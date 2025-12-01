@@ -2,6 +2,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { cast_vote } from './services/TribunalService';
+import { ServiceRegistry } from './services/ServiceRegistry';
 
 
 type Bindings = {
@@ -153,7 +155,7 @@ app.get('/', (c) => {
     return c.text('Rizik V8 Backend is Running!')
 })
 
-import { orchestrateAI } from './ai/AIOrchestrator'
+import { orchestrateAI, ChatMessage, UserContext, SquadContext } from './ai/AIOrchestrator'
 
 app.post('/api/ai/chat', async (c) => {
     const body = await c.req.json()
@@ -164,17 +166,87 @@ app.post('/api/ai/chat', async (c) => {
     }
 
     try {
+        // --- CONTEXT FETCHING ---
+        const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
+
+        // 1. Fetch User Profile
+        const { data: userProfile } = await supabase
+            .from('user_profiles')
+            .select('full_name, role, department')
+            .eq('id', user_id)
+            .maybeSingle();
+
+        const userContext: UserContext = {
+            name: userProfile?.full_name || "Squad Member",
+            role: (userProfile?.role as 'admin' | 'member') || 'member',
+            department: userProfile?.department || "General"
+        };
+
+        // 2. Fetch Squad Profile
+        const { data: squadProfile } = await supabase
+            .from('squads')
+            .select('name, member_count')
+            .eq('id', squad_id)
+            .maybeSingle();
+
+        const squadContext: SquadContext = {
+            name: squadProfile?.name || "My Squad",
+            memberCount: squadProfile?.member_count || 4
+        };
+
+        // 3. Fetch History
+        const { data: historyData } = await supabase
+            .from('chat_messages')
+            .select('role, content')
+            .eq('squad_id', squad_id)
+            .order('created_at', { ascending: false })
+            .limit(6);
+
+        // Reverse to chronological order
+        const history: ChatMessage[] = (historyData || []).reverse().map((msg: any) => ({
+            role: (['system', 'user', 'assistant'].includes(msg.role) ? msg.role : 'user') as 'system' | 'user' | 'assistant',
+            content: msg.content || ""
+        }));
+
         const result = await orchestrateAI(
             c.env.AI,
+            c.env,
             c.env.SUPABASE_URL,
             c.env.SUPABASE_KEY,
             message,
+            history,
             squad_id,
-            user_id
+            user_id,
+            userContext,
+            squadContext
         )
 
+        // SAVE INTERACTION TO DB (Memory)
+        c.executionCtx.waitUntil((async () => {
+            let aiResponseText = "";
+            if (result.type === 'chat_response') {
+                aiResponseText = result.message;
+            } else if (result.type === 'action_result') {
+                aiResponseText = result.ai_response || "Action executed.";
+            }
+
+            if (aiResponseText) {
+                await supabase.from('chat_messages').insert([
+                    { squad_id: squad_id, user_id: user_id, role: 'user', content: message },
+                    { squad_id: squad_id, user_id: null, role: 'assistant', content: aiResponseText }
+                ]);
+            }
+        })());
+
         // CHECK FOR UI UPDATE PAYLOAD
-        if ((result as any).ui_update_payload) {
+        // The result structure from orchestrateAI might be { type: 'action_result', result: { ui_update_payload: ... } }
+        // We need to extract it safely.
+        let uiPayload = null;
+        if (result.type === 'action_result' && result.result && (result.result as any).ui_update_payload) {
+            uiPayload = (result.result as any).ui_update_payload;
+        }
+
+        if (uiPayload) {
             const idObj = c.env.SQUAD_DO.idFromName(squad_id)
             const stub = c.env.SQUAD_DO.get(idObj)
 
@@ -182,7 +254,7 @@ app.post('/api/ai/chat', async (c) => {
             c.executionCtx.waitUntil(
                 stub.fetch(new Request('http://internal/ui-update', {
                     method: 'POST',
-                    body: JSON.stringify((result as any).ui_update_payload)
+                    body: JSON.stringify(uiPayload)
                 }))
             )
         }
@@ -924,12 +996,11 @@ app.get('/api/squad/invite/:squad_id', async (c) => {
     }
 })
 
-// Tribunal Vote Endpoint
-import { cast_vote } from './services/TribunalService'
-
+// --- 4. TRIBUNAL SYSTEM ---
+// --- 4. TRIBUNAL SYSTEM ---
 app.post('/api/squad/tribunal/vote', async (c) => {
-    const body = await c.req.json()
-    const { dispute_id, voter_id, vote } = body
+    const body = await c.req.json();
+    const { dispute_id, voter_id, vote, justification } = body;
 
     if (!dispute_id || !voter_id || !vote) {
         return c.json({ error: 'Missing dispute_id, voter_id, or vote' }, 400)
@@ -942,13 +1013,46 @@ app.post('/api/squad/tribunal/vote', async (c) => {
             dispute_id,
             voter_id,
             vote
-        )
-
-        return c.json(result)
+        );
+        return c.json(result);
     } catch (e: any) {
         return c.json({ error: e.message }, 500)
     }
-})
+});
+
+// --- 5. SERVICE REGISTRY (The Revolutionary Features) ---
+app.post('/api/services/rent', async (c) => {
+    const body = await c.req.json();
+    const { renter_id, owner_id, asset_name, monthly_rent, squad_id } = body;
+
+    const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
+    const registry = new ServiceRegistry(supabase, c.env);
+    const result = await registry.initiate_asset_rental(renter_id, owner_id, asset_name, monthly_rent, squad_id);
+
+    return c.json(result);
+});
+
+app.post('/api/services/gig/academic', async (c) => {
+    const body = await c.req.json();
+    const { poster_id, squad_id, title, description, bounty, required_tag } = body;
+
+    const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
+    const registry = new ServiceRegistry(supabase, c.env);
+    const result = await registry.post_academic_gig(poster_id, squad_id, title, description, bounty, required_tag);
+
+    return c.json(result);
+});
+
+app.post('/api/services/mission/proxy', async (c) => {
+    const body = await c.req.json();
+    const { requester_id, squad_id, mission_type, location, duration_hours, bounty } = body;
+
+    const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
+    const registry = new ServiceRegistry(supabase, c.env);
+    const result = await registry.launch_proxy_mission(requester_id, squad_id, mission_type, location, duration_hours, bounty);
+
+    return c.json(result);
+});
 
 // Deep Link Redirect (Magic Link)
 app.get('/api/squad/invite/:code', (c) => {
@@ -1400,26 +1504,54 @@ app.post('/api/ai/voice-chat', async (c) => {
         let input: ArrayBuffer | string;
         const contentType = c.req.header('content-type');
 
+        console.log('Received request method:', c.req.method);
+        console.log('Content-Type:', contentType);
+
         if (contentType && contentType.includes('application/json')) {
             const body = await c.req.json();
             input = body.text;
+            console.log('Input Type: Text');
         } else {
             input = await c.req.arrayBuffer();
+            console.log('Input Type: Audio Blob');
+            console.log('Audio Blob Size:', input.byteLength);
         }
+
+        const squadId = c.req.header('x-squad-id') || 'default_squad_id';
+        const userId = c.req.header('x-user-id') || 'current_user_id';
+
+        console.log(`[VoiceChat] Context - Squad: ${squadId}, User: ${userId}`);
 
         const result = await process_voice_command(
             c.env.AI,
+            c.env,
+            c.env.SUPABASE_URL,
+            c.env.SUPABASE_KEY,
+            squadId,
+            userId,
             input
         );
 
-        // Return the audio buffer directly so the frontend can play it
-        return c.body(result.audio, 200, {
-            'Content-Type': 'audio/mpeg',
-            'X-Transcript': result.transcript, // Send metadata in headers
-            'X-AI-Response': result.response
+        // result.audio is now already a Base64 string from VoiceAgent
+        const audioBase64 = result.audio;
+
+        // Return JSON with debug info and audio
+        return c.json({
+            success: true,
+            transcript: result.transcript,
+            ai_response: result.response,
+            ui_payload: result.ui_payload,
+            audio: audioBase64,
+            debug_error: result.debug_error
         });
+
     } catch (e: any) {
-        return c.json({ error: e.message }, 500);
+        console.error("Voice Chat Error:", e);
+        return c.json({
+            success: false,
+            error: e.message,
+            stack: e.stack
+        }, 500);
     }
 });
 
@@ -1430,9 +1562,21 @@ export { SquadCore } from './do/SquadCore'
 
 // ... (Other exports if any)
 
-export default app
-
-
 export { SquadDO } from './do/SquadDO'
 export { ChatDO } from './do/ChatDO'
 export { GigDO } from './do/GigDO'
+
+// ==========================================
+// CRON HANDLER (Scheduled Tasks)
+// ==========================================
+export default {
+    fetch: app.fetch,
+    async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+        console.log('[Cron] Scheduled event triggered:', event.cron);
+
+        const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+        const registry = new ServiceRegistry(supabase, env);
+
+        ctx.waitUntil(registry.process_scheduled_tasks());
+    }
+}

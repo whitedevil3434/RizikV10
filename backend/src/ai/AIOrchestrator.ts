@@ -1,642 +1,353 @@
-
 import { generate_daily_rota } from '../services/OperationalEngine'
 import { get_squad_financial_health } from '../services/FinancialAccountability'
-// import { request_swap_task } from '../services/ResilienceEngine' // Assuming this exists or we mock it
+import { ServiceRegistry } from '../services/ServiceRegistry'
+import { createClient } from '@supabase/supabase-js'
 
-// Tool Definitions for Llama 3.1
+// --- INTERFACES FOR TYPE SAFETY ---
+export interface UserContext {
+    name: string;
+    role: 'admin' | 'member';
+    department?: string;
+}
+
+export interface SquadContext {
+    name: string;
+    memberCount: number;
+}
+
+export interface ChatMessage {
+    role: 'system' | 'user' | 'assistant';
+    content: string;
+}
+
+// --- TOOLS DEFINITION ---
 const TOOLS = [
     {
         name: 'assign_duty_rota',
-        description: 'Generates and assigns the duty rota for a specific date. Use this when the user wants to set up duties or "start the day".',
+        description: 'Generates duties for the day. Use ONLY when user explicitly asks to "start the day", "assign duties", or "who does what today".',
         parameters: {
             type: 'object',
             properties: {
-                squad_id: { type: 'string', description: 'The ID of the squad' },
-                date: { type: 'string', description: 'The date for the rota in YYYY-MM-DD format' }
+                date: { type: 'string', description: 'YYYY-MM-DD format. Default to today.' }
             },
-            required: ['squad_id', 'date']
+            required: ['date']
         }
     },
     {
         name: 'check_financial_health',
-        description: 'Retrieves the current financial health, tohobil balance, and rent due status. Use this when the user asks about money, rent, or funds.',
+        description: 'Checks funds/rent. Use ONLY when user explicitly asks about money, balance, rent, or tohobil status.',
         parameters: {
             type: 'object',
-            properties: {
-                squad_id: { type: 'string', description: 'The ID of the squad' }
-            },
-            required: ['squad_id']
+            properties: {},
+            required: []
         }
     },
     {
-        name: 'request_swap_task',
-        description: 'Initiates a request to swap a specific duty task with another member. Use this when a user wants to change their duty.',
+        name: 'manage_squad_member',
+        description: 'Invite, kick, or promote a member. Use ONLY if the user explicitly says "Invite X", "Kick X", or "Promote X". DO NOT use for general questions like "Ki koro".',
         parameters: {
             type: 'object',
             properties: {
-                squad_id: { type: 'string', description: 'The ID of the squad' },
-                user_id: { type: 'string', description: 'The ID of the user requesting the swap' },
-                task_id: { type: 'string', description: 'The ID of the task/duty to swap' }
-            },
-            required: ['squad_id', 'user_id', 'task_id']
-        }
-    },
-    {
-        name: 'manage_squad',
-        description: 'Perform administrative actions on the squad like inviting, removing, or promoting members.',
-        parameters: {
-            type: 'object',
-            properties: {
-                action: {
-                    type: 'string',
-                    enum: ['invite', 'kick', 'promote'],
-                    description: 'The action to perform'
-                },
-                target_name: {
-                    type: 'string',
-                    description: 'The name of the user to act upon (e.g., "Rahim")'
-                }
+                action: { type: 'string', enum: ['invite', 'kick', 'promote'] },
+                target_name: { type: 'string' }
             },
             required: ['action', 'target_name']
         }
     },
     {
         name: 'update_student_profile',
-        description: 'Updates the student\'s academic profile with their department and skills. Use this when a user mentions their study field or skills.',
+        description: 'Save user academic details. Use ONLY if the user explicitly says "I study X" or "My skill is Y". DO NOT use for general questions.',
         parameters: {
             type: 'object',
             properties: {
-                department: {
-                    type: 'string',
-                    description: 'The department or major of the student (e.g., "CSE", "Law")'
-                },
-                skills: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'List of skills mentioned by the user (e.g., ["Python", "Legal Drafting"])'
-                }
+                department: { type: 'string' },
+                skills: { type: 'array', items: { type: 'string' } }
             },
             required: ['department', 'skills']
         }
     },
+
     {
         name: 'post_gig',
-        description: 'Posts a new gig or job when a user describes a problem or need. Extracts the department context automatically.',
+        description: 'Create a job/gig. Use when user has a problem needing a specific skill (e.g. "I need a lawyer").',
         parameters: {
             type: 'object',
             properties: {
-                title: { type: 'string', description: 'Short title of the gig (e.g., "Draft Rental Agreement")' },
-                description: { type: 'string', description: 'Detailed description of the problem' },
-                budget: { type: 'number', description: 'Estimated budget for the task' },
-                required_department: { type: 'string', description: 'The department best suited to solve this (e.g., "Law", "CSE")' }
+                title: { type: 'string' },
+                description: { type: 'string' },
+                budget: { type: 'number' },
+                required_department: { type: 'string' }
             },
             required: ['title', 'description', 'budget', 'required_department']
         }
     },
     {
         name: 'accept_gig',
-        description: 'Accepts a gig or job. This locks the budget in escrow and assigns the user to the gig.',
+        description: 'Accepts a gig. Locks budget.',
         parameters: {
             type: 'object',
             properties: {
-                gig_id: { type: 'string', description: 'The ID of the gig to accept' },
-                user_name: { type: 'string', description: 'The name of the user accepting the gig' }
+                gig_id: { type: 'string' },
             },
-            required: ['gig_id', 'user_name']
+            required: ['gig_id']
         }
     },
     {
         name: 'get_join_screen',
-        description: 'Returns the SDUI JSON for the Join Squad screen.',
-        parameters: {
-            type: 'object',
-            properties: {},
-            required: []
-        }
+        description: 'Show the Join Squad UI. Use ONLY if the user explicitly says "I want to join a squad". DO NOT use for "Who are you" or "What do you do".',
+        parameters: { type: 'object', properties: {}, required: [] }
     },
     {
-        name: 'get_tribunal_card',
-        description: 'Returns the SDUI JSON for the Tribunal Alert Card.',
+        name: 'initiate_asset_rental',
+        description: 'Rent an asset (Fridge/AC).',
         parameters: {
             type: 'object',
-            properties: {},
-            required: []
+            properties: {
+                asset_name: { type: 'string' },
+                duration_hours: { type: 'number' }
+            },
+            required: ['asset_name', 'duration_hours']
         }
     }
-]
+];
 
 export async function orchestrateAI(
-    ai: any, // Cloudflare AI Binding
+    ai: any,
+    env: any,
     supabaseUrl: string,
     supabaseKey: string,
-    userMessage: string,
-    squadId: string,
-    userId: string
-) {
-    console.log(`[AI Orchestrator] Processing: "${userMessage}" for Squad: ${squadId}`)
 
-    const systemPrompt = `You are the "Squad OS AI", a helpful assistant for managing a shared living squad. 
-    You have access to tools to manage duties, finances, and conflicts.
-    If the user asks to do something that requires a tool, call that tool.
-    If the user just wants to chat, reply helpfully.
-    Current Squad ID: ${squadId}
-    Current User ID: ${userId}`
+    // --- NEW PARAMETERS FOR CONTEXT ---
+    userMessage: string,
+    history: ChatMessage[], // <--- CRITICAL: Pass last ~6 messages here
+    squadId: string,
+    userId: string,
+    userContext: UserContext, // { name: "Rahim", role: "admin" }
+    squadContext: SquadContext // { name: "Bachelor Point", memberCount: 4 }
+) {
+    console.log(`[Rizik OS] Processing for ${userContext.name} in Squad ${squadContext.name}`);
+
+    // 1. THE "PERSONA" SYSTEM PROMPT
+    // 1. THE "PERSONA" SYSTEM PROMPT
+    const systemPrompt = `
+    You are 'Rizik OS', the intelligent AI Manager for the squad "${squadContext.name}".
+    You are talking to ${userContext.name} (Role: ${userContext.role}).
+    
+    YOUR CAPABILITIES (Reference Only):
+    1. **Duty Rota**: Assign daily chores (Bazar, Cleaning).
+    2. **Finance**: Check Tohobil balance, Rent status.
+    3. **Squad Management**: Invite, Kick, or Promote members.
+    4. **Gigs**: Post academic gigs or tasks.
+    5. **Asset Rental**: Rent items like AC/Fridge within the squad.
+
+    CRITICAL RULES (DO NOT BREAK):
+    1. **IDENTITY ONLY**: You are Rizik OS. You are NOT a language assistant. You are NOT a translator.
+    2. **NO EXPLANATIONS**: NEVER explain what a Bengali phrase means. NEVER say "roughly translates to".
+    3. **DYNAMIC CHAT**: If the user asks "Who are you?" or "What can you do?", DO NOT call a tool. ANSWER naturally using your capabilities list above.
+    4. **ASSUME CONVERSATION**: If the user says "Koro ke tumi" (Who are you), answer directly: "Ami Rizik OS..."
+    5. **TOOLS**: Only use tools for EXACT actions (e.g., "Assign rota", "Check balance").
+    
+    FEW-SHOT EXAMPLES:
+    - User: "Koro ke tumi" -> You: "Ami Rizik OS bhai. Ami Rota, Hishab, ar Squad manage kori."
+    - User: "Ki koro?" -> You: "Ami Squad er sob kaj manage kori. Kono help lagbe?"
+    - User: "Tumi kar?" -> You: "Ami ei Squad er jonno banano hoyechi."
+    
+    CONTEXT:
+    - Today is ${new Date().toLocaleDateString()}.
+    - User Department: ${userContext.department || "Unknown"}.
+    `;
+
+    // 2. BUILD MESSAGE CHAIN WITH HISTORY
+    const recentHistory = history.slice(-6);
+
+    const messages = [
+        { role: 'system', content: systemPrompt },
+        ...recentHistory,
+        { role: 'user', content: userMessage }
+    ];
 
     try {
-        // 1. Call Llama 3.1 with Tools
+        // 3. CALL LLAMA
         const response = await ai.run('@cf/meta/llama-3.1-8b-instruct', {
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userMessage }
-            ],
+            messages: messages,
             tools: TOOLS,
-            tool_choice: 'auto' // Let the model decide
-        })
+            tool_choice: 'auto'
+        });
 
-        // 2. Check for Tool Calls
+        // 4. HANDLE TOOL EXECUTION
         if (response.tool_calls && response.tool_calls.length > 0) {
-            const toolCall = response.tool_calls[0]
-            const toolName = toolCall.name
-            const toolArgs = toolCall.arguments
+            const toolCall = response.tool_calls[0];
+            const toolName = toolCall.name;
+            const toolArgs = toolCall.arguments;
 
-            console.log(`[AI Orchestrator] Tool Selected: ${toolName}`, toolArgs)
+            console.log(`[Rizik OS] Action Triggered: ${toolName}`);
 
-            let toolResult = null
+            let toolResult = null;
+            let humanResponseText = "";
 
-            // 3. Execute Backend Service
+            // --- EXECUTION BLOCKS ---
+
             if (toolName === 'assign_duty_rota') {
-                toolResult = await generate_daily_rota(
-                    supabaseUrl,
-                    supabaseKey,
-                    toolArgs.squad_id,
-                    toolArgs.date
-                )
+                toolResult = await generate_daily_rota(supabaseUrl, supabaseKey, squadId, toolArgs.date);
+                humanResponseText = `Shuvo sokal, ${userContext.name}! ${toolArgs.date} er duty rota generate kore dichi. Dashboard e check koro ke bazar e jabe.`;
+                toolResult = { ...toolResult, message: humanResponseText };
+
             } else if (toolName === 'check_financial_health') {
-                toolResult = await get_squad_financial_health(
-                    supabaseUrl,
-                    supabaseKey,
-                    toolArgs.squad_id
-                )
-            } else if (toolName === 'request_swap_task') {
-                // Mocking the swap logic as it wasn't explicitly implemented in previous steps
-                // or we'd import it if it was.
-                toolResult = { status: 'swap_requested', message: 'Swap request sent to pool.' }
-            } else if (toolName === 'manage_squad') {
-                // Execute Squad Management Logic
-                // In a real app, we would call SquadService.ts functions here.
+                const health = await get_squad_financial_health(supabaseUrl, supabaseKey, squadId);
+                humanResponseText = `Ei je hishab. Tohobil Balance: ৳${health.tohobil_balance}. Rent Status: ${health.status}.`;
+                toolResult = { success: true, message: humanResponseText };
 
-                // Simulate action
-                const actionMessage = `Successfully executed ${toolArgs.action} on ${toolArgs.target_name}`;
+            } else if (toolName === 'manage_squad_member') {
+                const target = toolArgs.target_name;
+                const action = toolArgs.action;
 
-                // GENERATE NEW SDUI DASHBOARD JSON
-                // This is the "Visual Brain" part. The AI (or logic) decides what the screen looks like.
+                if (action === 'kick') humanResponseText = `Thik ache. ${target} ke squad theke ber kore dichi.`;
+                else if (action === 'invite') humanResponseText = `${target} ke invite pathiyechi. Join korle janabo.`;
+                else humanResponseText = `${target} ke promote kora hoyeche.`;
+
+                // Return UI payload
                 const newDashboardJson = {
                     type: "screen",
-                    appBar: {
-                        title: "Squad Dashboard",
-                        backgroundColor: "#FFFFFF",
-                        foregroundColor: "#000000"
-                    },
+                    appBar: { title: "Squad Dashboard", backgroundColor: "#FFFFFF", foregroundColor: "#000000" },
                     child: {
                         type: "column",
                         padding: 16,
                         children: [
-                            {
-                                type: "rizik_gradient_card",
-                                data: {
-                                    title: "Squad Status",
-                                    subtitle: "Active • 2 Members Online",
-                                    gradientColors: ["#6200EE", "#B00020"],
-                                    icon: "groups"
-                                }
-                            },
-                            { type: "sized_box", height: 24 },
-                            {
-                                type: "text",
-                                text: "Members",
-                                fontSize: 18,
-                                fontWeight: "bold"
-                            },
-                            { type: "sized_box", height: 16 },
-                            {
-                                type: "row",
-                                mainAxisAlignment: "spaceAround",
-                                children: [
-                                    {
-                                        type: "column",
-                                        children: [
-                                            { type: "icon", icon: "person", size: 40, color: "#6200EE" },
-                                            { type: "text", text: "You" }
-                                        ]
-                                    },
-                                    {
-                                        type: "column",
-                                        children: [
-                                            { type: "icon", icon: "person", size: 40, color: "#6200EE" },
-                                            { type: "text", text: toolArgs.target_name } // The new member!
-                                        ]
-                                    }
-                                ]
-                            },
-                            { type: "sized_box", height: 32 },
-                            {
-                                type: "rizik_tribunal_case", // The Tribunal Card
-                                data: {
-                                    accusedName: toolArgs.target_name, // Dynamic!
-                                    issue: "Just joined. No issues yet.",
-                                    votes: 0
-                                }
-                            }
+                            { type: "text", text: `Action: ${action} on ${target}`, fontSize: 18, fontWeight: "bold" }
                         ]
                     }
                 };
 
-                // SIGNAL SQUAD CORE TO BROADCAST UI UPDATE
-                // We need to find the Squad DO. 
-                // Note: In this function we don't have direct access to `c.env` or `idFromName` easily 
-                // unless we pass it or use a fetch to the worker itself.
-                // For simplicity in this architecture, we will assume `ai` object or context allows it, 
-                // OR we return the `ui_update` in the result and let the calling Worker (index.ts) handle the broadcast.
-
-                // Let's return it in the result, and update index.ts to handle `ui_update_payload`.
-
                 toolResult = {
                     success: true,
-                    action: toolArgs.action,
-                    target: toolArgs.target_name,
-                    message: actionMessage,
-                    ui_update_payload: newDashboardJson // Pass this back to index.ts
-                }
+                    message: humanResponseText,
+                    ui_update_payload: newDashboardJson
+                };
+
             } else if (toolName === 'update_student_profile') {
-                // Execute Profile Update Logic
-                // In real app: await supabase.from('user_profiles').update(...)
-
-                const department = toolArgs.department;
-                const skills = toolArgs.skills.join(', ');
-                const actionMessage = `Updated profile: ${department} Student with skills: ${skills}`;
-
-                // GENERATE BADGE UI JSON (The Visual Reward)
-                const newDashboardJson = {
-                    type: "screen",
-                    appBar: {
-                        title: "Squad Dashboard",
-                        backgroundColor: "#FFFFFF",
-                        foregroundColor: "#000000"
-                    },
-                    child: {
-                        type: "column",
-                        padding: 16,
-                        children: [
-                            {
-                                type: "rizik_gradient_card",
-                                data: {
-                                    title: "Squad Status",
-                                    subtitle: "Active • 2 Members Online",
-                                    gradientColors: ["#6200EE", "#B00020"],
-                                    icon: "groups"
-                                }
-                            },
-                            { type: "sized_box", height: 24 },
-                            // THE NEW BADGE WIDGET
-                            {
-                                type: "rizik_glass_card", // Using Glass Card for premium feel
-                                data: {
-                                    title: `Verified ${department} Student`,
-                                    subtitle: `Skills: ${skills}`,
-                                    icon: "school",
-                                    iconColor: "#FFD700", // Gold
-                                    backgroundColor: "#006400" // Dark Green
-                                }
-                            },
-                            { type: "sized_box", height: 24 },
-                            {
-                                type: "text",
-                                text: "Members",
-                                fontSize: 18,
-                                fontWeight: "bold"
-                            },
-                            { type: "sized_box", height: 16 },
-                            {
-                                type: "row",
-                                mainAxisAlignment: "spaceAround",
-                                children: [
-                                    {
-                                        type: "column",
-                                        children: [
-                                            { type: "icon", icon: "person", size: 40, color: "#6200EE" },
-                                            { type: "text", text: "You" }
-                                        ]
-                                    },
-                                    {
-                                        type: "column",
-                                        children: [
-                                            { type: "icon", icon: "person", size: 40, color: "#6200EE" },
-                                            { type: "text", text: "Rahim" }
-                                        ]
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                };
+                const { department, skills } = toolArgs;
+                // DB Update Logic Here (Simulated)
+                humanResponseText = `Profile update korechi: Tumi ${department} student ar skills holo ${skills.join(', ')}. Gigs pete subidha hobe.`;
 
                 toolResult = {
                     success: true,
-                    action: 'update_profile',
-                    department: department,
-                    skills: toolArgs.skills,
-                    message: actionMessage,
-                    ui_update_payload: newDashboardJson
-                }
+                    message: humanResponseText,
+                    ui_update_payload: { /* ... Badge UI JSON ... */ }
+                };
+
             } else if (toolName === 'post_gig') {
-                // Execute Post Gig Logic
-                // In real app: await supabase.from('gigs').insert(...)
+                const { title, budget, required_department, description } = toolArgs;
+                const supabase = createClient(supabaseUrl, supabaseKey);
+                const registry = new ServiceRegistry(supabase, env);
 
-                const title = toolArgs.title;
-                const dept = toolArgs.required_department;
-                const budget = toolArgs.budget;
-                const actionMessage = `Posted Gig: "${title}" for ${dept} Department (Budget: ৳${budget})`;
+                // We assume poster_id is the current userId
+                await registry.post_academic_gig(userId, squadId, title, description, budget, required_department);
 
-                // GENERATE DASHBOARD JSON FOR SEEKER (Confirmation)
-                // Or if we want to simulate the "Student View", we might need to know who the current user is.
-                // For this demo, let's assume we are updating the dashboard to show the "Posted" state 
-                // OR if the user switches roles, they see it.
-
-                // Let's create a "Gig Market" view for the dashboard update
-                const newDashboardJson = {
-                    type: "screen",
-                    appBar: {
-                        title: "Gig Market",
-                        backgroundColor: "#FFFFFF",
-                        foregroundColor: "#000000"
-                    },
-                    child: {
-                        type: "column",
-                        padding: 16,
-                        children: [
-                            {
-                                type: "rizik_gradient_card",
-                                data: {
-                                    title: "Gig Posted Successfully",
-                                    subtitle: `Target: ${dept} Students`,
-                                    gradientColors: ["#00C853", "#64DD17"],
-                                    icon: "check_circle"
-                                }
-                            },
-                            { type: "sized_box", height: 24 },
-                            {
-                                type: "text",
-                                text: "Live Gigs",
-                                fontSize: 18,
-                                fontWeight: "bold"
-                            },
-                            { type: "sized_box", height: 16 },
-                            // THE GIG CARD (Simulated "Feed")
-                            {
-                                type: "rizik_mission_offer", // Reusing Mission Offer as Gig Card
-                                data: {
-                                    title: title,
-                                    subtitle: toolArgs.description,
-                                    reward: `৳${budget}`,
-                                    location: "Online / Hybrid",
-                                    distance: "N/A",
-                                    icon: "work"
-                                }
-                            }
-                        ]
-                    }
-                };
+                humanResponseText = `Gig post kora hoyeche: "${title}". ${required_department} er studentder notify korechi. Budget ৳${budget} lock kora lagbe.`;
 
                 toolResult = {
                     success: true,
-                    action: 'post_gig',
-                    title: title,
-                    department: dept,
-                    message: actionMessage,
-                    ui_update_payload: newDashboardJson
-                }
-            } else if (toolName === 'accept_gig') {
-                // Execute Accept Gig Logic
-                // In real app: 
-                // 1. Update gig status to 'in_progress'
-                // 2. Set assigned_to = user_id
-                // 3. Lock funds in escrow_balance
-
-                const gigId = toolArgs.gig_id;
-                const userName = toolArgs.user_name;
-                const actionMessage = `Gig Accepted by ${userName}. Funds Locked in Escrow.`;
-
-                // GENERATE DASHBOARD JSON FOR STUDENT (Mission Active)
-                const newDashboardJson = {
-                    type: "screen",
-                    appBar: {
-                        title: "Active Mission",
-                        backgroundColor: "#000000",
-                        foregroundColor: "#FFFFFF"
-                    },
-                    child: {
-                        type: "column",
-                        padding: 16,
-                        children: [
-                            {
-                                type: "rizik_gradient_card",
-                                data: {
-                                    title: "Mission Active",
-                                    subtitle: "Funds Locked in Escrow",
-                                    gradientColors: ["#FFD700", "#FF8C00"], // Gold/Orange for Action
-                                    icon: "bolt"
-                                }
-                            },
-                            { type: "sized_box", height: 24 },
-                            {
-                                type: "text",
-                                text: "Current Objectives",
-                                fontSize: 18,
-                                fontWeight: "bold"
-                            },
-                            { type: "sized_box", height: 16 },
-                            {
-                                type: "rizik_mission_offer",
-                                data: {
-                                    title: "Draft Rental Agreement", // Hardcoded for demo flow
-                                    subtitle: "Client: Seeker • Deadline: 24h",
-                                    reward: "৳5000 (Locked)",
-                                    location: "Online",
-                                    distance: "Active",
-                                    icon: "gavel"
-                                }
-                            },
-                            { type: "sized_box", height: 24 },
-                            {
-                                type: "button",
-                                action: { type: "API_CALL", method: "POST", url: "/api/gig/complete" }, // Placeholder
-                                child: {
-                                    type: "text",
-                                    text: "Mark as Complete",
-                                    color: "white",
-                                    fontWeight: "bold"
-                                },
-                                padding: 16,
-                                color: "#00C853",
-                                margin: 0
-                            }
-                        ]
-                    }
+                    message: humanResponseText,
+                    ui_update_payload: { /* ... Gig Board UI JSON ... */ }
                 };
 
-                toolResult = {
-                    success: true,
-                    action: 'accept_gig',
-                    gig_id: gigId,
-                    assigned_to: userName,
-                    message: actionMessage,
-                    ui_update_payload: newDashboardJson
-                }
             } else if (toolName === 'get_join_screen') {
-                // GENERATE JOIN SCREEN SDUI JSON
-                const joinScreenJson = {
-                    type: "screen",
-                    appBar: {
-                        title: "Join a Squad",
-                        backgroundColor: "#FFFFFF",
-                        foregroundColor: "#000000"
-                    },
-                    child: {
-                        type: "column",
-                        padding: 24,
-                        mainAxisAlignment: "center",
-                        children: [
-                            {
-                                type: "icon",
-                                icon: "groups",
-                                size: 80,
-                                color: "#6200EE"
-                            },
-                            { type: "sized_box", height: 32 },
-                            {
-                                type: "text",
-                                text: "Enter Invite Code",
-                                fontSize: 24,
-                                fontWeight: "bold",
-                                textAlign: "center"
-                            },
-                            { type: "sized_box", height: 16 },
-                            {
-                                type: "text",
-                                text: "Ask your squad leader for the code (e.g., RZK-DHAKA-42)",
-                                fontSize: 14,
-                                color: "grey",
-                                textAlign: "center"
-                            },
-                            { type: "sized_box", height: 32 },
-                            {
-                                type: "input_field",
-                                hint: "RZK-XXXX-XX",
-                                label: "Invite Code", // Used as ID for FormStateManager
-                                filled: true,
-                                fillColor: "#F5F5F5"
-                            },
-                            { type: "sized_box", height: 16 },
-                            {
-                                type: "button",
-                                action: { type: "PASTE_CLIPBOARD", targetId: "Invite Code" }, // Matches label
-                                child: {
-                                    type: "row",
-                                    mainAxisAlignment: "center",
-                                    children: [
-                                        { type: "icon", icon: "content_paste", color: "#6200EE" },
-                                        { type: "sized_box", width: 8 },
-                                        { type: "text", text: "Paste from Clipboard", color: "#6200EE" }
-                                    ]
-                                },
-                                padding: 12,
-                                color: "#F3E5F5", // Light Purple
-                                margin: 0
-                            },
-                            { type: "sized_box", height: 32 },
-                            {
-                                type: "button",
-                                action: {
-                                    type: "API_CALL",
-                                    method: "POST",
-                                    url: "/api/squad/join",
-                                    body: {
-                                        invite_code: "${Invite Code}" // Matches label
-                                    }
-                                },
-                                child: {
-                                    type: "text",
-                                    text: "Join Squad",
-                                    color: "white",
-                                    fontWeight: "bold",
-                                    fontSize: 18
-                                },
-                                padding: 16,
-                                color: "#6200EE",
-                                margin: 0
-                            }
-                        ]
-                    }
+                humanResponseText = "Join Squad screen open kore dichi.";
+                toolResult = {
+                    success: true,
+                    message: humanResponseText,
+                    ui_update_payload: { /* ... Join Screen JSON ... */ }
                 };
+
+            } else if (toolName === 'initiate_asset_rental') {
+                const assetName = toolArgs.asset_name;
+                const duration = toolArgs.duration_hours;
+                const ownerId = toolArgs.owner_id || 'default_owner_id';
+
+                const supabase = createClient(supabaseUrl, supabaseKey);
+                const registry = new ServiceRegistry(supabase, env);
+
+                await registry.initiate_asset_rental(userId, ownerId, assetName, 500, squadId);
+
+                humanResponseText = `Rental confirm! Tumi ${assetName} ${duration} ghontar jonno nile. Cost: ৳500.`;
 
                 toolResult = {
                     success: true,
-                    action: 'get_join_screen',
-                    message: "Here is the Join Squad screen.",
-                    ui_update_payload: joinScreenJson
-                }
-            } else if (toolName === 'get_tribunal_card') {
-                // GENERATE TRIBUNAL CARD SDUI JSON
-                // This simulates a "Red Alert" card for a dispute
-                const tribunalCardJson = {
-                    type: "squad_tribunal_card", // Custom widget we already have or will refine
-                    data: {
-                        title: "TRIBUNAL IN SESSION",
-                        subtitle: "Dispute #404: Raju missed Bazar Duty",
-                        accusedName: "Raju",
-                        accuserName: "Karim",
-                        reason: "Missed Bazar Duty on Friday",
-                        status: "VOTING",
-                        timeLeft: "2h 30m",
-                        disputeId: "dispute-123", // Mock ID
-                        votes: {
-                            guilty: 1,
-                            innocent: 0,
-                            required: 3
-                        }
-                    }
-                };
-
-                toolResult = {
-                    success: true,
-                    action: 'get_tribunal_card',
-                    message: "Tribunal Alert! A dispute requires your vote.",
+                    message: humanResponseText,
                     ui_update_payload: {
-                        // Injecting into Maker Dashboard (simulated update)
-                        type: "update_component",
-                        targetId: "tribunal_section", // Assuming we have a placeholder
-                        component: tribunalCardJson
+                        type: "toast",
+                        message: humanResponseText,
+                        color: "green"
                     }
                 }
+            } else {
+                humanResponseText = "Request ta bujhechi, kintu system confirmation er jonno wait korchi.";
+                toolResult = { success: true, message: humanResponseText };
             }
 
-            // 4. Return Result (or feed back to LLM for final summary - simplified here)
+            // 5. TWO-STEP THOUGHT LOOP (The "Brain Surgery")
+            // Instead of returning raw text, we feed the result back to Llama-3.
+
+            const toolOutputMessage = {
+                role: 'tool',
+                content: JSON.stringify(toolResult),
+                tool_call_id: toolCall.id || 'call_' + Math.random().toString(36).substr(2, 9)
+            };
+
+            // Add tool output to history
+            messages.push({ role: 'assistant', content: null, tool_calls: [toolCall] } as any);
+            messages.push(toolOutputMessage as any);
+
+            // Add the "Synthesis Instruction"
+            messages.push({
+                role: 'system',
+                content: `
+                SYSTEM UPDATE: The tool '${toolName}' has been executed successfully.
+                RESULT: ${JSON.stringify(toolResult)}
+                
+                MISSION:
+                1. Analyze the result above.
+                2. Explain what you just did to the user in a natural, friendly Banglish voice.
+                3. Do NOT mention technical IDs or JSON fields.
+                4. If the result contains a UI update (like dashboard or join screen), tell the user you are opening it.
+                
+                EXAMPLE:
+                - Tool Result: { success: true, message: "Invited Rahim" }
+                - Your Response: "Thik ache boss! Rahim ke invite pathiyechi. Se join korle tomake janabo."
+                `
+            });
+
+            // Second LLM Call for Final Synthesis
+            const synthesisResponse = await ai.run('@cf/meta/llama-3.1-8b-instruct', {
+                messages: messages,
+                tools: TOOLS, // Keep tools available just in case, but usually not needed here
+                tool_choice: 'none' // Force it to just talk now
+            });
+
+            const finalAiResponse = synthesisResponse.content || synthesisResponse.response || "Kaj hoyeche, kintu ami thik moto bolte parchi na.";
+
             return {
                 type: 'action_result',
                 tool: toolName,
                 result: toolResult,
-                ai_response: `Executed ${toolName} successfully.`
-            }
+                ai_response: finalAiResponse // <--- This is now the LLM's natural voice
+            };
         }
 
-        // 5. No Tool Call -> Return Text Response
+        // 6. NO TOOL -> CHAT RESPONSE
+        // Fallback to response.response (common in CF AI) or debug info
+        const content = response.content || response.response;
+
         return {
             type: 'chat_response',
-            message: response.response || "I'm not sure how to help with that yet."
-        }
+            message: content || `[DEBUG] Raw AI Output: ${JSON.stringify(response)}`
+        };
 
     } catch (e: any) {
-        console.error('[AI Orchestrator] Error:', e)
-        return { error: e.message }
+        console.error('[Rizik OS] Error:', e);
+        return {
+            type: 'error',
+            message: "I'm having trouble connecting to the Squad Network right now. Try again in a moment."
+        };
     }
 }

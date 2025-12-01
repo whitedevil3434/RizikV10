@@ -1,5 +1,38 @@
 import { createClient } from '@supabase/supabase-js';
 
+export async function create_dispute(
+    supabaseUrl: string,
+    supabaseKey: string,
+    squadId: string,
+    accusedUserId: string,
+    accuserUserId: string,
+    reason: string,
+    amount: number,
+    evidenceUrl: string
+) {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data, error } = await supabase
+        .from('disputes')
+        .insert({
+            squad_id: squadId,
+            accused_user_id: accusedUserId,
+            accuser_user_id: accuserUserId,
+            reason: reason,
+            amount: amount,
+            status: 'OPEN',
+            metadata: {
+                evidence_url: evidenceUrl
+            },
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
+        })
+        .select()
+        .single();
+
+    if (error) throw new Error(`Dispute Creation Failed: ${error.message}`);
+    return data;
+}
+
 export async function cast_vote(
     supabaseUrl: string,
     supabaseKey: string,
@@ -19,7 +52,6 @@ export async function cast_vote(
         });
 
     if (voteError) {
-        // Handle duplicate vote (already voted)
         if (voteError.code === '23505') throw new Error("You have already voted.");
         throw new Error(`Vote Failed: ${voteError.message}`);
     }

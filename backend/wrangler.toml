@@ -1,6 +1,7 @@
 name = "rizik-backend"
 main = "src/index.ts"
 compatibility_date = "2024-05-29"
+compatibility_flags = ["nodejs_compat"]
 
 # --- Observability ---
 [observability]
@@ -10,11 +11,11 @@ enabled = true
 # Store configuration and fast-access data
 [[kv_namespaces]]
 binding = "RIZIK_CONFIG"
-id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Replace with actual ID
+id = "3599876f242144438c19456c467138db" # Replace with actual ID
 
 [[kv_namespaces]]
 binding = "RIZIK_CACHE"
-id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Replace with actual ID
+id = "6de7b5dc92844b4ca3d3721408a17a97" # Replace with actual ID
 
 # --- Durable Objects (Live State) ---
 # Squads, Chat, and Real-time Logic
@@ -32,7 +33,7 @@ class_name = "GigDO"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["SquadDO", "ChatDO", "GigDO"]
+new_sqlite_classes = ["SquadCore", "ChatDO", "GigDO"]
 
 # --- R2 Buckets (Storage) ---
 # Media and Delivery Proofs
@@ -58,8 +59,8 @@ binding = "AI"
 # --- Environment Variables ---
 # Secrets should be in .dev.vars or added via `wrangler secret put`
 [vars]
-# SUPABASE_URL = "..." (Managed via secrets/env)
-# SUPABASE_KEY = "..." (Managed via secrets/env)
+SUPABASE_URL = "https://dxekolvveoadbaftfsmy.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4ZWtvbHZ2ZW9hZGJhZnRmc215Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyNzczMTEsImV4cCI6MjA2ODg1MzMxMX0.TRM9nL85CLLjvR5XfZ7YBncwqn0EybTVtt8a46NlZRg"
 CLOUDFLARE_ACCOUNT_ID = "e8181864e56d18f34edf61eeed4975cd"
 
 # Cloudflare Calls (Legacy - Manual WebRTC)
@@ -68,3 +69,8 @@ CLOUDFLARE_CALLS_APP_SECRET = "b2aba4fc601707bf3feeef5a9993f622ae7e60a760b09ea5b
 
 # RealtimeKit SDK (Official Cloudflare Flutter SDK)
 REALTIMEKIT_API_KEY = "ODg1Mjc4N2ItOWIyZC00ZTY5LTg4ZGMtNTllNDAyNjZkZTdjOmFhMWE5M2E1NDMzNzBhMWM5YzNl"
+
+# --- Cron Triggers (Scheduled Tasks) ---
+# Runs every hour to check for recurring rents and expired disputes
+[triggers]
+crons = ["0 * * * *"]

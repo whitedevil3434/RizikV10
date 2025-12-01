@@ -13,6 +13,19 @@ export class SquadDO extends DurableObject {
         const path = url.pathname;
         console.log(`SquadDO received: ${path}`);
 
+        // WebSocket Upgrade
+        if (request.headers.get("Upgrade") === "websocket") {
+            const pair = new WebSocketPair();
+            const [client, server] = Object.values(pair);
+
+            this.handleWebSocket(server);
+
+            return new Response(null, {
+                status: 101,
+                webSocket: client,
+            });
+        }
+
         // /squad/:id/join
         if (path.endsWith("/join")) {
             return this.joinSquad(request);
@@ -29,6 +42,21 @@ export class SquadDO extends DurableObject {
         }
 
         return new Response("SquadDO: Not Found", { status: 404 });
+    }
+
+    handleWebSocket(ws: WebSocket) {
+        ws.accept();
+        // this.sessions.push(ws); // Store session if needed
+
+        ws.addEventListener("message", async (msg) => {
+            console.log("SquadDO WebSocket Message:", msg.data);
+            // Echo back or broadcast
+            ws.send(`Echo: ${msg.data}`);
+        });
+
+        ws.addEventListener("close", () => {
+            console.log("SquadDO WebSocket Closed");
+        });
     }
 
     async joinSquad(request: Request): Promise<Response> {
