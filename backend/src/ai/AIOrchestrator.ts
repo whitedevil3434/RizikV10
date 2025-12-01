@@ -227,7 +227,8 @@ export async function orchestrateAI(
             } else if (toolName === 'update_student_profile') {
                 const { department, skills } = toolArgs;
                 // DB Update Logic Here (Simulated)
-                humanResponseText = `Profile update korechi: Tumi ${department} student ar skills holo ${skills.join(', ')}. Gigs pete subidha hobe.`;
+                const safeSkills = Array.isArray(skills) ? skills.join(', ') : (skills || "General");
+                humanResponseText = `Profile update korechi: Tumi ${department} student ar skills holo ${safeSkills}. Gigs pete subidha hobe.`;
 
                 toolResult = {
                     success: true,
@@ -295,7 +296,7 @@ export async function orchestrateAI(
             };
 
             // Add tool output to history
-            messages.push({ role: 'assistant', content: null, tool_calls: [toolCall] } as any);
+            messages.push({ role: 'assistant', content: "", tool_calls: [toolCall] } as any);
             messages.push(toolOutputMessage as any);
 
             // Add the "Synthesis Instruction"
@@ -330,7 +331,7 @@ export async function orchestrateAI(
                 type: 'action_result',
                 tool: toolName,
                 result: toolResult,
-                ai_response: finalAiResponse // <--- This is now the LLM's natural voice
+                ai_response: finalAiResponse
             };
         }
 
@@ -347,7 +348,7 @@ export async function orchestrateAI(
         console.error('[Rizik OS] Error:', e);
         return {
             type: 'error',
-            message: "I'm having trouble connecting to the Squad Network right now. Try again in a moment."
+            message: `Error: ${e.message || e}` // <--- Expose error
         };
     }
 }

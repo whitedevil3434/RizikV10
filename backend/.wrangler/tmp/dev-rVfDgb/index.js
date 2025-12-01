@@ -15694,7 +15694,8 @@ async function orchestrateAI(ai, env, supabaseUrl, supabaseKey, userMessage, his
         };
       } else if (toolName === "update_student_profile") {
         const { department, skills } = toolArgs;
-        humanResponseText = `Profile update korechi: Tumi ${department} student ar skills holo ${skills.join(", ")}. Gigs pete subidha hobe.`;
+        const safeSkills = Array.isArray(skills) ? skills.join(", ") : skills || "General";
+        humanResponseText = `Profile update korechi: Tumi ${department} student ar skills holo ${safeSkills}. Gigs pete subidha hobe.`;
         toolResult = {
           success: true,
           message: humanResponseText,
@@ -15750,7 +15751,7 @@ async function orchestrateAI(ai, env, supabaseUrl, supabaseKey, userMessage, his
         content: JSON.stringify(toolResult),
         tool_call_id: toolCall.id || "call_" + Math.random().toString(36).substr(2, 9)
       };
-      messages.push({ role: "assistant", content: null, tool_calls: [toolCall] });
+      messages.push({ role: "assistant", content: "", tool_calls: [toolCall] });
       messages.push(toolOutputMessage);
       messages.push({
         role: "system",
@@ -15782,7 +15783,6 @@ async function orchestrateAI(ai, env, supabaseUrl, supabaseKey, userMessage, his
         tool: toolName,
         result: toolResult,
         ai_response: finalAiResponse
-        // <--- This is now the LLM's natural voice
       };
     }
     const content = response.content || response.response;
@@ -15794,7 +15794,8 @@ async function orchestrateAI(ai, env, supabaseUrl, supabaseKey, userMessage, his
     console.error("[Rizik OS] Error:", e);
     return {
       type: "error",
-      message: "I'm having trouble connecting to the Squad Network right now. Try again in a moment."
+      message: `Error: ${e.message || e}`
+      // <--- Expose error
     };
   }
 }
@@ -16633,8 +16634,10 @@ async function process_voice_command(ai, env, supabaseUrl, supabaseKey, squadId,
   } else if (orchestrationResult.type === "action_result") {
     const res = orchestrationResult.result;
     aiResponseText = orchestrationResult.ai_response || res && res.message || "Action executed.";
+  } else if (orchestrationResult.type === "error") {
+    aiResponseText = orchestrationResult.message || "An error occurred.";
   } else {
-    aiResponseText = "I processed that, but I'm not sure what to say.";
+    aiResponseText = "I processed that, but I'm not sure what to say. (Unknown Type: " + orchestrationResult.type + ")";
   }
   console.log(`[VoiceAgent] AI Response: "${aiResponseText}"`);
   let uiPayload = null;

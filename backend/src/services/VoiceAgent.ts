@@ -105,8 +105,10 @@ export async function process_voice_command(
     } else if (orchestrationResult.type === 'action_result') {
         const res = orchestrationResult.result as any;
         aiResponseText = orchestrationResult.ai_response || (res && res.message) || "Action executed.";
+    } else if (orchestrationResult.type === 'error') {
+        aiResponseText = orchestrationResult.message || "An error occurred.";
     } else {
-        aiResponseText = "I processed that, but I'm not sure what to say.";
+        aiResponseText = "I processed that, but I'm not sure what to say. (Unknown Type: " + orchestrationResult.type + ")";
     }
 
     console.log(`[VoiceAgent] AI Response: "${aiResponseText}"`);
