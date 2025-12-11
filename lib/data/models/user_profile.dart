@@ -60,7 +60,7 @@ class UserProfile {
 
   // Default user profile
   static UserProfile get defaultProfile {
-    const userId = 'default_user_001';
+    const userId = 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
     return UserProfile(
       id: userId,
       name: 'Nusrat Jahan',

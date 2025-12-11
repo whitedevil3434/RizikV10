@@ -4,6 +4,21 @@
 **Source of Truth**: `part 1&2 of Rizik.pdf`, `Rizik Backend plan .pdf` & **User Provided 52-Feature List**
 **Goal**: Build the "Rizik" Super-App using a hybrid **Cloudflare + Supabase** architecture, integrating "Maker", "Mover", and "Consumer" into a seamless ecosystem.
 
+### ✅ Recent Updates (2025-12-03)
+- **Voice Pipeline**: Refactored to "Hyper-Realtime" streaming using Vercel AI SDK v4.
+- **Voice UI**: Implemented `VoiceAssistantPalette` (Google-Assistant style sliding sheet) with `RizikMojo` orb.
+- **State Management**: Created `VoiceSessionProvider` using Riverpod for LiveKit session handling.
+- **Flutter Integration**: Wired `MojoFloatingWidget` (Long Press) to trigger the Voice Palette.
+- **Backend**: Updated `AIOrchestrator` for intent detection and voice chunk injection.
+- **Dependencies**: Downgraded `ai` to v4 and `zod` to v3 for compatibility.
+- **Bazar Ecosystem**: Implemented "Capacity Lock" (Kitchen OS) and "Inventory Voice-Log" (AI).
+- **Backend**: Added `OperationalEngine`, `SquadService`, `InventoryService`, and exposed endpoints.
+- **AI**: Trained `AIOrchestrator` for inventory management.
+- **Frontend**: Created `CapacityToggleWidget` and updated `Squad` model.
+- **Build Fix**: Fixed `VoiceInputService.dart` build errors (AudioEncoder & missing methods).
+- **Cloudflare Stack**: Finalized "All-in-Cloudflare" architecture with Azure TTS. from that entirely remove that
+
+
 ## 🏗️ Architecture (The "Super-Cloud" Stack)
 - **Frontend**: Flutter (Riverpod 2.0, Freezed, Skeletonizer)
 - **Backend Compute**: Cloudflare Workers (Hono.js)

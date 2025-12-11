@@ -24,11 +24,15 @@ class EnvConfig {
     const String envUrl = String.fromEnvironment('BACKEND_URL');
     if (envUrl.isNotEmpty) return envUrl;
 
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8787';
+    if (kDebugMode) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        return 'http://10.0.2.2:8787';
+      }
+      return 'https://api.rizik.app'; // Placeholder for production, localhost removed
     }
-    
-    return 'http://localhost:8787';
+
+    // Default to Production Backend for stability
+    return 'https://rizik-backend.its-sabbir69.workers.dev';
   }
   
   static Future<void> init() async {

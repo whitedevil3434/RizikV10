@@ -11,10 +11,14 @@ class RizikGradientCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorsData = (data['colors'] as List<dynamic>?)?.cast<String>() ?? ['#FFFFFF', '#FFFFFF'];
+    final effectiveData = data['data'] is Map<String, dynamic> 
+        ? data['data'] as Map<String, dynamic> 
+        : data;
+
+    final colorsData = (effectiveData['colors'] as List<dynamic>?)?.cast<String>() ?? ['#FFFFFF', '#FFFFFF'];
     final colors = colorsData.map((c) => _parseColor(c)).toList();
-    final radius = (data['radius'] as num?)?.toDouble() ?? 12.0;
-    final childData = data['child'];
+    final radius = (effectiveData['radius'] as num?)?.toDouble() ?? 12.0;
+    final childData = effectiveData['child'];
 
     return Container(
       decoration: BoxDecoration(
@@ -27,8 +31,49 @@ class RizikGradientCard extends StatelessWidget {
       ),
       child: childData != null
           ? WidgetRegistry.build(context, childData['type'], childData)
-          : null,
+          : _buildDefaultContent(context, effectiveData),
     );
+  }
+
+  Widget? _buildDefaultContent(BuildContext context, Map<String, dynamic> data) {
+    final title = data['title'] as String?;
+    final subtitle = data['subtitle'] as String?;
+    final iconName = data['icon'] as String?;
+    
+    if (title == null) return null;
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: [
+          if (iconName != null) ...[
+            Icon(_parseIconData(iconName), color: Colors.white, size: 32),
+            const SizedBox(width: 16),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                if (subtitle != null)
+                  Text(subtitle, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _parseIconData(String name) {
+    switch (name) {
+      case 'sentiment_satisfied': return Icons.sentiment_satisfied;
+      case 'sentiment_dissatisfied': return Icons.sentiment_dissatisfied;
+      case 'attach_money': return Icons.attach_money;
+      case 'bar_chart': return Icons.bar_chart;
+      default: return Icons.star;
+    }
   }
 
   Color _parseColor(String hexString) {
@@ -66,11 +111,84 @@ class RizikGlassCard extends StatelessWidget {
           color: Colors.white.withOpacity(opacity),
           child: childData != null
               ? WidgetRegistry.build(context, childData['type'], childData)
-              : null,
+              : _buildDefaultContent(context, effectiveData),
         ),
       ),
     );
   }
+
+  Widget? _buildDefaultContent(BuildContext context, Map<String, dynamic> data) {
+    final title = data['title'] as String?;
+    final subtitle = data['subtitle'] as String?;
+    final description = data['description'] as String?;
+    final iconName = data['icon'] as String?;
+    final iconColorHex = data['iconColor'] as String? ?? '#000000';
+    
+    if (title == null) return null;
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              if (iconName != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _parseColor(iconColorHex).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(_parseIconData(iconName), color: _parseColor(iconColorHex), size: 24),
+                ),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    if (subtitle != null)
+                      Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (description != null) ...[
+            const SizedBox(height: 12),
+            Text(description, style: const TextStyle(fontSize: 14)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Color _parseColor(String hexString) {
+    try {
+      final buffer = StringBuffer();
+      if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
+      buffer.write(hexString.replaceFirst('#', ''));
+      return Color(int.parse(buffer.toString(), radix: 16));
+    } catch (e) {
+      if (hexString == 'blue') return Colors.blue;
+      if (hexString == 'green') return Colors.green;
+      if (hexString == 'red') return Colors.red;
+      return Colors.black;
+    }
+  }
+
+  IconData _parseIconData(String name) {
+    switch (name) {
+      case 'attach_money': return Icons.attach_money;
+      case 'bar_chart': return Icons.bar_chart;
+      case 'sentiment_satisfied': return Icons.sentiment_satisfied;
+      default: return Icons.info;
+    }
+  }
+
 }
 
 /// An icon that animates based on the command (e.g., a pulsing red dot for alerts).

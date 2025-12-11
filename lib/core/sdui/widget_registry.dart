@@ -60,7 +60,7 @@ import 'package:rizik_v4/core/sdui/widgets/business/mission_chain_alert.dart';
 import 'package:rizik_v4/core/sdui/widgets/business/hyperlocal_gig_grid.dart';
 import 'package:rizik_v4/core/theme/rizik_brand_colors.dart';
 // Removed: import 'package:rizik_v4/features/connect/presentation/call_screen.dart'; - using RealtimeKit SDK now
-import 'package:rizik_v4/features/ai/presentation/voice_mode_screen.dart';
+// import 'package:rizik_v4/features/ai/presentation/voice_mode_screen.dart'; // Removed legacy
 
 class WidgetRegistry {
   // The registry now accepts BuildContext as the first argument
@@ -145,7 +145,7 @@ class WidgetRegistry {
     'hyperlocal_gig_grid': (context, data) => HyperlocalGigGrid(data: data),
     // Cloudflare Ecosystem Widgets
     // 'rizik_connect_call': (context, data) => const CallScreen(), // Removed - using RealtimeKit SDK now
-    'rizik_copilot_voice': (context, data) => const VoiceModeScreen(),
+    // 'rizik_copilot_voice': (context, data) => const VoiceModeScreen(), // Removed legacy screen
     // Aliases for SDUI Preview / Legacy compatibility
     'risk_money_force_data': (context, data) => WidgetFloatMonitor(data: data),
     'squad_tribunal_vote': (context, data) => WidgetTribunalCase(data: data),

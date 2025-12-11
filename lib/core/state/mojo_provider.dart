@@ -10,8 +10,10 @@ enum MojoState {
   idle,
   listening,
   speaking,
+  processing,
   poor,    // Low wallet balance
   referee, // Tribunal active
+  warning, // Nazar Shield / Alert
 }
 
 class MojoProvider with ChangeNotifier {
@@ -34,6 +36,11 @@ class MojoProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void setProcessing() {
+    _state = MojoState.processing;
+    notifyListeners();
+  }
+
   void setPoor() {
     _state = MojoState.poor;
     notifyListeners();
@@ -41,6 +48,11 @@ class MojoProvider with ChangeNotifier {
 
   void setReferee() {
     _state = MojoState.referee;
+    notifyListeners();
+  }
+
+  void setWarning() {
+    _state = MojoState.warning;
     notifyListeners();
   }
 

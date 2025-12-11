@@ -11,8 +11,10 @@ import 'features/source/home/source_dashboard_screen.dart';
 import 'features/force/dashboard/force_dashboard_screen.dart';
 // import 'features/connect/presentation/call_screen.dart'; // RealtimeKit REST API + WebRTC
 import 'features/connect/presentation/call_screen_realtimekit.dart';
-import 'features/ai/presentation/voice_mode_screen.dart';
+import 'package:rizik_v4/features/voice/presentation/live_agent_screen.dart';
+// import 'features/voice/presentation/voice_mode_screen.dart'; // Removed legacy
 import 'features/squad/presentation/screens/squad_dashboard_screen.dart';
+import 'features/source/inventory/presentation/screens/inventory_screen.dart';
 
 // State Management (Auth State দেখার জন্য)
 import 'features/auth/logic/auth_controller.dart';
@@ -104,9 +106,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const CallScreenRealtimeKit(),
       ),
       GoRoute(
-        path: '/copilot',
-        name: 'rizik_copilot',
-        builder: (context, state) => const VoiceModeScreen(),
+        path: '/live-agent',
+        name: 'live_agent',
+        builder: (context, state) => const LiveAgentScreen(),
       ),
 
       // 7. SQUAD SYSTEM (The Visual Brain)
@@ -114,6 +116,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/squad/dashboard',
         name: 'squad_dashboard',
         builder: (context, state) => const SquadDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/inventory',
+        name: 'inventory',
+        builder: (context, state) => const InventoryScreen(),
       ),
     ],
 

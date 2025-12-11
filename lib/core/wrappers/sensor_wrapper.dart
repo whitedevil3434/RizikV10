@@ -1,46 +1,81 @@
-import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 import 'package:proximity_sensor/proximity_sensor.dart';
+import 'dart:async';
 
-/// Wrapper for sensor interactions (Proximity, etc.)
+/// SensorWrapper - Device Sensors Manager
+/// Handles Accelerometer, Gyroscope, Magnetometer, and Proximity
 class SensorWrapper {
-  StreamSubscription<int>? _proximitySubscription;
-  final Function(bool isNear) onProximityChanged;
+  static final SensorWrapper _instance = SensorWrapper._internal();
+  factory SensorWrapper() => _instance;
+  SensorWrapper._internal();
 
-  SensorWrapper({required this.onProximityChanged});
+  // Streams
+  Stream<AccelerometerEvent>? _accelerometerStream;
+  Stream<UserAccelerometerEvent>? _userAccelerometerStream;
+  Stream<GyroscopeEvent>? _gyroscopeStream;
+  Stream<MagnetometerEvent>? _magnetometerStream;
+  Stream<int>? _proximityStream;
 
-  void startListening() {
-    try {
-      _proximitySubscription = ProximitySensor.events.listen((int event) {
-        // event > 0 usually means "near" (or object detected) depending on sensor.
-        // Standard Android/iOS: 0 = far, 1 = near (or vice versa depending on implementation).
-        // Actually, usually 0 is near (blocked) and >0 is far (cm).
-        // Let's check package docs or assume standard behavior:
-        // "The stream emits 1 if the sensor detects something close, and 0 otherwise." -> wait, let's verify.
-        // Common behavior: 0 = near, 1 = far (binary).
-        // BUT `proximity_sensor` package says: "Stream<int> events".
-        // Let's assume > 0 is NEAR (object detected) based on typical boolean mapping, 
-        // OR check if it returns distance.
-        // Most simple sensors return 0 or 1.
-        // Let's assume: event > 0 means "Near" (Object detected).
-        // Wait, standard Android is: 0 = Near, 5/8 = Far.
-        // Let's try: event > 0 ? false : true (if 0 is near).
-        // Actually, let's assume the package normalizes it.
-        // "The plugin returns 1 if an object is close, and 0 otherwise." (common for plugins).
-        // Let's assume 1 = Near.
-        
-        bool isNear = event > 0;
-        onProximityChanged(isNear);
-      });
-      debugPrint('SensorWrapper: Started listening to Proximity Sensor');
-    } catch (e) {
-      debugPrint('SensorWrapper: Error starting proximity sensor: $e');
-    }
+  /// Get accelerometer stream (includes gravity)
+  Stream<AccelerometerEvent> get accelerometer {
+    _accelerometerStream ??= accelerometerEventStream();
+    return _accelerometerStream!;
   }
 
+  /// Get user accelerometer stream (excludes gravity)
+  Stream<UserAccelerometerEvent> get userAccelerometer {
+    _userAccelerometerStream ??= userAccelerometerEventStream();
+    return _userAccelerometerStream!;
+  }
+
+  /// Get gyroscope stream
+  Stream<GyroscopeEvent> get gyroscope {
+    _gyroscopeStream ??= gyroscopeEventStream();
+    return _gyroscopeStream!;
+  }
+
+  /// Get magnetometer stream
+  Stream<MagnetometerEvent> get magnetometer {
+    _magnetometerStream ??= magnetometerEventStream();
+    return _magnetometerStream!;
+  }
+
+  /// Get proximity stream
+  /// Returns 1 if near, 0 if far (usually)
+  Stream<int> get proximity {
+    _proximityStream ??= ProximitySensor.events;
+    return _proximityStream!;
+  }
+
+  /// Check if device has shake motion
+  /// Returns a stream that emits when shake is detected
+  Stream<void> get shakeStream {
+    return userAccelerometer.map((event) {
+      // Simple shake detection logic
+      double acceleration = event.x * event.x + event.y * event.y + event.z * event.z;
+      return acceleration > 100; // Threshold
+    }).where((isShaking) => isShaking).map((_) {});
+  }
+
+  /// Listen to proximity (helper)
+  StreamSubscription<int> listenProximity(Function(bool isNear) onData) {
+    return proximity.listen((event) {
+      // > 0 usually means object detected (Near)
+      onData(event > 0);
+    });
+  }
+
+  /// Start listening to sensors (placeholder for explicit start if needed)
+  void startListening() {
+    // Sensors plus streams are broadcast and start automatically on listen
+    // This method is kept for API compatibility if explicit start is added later
+  }
+
+  /// Stop listening to sensors (placeholder)
   void stopListening() {
-    _proximitySubscription?.cancel();
-    _proximitySubscription = null;
-    debugPrint('SensorWrapper: Stopped listening');
+    // Stream subscriptions should be cancelled by the consumer
   }
 }
+
+/// Global instance
+final sensorWrapper = SensorWrapper();

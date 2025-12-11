@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:rizik_v4/core/config/env_config.dart';
 
 class ApiService {
   // Use 10.0.2.2 for Android emulator to access host localhost
-  static const String baseUrl = 'http://10.0.2.2:8787';
+  static String get baseUrl => EnvConfig.backendUrl;
+  static String get wsBaseUrl => baseUrl.replaceFirst('http', 'ws');
 
   static Future<Map<String, dynamic>> fetchHomeData() async {
     try {
@@ -106,6 +108,21 @@ class ApiService {
       }
     } catch (e) {
       print('Error posting to $endpoint: $e');
+      throw e;
+    }
+  }
+
+  static Future<Map<String, dynamic>> get(String endpoint) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl$endpoint'));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to get from $endpoint: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error getting from $endpoint: $e');
       throw e;
     }
   }

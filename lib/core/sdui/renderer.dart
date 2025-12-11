@@ -13,10 +13,10 @@ class RizikRenderer extends StatelessWidget {
   Widget build(BuildContext context) {
     final type = uiData['type'];
     if (type == null) {
-      print('Error: Widget type is null in RizikRenderer');
+      // print('Error: Widget type is null in RizikRenderer');
       return const SizedBox.shrink();
     }
-    print('RizikRenderer building root widget: $type');
+    // print('RizikRenderer building root widget: $type');
     return WidgetRegistry.build(context, type, uiData);
   }
 }

@@ -1,0 +1,21 @@
+# Python Virtual Environment (মেইন কালপ্রিট)
+agent_python/.venv/
+agent_python/venv/
+.venv/
+venv/
+
+# Compiled Binary Files (এগুলো AI পড়তে পারে না)
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.dll
+*.dylib
+*.bin
+*.exe
+
+# Other heavy folders
+node_modules/
+.git/
+build/
+.dart_tool/

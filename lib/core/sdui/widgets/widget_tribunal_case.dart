@@ -13,9 +13,13 @@ class WidgetTribunalCase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final disputeId = data['disputeId'] as String? ?? 'default_dispute';
-    final showEvidence = data['showEvidence'] as bool? ?? true;
-    final userId = data['userId'] as String? ?? 'user_123';
+    final effectiveData = data['data'] is Map<String, dynamic> 
+        ? data['data'] as Map<String, dynamic> 
+        : data;
+
+    final disputeId = effectiveData['disputeId'] as String? ?? 'default_dispute';
+    final showEvidence = effectiveData['showEvidence'] as bool? ?? true;
+    final userId = effectiveData['userId'] as String? ?? 'user_123';
 
     final dispute = _getMockDispute(disputeId);
 

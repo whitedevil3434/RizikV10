@@ -1,0 +1,550 @@
+[Skip to content](https://developers.cloudflare.com/workers-ai/models/#_top)
+[Cloudflare Docs](https://developers.cloudflare.com/)
+[Docs Directory](https://developers.cloudflare.com/directory/)
+[APIs](https://developers.cloudflare.com/api/)
+[SDKs](https://developers.cloudflare.com/fundamentals/api/reference/sdks/)
+[Log in](https://dash.cloudflare.com/)
+[Workers AI](https://developers.cloudflare.com/workers-ai/)
+-  [Overview](https://developers.cloudflare.com/workers-ai/) 
+-     Getting started        [Overview](https://developers.cloudflare.com/workers-ai/get-started/)  [Workers Bindings](https://developers.cloudflare.com/workers-ai/get-started/workers-wrangler/)  [REST API](https://developers.cloudflare.com/workers-ai/get-started/rest-api/)  [Dashboard](https://developers.cloudflare.com/workers-ai/get-started/dashboard/)     
+-  [Overview](https://developers.cloudflare.com/workers-ai/get-started/) 
+-  [Workers Bindings](https://developers.cloudflare.com/workers-ai/get-started/workers-wrangler/) 
+-  [REST API](https://developers.cloudflare.com/workers-ai/get-started/rest-api/) 
+-  [Dashboard](https://developers.cloudflare.com/workers-ai/get-started/dashboard/) 
+-  [Models](https://developers.cloudflare.com/workers-ai/models/) 
+-     Configuration        [Workers Bindings](https://developers.cloudflare.com/workers-ai/configuration/bindings/)  [OpenAI compatible API endpoints](https://developers.cloudflare.com/workers-ai/configuration/open-ai-compatibility/)  [Vercel AI SDK](https://developers.cloudflare.com/workers-ai/configuration/ai-sdk/)  [Hugging Face Chat UI](https://developers.cloudflare.com/workers-ai/configuration/hugging-face-chat-ui/)     
+-  [Workers Bindings](https://developers.cloudflare.com/workers-ai/configuration/bindings/) 
+-  [OpenAI compatible API endpoints](https://developers.cloudflare.com/workers-ai/configuration/open-ai-compatibility/) 
+-  [Vercel AI SDK](https://developers.cloudflare.com/workers-ai/configuration/ai-sdk/) 
+-  [Hugging Face Chat UI](https://developers.cloudflare.com/workers-ai/configuration/hugging-face-chat-ui/) 
+-     Features           Asynchronous Batch API Beta       [Overview](https://developers.cloudflare.com/workers-ai/features/batch-api/)  [Workers Binding](https://developers.cloudflare.com/workers-ai/features/batch-api/workers-binding/)  [REST API](https://developers.cloudflare.com/workers-ai/features/batch-api/rest-api/)         Function calling        [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/)     Embedded        [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/)  [Get Started](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/get-started/)     Examples        [Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/)  [Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/)  [Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/)      [API Reference](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/api-reference/)  [Troubleshooting](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/troubleshooting/)      [Traditional Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/traditional/)      [JSON Mode](https://developers.cloudflare.com/workers-ai/features/json-mode/)     Fine-tunes        [Overview](https://developers.cloudflare.com/workers-ai/features/fine-tunes/)  [Using LoRA adapters Beta](https://developers.cloudflare.com/workers-ai/features/fine-tunes/loras/)  [Public LoRA adapters](https://developers.cloudflare.com/workers-ai/features/fine-tunes/public-loras/)      [Prompting](https://developers.cloudflare.com/workers-ai/features/prompting/)  [Markdown Conversion Beta](https://developers.cloudflare.com/workers-ai/features/markdown-conversion/)     
+-     Asynchronous Batch API Beta       [Overview](https://developers.cloudflare.com/workers-ai/features/batch-api/)  [Workers Binding](https://developers.cloudflare.com/workers-ai/features/batch-api/workers-binding/)  [REST API](https://developers.cloudflare.com/workers-ai/features/batch-api/rest-api/)     
+-  [Overview](https://developers.cloudflare.com/workers-ai/features/batch-api/)
+
+-  [Workers Binding](https://developers.cloudflare.com/workers-ai/features/batch-api/workers-binding/) 
+-  [REST API](https://developers.cloudflare.com/workers-ai/features/batch-api/rest-api/) 
+-     Function calling        [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/)     Embedded        [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/)  [Get Started](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/get-started/)     Examples        [Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/)  [Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/)  [Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/)      [API Reference](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/api-reference/)  [Troubleshooting](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/troubleshooting/)      [Traditional Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/traditional/)     
+-  [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/) 
+-     Embedded        [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/)  [Get Started](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/get-started/)     Examples        [Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/)  [Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/)  [Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/)      [API Reference](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/api-reference/)  [Troubleshooting](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/troubleshooting/)     
+-  [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/) 
+-  [Get Started](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/get-started/) 
+-     Examples        [Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/)  [Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/)  [Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/)     
+-  [Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/) 
+-  [Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/) 
+-  [Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/) 
+-  [API Reference](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/api-reference/) 
+-  [Troubleshooting](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/troubleshooting/) 
+-  [Traditional Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/traditional/) 
+-  [JSON Mode](https://developers.cloudflare.com/workers-ai/features/json-mode/) 
+-     Fine-tunes        [Overview](https://developers.cloudflare.com/workers-ai/features/fine-tunes/)  [Using LoRA adapters Beta](https://developers.cloudflare.com/workers-ai/features/fine-tunes/loras/)  [Public LoRA adapters](https://developers.cloudflare.com/workers-ai/features/fine-tunes/public-loras/)     
+-  [Overview](https://developers.cloudflare.com/workers-ai/features/fine-tunes/) 
+-  [Using LoRA adapters Beta](https://developers.cloudflare.com/workers-ai/features/fine-tunes/loras/) 
+-  [Public LoRA adapters](https://developers.cloudflare.com/workers-ai/features/fine-tunes/public-loras/) 
+-  [Prompting](https://developers.cloudflare.com/workers-ai/features/prompting/) 
+-  [Markdown Conversion Beta](https://developers.cloudflare.com/workers-ai/features/markdown-conversion/)
+
+-     Guides        [Demos and architectures](https://developers.cloudflare.com/workers-ai/guides/demos-architectures/)  [Tutorials](https://developers.cloudflare.com/workers-ai/guides/tutorials/)  [Agents ↗](https://developers.cloudflare.com/agents/)     
+-  [Demos and architectures](https://developers.cloudflare.com/workers-ai/guides/demos-architectures/) 
+-  [Tutorials](https://developers.cloudflare.com/workers-ai/guides/tutorials/) 
+-  [Agents ↗](https://developers.cloudflare.com/agents/) 
+-     Platform        [Pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/)  [Data usage](https://developers.cloudflare.com/workers-ai/platform/data-usage/)  [Limits](https://developers.cloudflare.com/workers-ai/platform/limits/)  [Glossary](https://developers.cloudflare.com/workers-ai/platform/glossary/)  [AI Gateway ↗](https://developers.cloudflare.com/ai-gateway/)  [Errors](https://developers.cloudflare.com/workers-ai/platform/errors/)  [Choose a data or storage product ↗](https://developers.cloudflare.com/workers/platform/storage-options/)  [Event subscriptions](https://developers.cloudflare.com/workers-ai/platform/event-subscriptions/)     
+-  [Pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/) 
+-  [Data usage](https://developers.cloudflare.com/workers-ai/platform/data-usage/) 
+-  [Limits](https://developers.cloudflare.com/workers-ai/platform/limits/) 
+-  [Glossary](https://developers.cloudflare.com/workers-ai/platform/glossary/) 
+-  [AI Gateway ↗](https://developers.cloudflare.com/ai-gateway/) 
+-  [Errors](https://developers.cloudflare.com/workers-ai/platform/errors/) 
+-  [Choose a data or storage product ↗](https://developers.cloudflare.com/workers/platform/storage-options/) 
+-  [Event subscriptions](https://developers.cloudflare.com/workers-ai/platform/event-subscriptions/) 
+-  [Agents ↗](https://developers.cloudflare.com/agents/) 
+-  [Playground ↗](https://playground.ai.cloudflare.com) 
+-  [Changelog](https://developers.cloudflare.com/workers-ai/changelog/) 
+-  [REST API reference ↗ API](https://developers.cloudflare.com/api/resources/ai/methods/run/) 
+-     LLM resources        [llms.txt](https://developers.cloudflare.com/llms.txt)  [prompt.txt](https://developers.cloudflare.com/workers/prompt.txt)  [Workers AI llms-full.txt](https://developers.cloudflare.com/workers-ai/llms-full.txt)  [Developer Platform llms-full.txt](https://developers.cloudflare.com/developer-platform/llms-full.txt)     
+-  [llms.txt](https://developers.cloudflare.com/llms.txt) 
+-  [prompt.txt](https://developers.cloudflare.com/workers/prompt.txt) 
+-  [Workers AI llms-full.txt](https://developers.cloudflare.com/workers-ai/llms-full.txt) 
+-  [Developer Platform llms-full.txt](https://developers.cloudflare.com/developer-platform/llms-full.txt) 
+[Overview](https://developers.cloudflare.com/workers-ai/)
+-  [Overview](https://developers.cloudflare.com/workers-ai/get-started/) 
+-  [Workers Bindings](https://developers.cloudflare.com/workers-ai/get-started/workers-wrangler/) 
+-  [REST API](https://developers.cloudflare.com/workers-ai/get-started/rest-api/) 
+-  [Dashboard](https://developers.cloudflare.com/workers-ai/get-started/dashboard/) 
+[Overview](https://developers.cloudflare.com/workers-ai/get-started/)
+[Workers Bindings](https://developers.cloudflare.com/workers-ai/get-started/workers-wrangler/)
+[REST API](https://developers.cloudflare.com/workers-ai/get-started/rest-api/)
+[Dashboard](https://developers.cloudflare.com/workers-ai/get-started/dashboard/)
+[Models](https://developers.cloudflare.com/workers-ai/models/)
+-  [Workers Bindings](https://developers.cloudflare.com/workers-ai/configuration/bindings/) 
+-  [OpenAI compatible API endpoints](https://developers.cloudflare.com/workers-ai/configuration/open-ai-compatibility/) 
+-  [Vercel AI SDK](https://developers.cloudflare.com/workers-ai/configuration/ai-sdk/) 
+-  [Hugging Face Chat UI](https://developers.cloudflare.com/workers-ai/configuration/hugging-face-chat-ui/) 
+[Workers Bindings](https://developers.cloudflare.com/workers-ai/configuration/bindings/)
+[OpenAI compatible API endpoints](https://developers.cloudflare.com/workers-ai/configuration/open-ai-compatibility/)
+[Vercel AI SDK](https://developers.cloudflare.com/workers-ai/configuration/ai-sdk/)
+[Hugging Face Chat UI](https://developers.cloudflare.com/workers-ai/configuration/hugging-face-chat-ui/)
+
+-     Asynchronous Batch API Beta       [Overview](https://developers.cloudflare.com/workers-ai/features/batch-api/)  [Workers Binding](https://developers.cloudflare.com/workers-ai/features/batch-api/workers-binding/)  [REST API](https://developers.cloudflare.com/workers-ai/features/batch-api/rest-api/)     
+-  [Overview](https://developers.cloudflare.com/workers-ai/features/batch-api/) 
+-  [Workers Binding](https://developers.cloudflare.com/workers-ai/features/batch-api/workers-binding/) 
+-  [REST API](https://developers.cloudflare.com/workers-ai/features/batch-api/rest-api/) 
+-     Function calling        [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/)     Embedded        [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/)  [Get Started](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/get-started/)     Examples        [Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/)  [Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/)  [Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/)      [API Reference](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/api-reference/)  [Troubleshooting](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/troubleshooting/)      [Traditional Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/traditional/)     
+-  [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/) 
+-     Embedded        [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/)  [Get Started](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/get-started/)     Examples        [Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/)  [Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/)  [Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/)      [API Reference](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/api-reference/)  [Troubleshooting](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/troubleshooting/)     
+-  [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/) 
+-  [Get Started](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/get-started/) 
+-     Examples        [Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/)  [Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/)  [Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/)     
+-  [Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/) 
+-  [Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/) 
+-  [Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/) 
+-  [API Reference](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/api-reference/) 
+-  [Troubleshooting](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/troubleshooting/) 
+-  [Traditional Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/traditional/) 
+-  [JSON Mode](https://developers.cloudflare.com/workers-ai/features/json-mode/) 
+-     Fine-tunes        [Overview](https://developers.cloudflare.com/workers-ai/features/fine-tunes/)  [Using LoRA adapters Beta](https://developers.cloudflare.com/workers-ai/features/fine-tunes/loras/)  [Public LoRA adapters](https://developers.cloudflare.com/workers-ai/features/fine-tunes/public-loras/)     
+-  [Overview](https://developers.cloudflare.com/workers-ai/features/fine-tunes/) 
+-  [Using LoRA adapters Beta](https://developers.cloudflare.com/workers-ai/features/fine-tunes/loras/)
+
+-  [Public LoRA adapters](https://developers.cloudflare.com/workers-ai/features/fine-tunes/public-loras/) 
+-  [Prompting](https://developers.cloudflare.com/workers-ai/features/prompting/) 
+-  [Markdown Conversion Beta](https://developers.cloudflare.com/workers-ai/features/markdown-conversion/) 
+-  [Overview](https://developers.cloudflare.com/workers-ai/features/batch-api/) 
+-  [Workers Binding](https://developers.cloudflare.com/workers-ai/features/batch-api/workers-binding/) 
+-  [REST API](https://developers.cloudflare.com/workers-ai/features/batch-api/rest-api/) 
+[Overview](https://developers.cloudflare.com/workers-ai/features/batch-api/)
+[Workers Binding](https://developers.cloudflare.com/workers-ai/features/batch-api/workers-binding/)
+[REST API](https://developers.cloudflare.com/workers-ai/features/batch-api/rest-api/)
+-  [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/) 
+-     Embedded        [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/)  [Get Started](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/get-started/)     Examples        [Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/)  [Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/)  [Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/)      [API Reference](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/api-reference/)  [Troubleshooting](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/troubleshooting/)     
+-  [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/) 
+-  [Get Started](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/get-started/) 
+-     Examples        [Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/)  [Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/)  [Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/)     
+-  [Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/) 
+-  [Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/) 
+-  [Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/) 
+-  [API Reference](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/api-reference/) 
+-  [Troubleshooting](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/troubleshooting/) 
+-  [Traditional Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/traditional/) 
+[Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/)
+-  [Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/) 
+-  [Get Started](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/get-started/) 
+-     Examples        [Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/)  [Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/)  [Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/)     
+-  [Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/) 
+-  [Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/) 
+-  [Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/) 
+-  [API Reference](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/api-reference/) 
+-  [Troubleshooting](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/troubleshooting/) 
+[Overview Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/)
+
+[Get Started](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/get-started/)
+-  [Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/) 
+-  [Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/) 
+-  [Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/) 
+[Use fetch() handler](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/fetch/)
+[Tools based on OpenAPI Spec](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/openapi/)
+[Use KV API](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/examples/kv/)
+[API Reference](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/api-reference/)
+[Troubleshooting](https://developers.cloudflare.com/workers-ai/features/function-calling/embedded/troubleshooting/)
+[Traditional Beta](https://developers.cloudflare.com/workers-ai/features/function-calling/traditional/)
+[JSON Mode](https://developers.cloudflare.com/workers-ai/features/json-mode/)
+-  [Overview](https://developers.cloudflare.com/workers-ai/features/fine-tunes/) 
+-  [Using LoRA adapters Beta](https://developers.cloudflare.com/workers-ai/features/fine-tunes/loras/) 
+-  [Public LoRA adapters](https://developers.cloudflare.com/workers-ai/features/fine-tunes/public-loras/) 
+[Overview](https://developers.cloudflare.com/workers-ai/features/fine-tunes/)
+[Using LoRA adapters Beta](https://developers.cloudflare.com/workers-ai/features/fine-tunes/loras/)
+[Public LoRA adapters](https://developers.cloudflare.com/workers-ai/features/fine-tunes/public-loras/)
+[Prompting](https://developers.cloudflare.com/workers-ai/features/prompting/)
+[Markdown Conversion Beta](https://developers.cloudflare.com/workers-ai/features/markdown-conversion/)
+-  [Demos and architectures](https://developers.cloudflare.com/workers-ai/guides/demos-architectures/) 
+-  [Tutorials](https://developers.cloudflare.com/workers-ai/guides/tutorials/) 
+-  [Agents ↗](https://developers.cloudflare.com/agents/) 
+[Demos and architectures](https://developers.cloudflare.com/workers-ai/guides/demos-architectures/)
+[Tutorials](https://developers.cloudflare.com/workers-ai/guides/tutorials/)
+[Agents ↗](https://developers.cloudflare.com/agents/)
+-  [Pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/) 
+-  [Data usage](https://developers.cloudflare.com/workers-ai/platform/data-usage/) 
+-  [Limits](https://developers.cloudflare.com/workers-ai/platform/limits/) 
+-  [Glossary](https://developers.cloudflare.com/workers-ai/platform/glossary/) 
+-  [AI Gateway ↗](https://developers.cloudflare.com/ai-gateway/) 
+-  [Errors](https://developers.cloudflare.com/workers-ai/platform/errors/) 
+-  [Choose a data or storage product ↗](https://developers.cloudflare.com/workers/platform/storage-options/) 
+-  [Event subscriptions](https://developers.cloudflare.com/workers-ai/platform/event-subscriptions/) 
+[Pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/)
+[Data usage](https://developers.cloudflare.com/workers-ai/platform/data-usage/)
+[Limits](https://developers.cloudflare.com/workers-ai/platform/limits/)
+[Glossary](https://developers.cloudflare.com/workers-ai/platform/glossary/)
+[AI Gateway ↗](https://developers.cloudflare.com/ai-gateway/)
+[Errors](https://developers.cloudflare.com/workers-ai/platform/errors/)
+[Choose a data or storage product ↗](https://developers.cloudflare.com/workers/platform/storage-options/)
+[Event subscriptions](https://developers.cloudflare.com/workers-ai/platform/event-subscriptions/)
+[Agents ↗](https://developers.cloudflare.com/agents/)
+[Playground ↗](https://playground.ai.cloudflare.com)
+[Changelog](https://developers.cloudflare.com/workers-ai/changelog/)
+[REST API reference ↗ API](https://developers.cloudflare.com/api/resources/ai/methods/run/)
+-  [llms.txt](https://developers.cloudflare.com/llms.txt) 
+-  [prompt.txt](https://developers.cloudflare.com/workers/prompt.txt) 
+-  [Workers AI llms-full.txt](https://developers.cloudflare.com/workers-ai/llms-full.txt) 
+-  [Developer Platform llms-full.txt](https://developers.cloudflare.com/developer-platform/llms-full.txt) 
+[llms.txt](https://developers.cloudflare.com/llms.txt)
+
+[prompt.txt](https://developers.cloudflare.com/workers/prompt.txt)
+[Workers AI llms-full.txt](https://developers.cloudflare.com/workers-ai/llms-full.txt)
+[Developer Platform llms-full.txt](https://developers.cloudflare.com/developer-platform/llms-full.txt)
+[GitHub](https://github.com/cloudflare/cloudflare-docs)
+[X.com](https://x.com/cloudflare)
+[YouTube](https://www.youtube.com/cloudflare)
+1.  [Directory](https://developers.cloudflare.com/directory/)      
+2.   …       
+3.  [Workers AI](https://developers.cloudflare.com/workers-ai/)      
+4.  [Models](https://developers.cloudflare.com/workers-ai/models/)  
+[Directory](https://developers.cloudflare.com/directory/)
+[Workers AI](https://developers.cloudflare.com/workers-ai/)
+[Models](https://developers.cloudflare.com/workers-ai/models/)
+
+# Models
+
+[📌gpt-oss-120bText Generation • OpenAIOpenAI’s open-weight models designed for powerful reasoning, agentic tasks, and versatile developer use cases – gpt-oss-120b is for production, general purpose, high reasoning use-cases.Batch](https://developers.cloudflare.com/workers-ai/models/gpt-oss-120b)
+OpenAI’s open-weight models designed for powerful reasoning, agentic tasks, and versatile developer use cases – gpt-oss-120b is for production, general purpose, high reasoning use-cases.
+- Batch
+[📌gpt-oss-20bText Generation • OpenAIOpenAI’s open-weight models designed for powerful reasoning, agentic tasks, and versatile developer use cases – gpt-oss-20b is for lower latency, and local or specialized use-cases.Batch](https://developers.cloudflare.com/workers-ai/models/gpt-oss-20b)
+OpenAI’s open-weight models designed for powerful reasoning, agentic tasks, and versatile developer use cases – gpt-oss-20b is for lower latency, and local or specialized use-cases.
+- Batch
+[📌llama-4-scout-17b-16e-instructText Generation • MetaMeta's Llama 4 Scout is a 17 billion parameter model with 16 experts that is natively multimodal. These models leverage a mixture-of-experts architecture to offer industry-leading performance in text and image understanding.BatchFunction calling](https://developers.cloudflare.com/workers-ai/models/llama-4-scout-17b-16e-instruct)
+Meta's Llama 4 Scout is a 17 billion parameter model with 16 experts that is natively multimodal. These models leverage a mixture-of-experts architecture to offer industry-leading performance in text and image understanding.
+- Batch
+- Function calling
+[📌llama-3.3-70b-instruct-fp8-fastText Generation • MetaLlama 3.3 70B quantized to fp8 precision, optimized to be faster.BatchFunction calling](https://developers.cloudflare.com/workers-ai/models/llama-3.3-70b-instruct-fp8-fast)
+Llama 3.3 70B quantized to fp8 precision, optimized to be faster.
+- Batch
+- Function calling
+[📌llama-3.1-8b-instruct-fastText Generation • Meta[Fast version] The Meta Llama 3.1 collection of multilingual large language models (LLMs) is a collection of pretrained and instruction tuned generative models. The Llama 3.1 instruction tuned text only models are optimized for multilingual dialogue use cases and outperform many of the available open source and closed chat models on common industry benchmarks.](https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct-fast)
+[Fast version] The Meta Llama 3.1 collection of multilingual large language models (LLMs) is a collection of pretrained and instruction tuned generative models. The Llama 3.1 instruction tuned text only models are optimized for multilingual dialogue use cases and outperform many of the available open source and closed chat models on common industry benchmarks.
+[flux-2-devText-to-Image • Black Forest LabsFLUX.2 [dev] is an image model from Black Forest Labs where you can generate highly realistic and detailed images, with multi-reference support.Partner](https://developers.cloudflare.com/workers-ai/models/flux-2-dev)
+FLUX.2 [dev] is an image model from Black Forest Labs where you can generate highly realistic and detailed images, with multi-reference support.
+- Partner
+[aura-2-esText-to-Speech • DeepgramAura-2 is a context-aware text-to-speech (TTS) model that applies natural pacing, expressiveness, and fillers based on the context of the provided text. The quality of your text input directly impacts the naturalness of the audio output.BatchPartnerReal-time](https://developers.cloudflare.com/workers-ai/models/aura-2-es)
+Aura-2 is a context-aware text-to-speech (TTS) model that applies natural pacing, expressiveness, and fillers based on the context of the provided text. The quality of your text input directly impacts the naturalness of the audio output.
+- Batch
+- Partner
+- Real-time
+[aura-2-enText-to-Speech • DeepgramAura-2 is a context-aware text-to-speech (TTS) model that applies natural pacing, expressiveness, and fillers based on the context of the provided text. The quality of your text input directly impacts the naturalness of the audio output.BatchPartnerReal-time](https://developers.cloudflare.com/workers-ai/models/aura-2-en)
+Aura-2 is a context-aware text-to-speech (TTS) model that applies natural pacing, expressiveness, and fillers based on the context of the provided text. The quality of your text input directly impacts the naturalness of the audio output.
+- Batch
+- Partner
+
+# Models
+
+- Real-time
+[granite-4.0-h-microText Generation • IBMGranite 4.0 instruct models deliver strong performance across benchmarks, achieving industry-leading results in key agentic tasks like instruction following and function calling. These efficiencies make the models well-suited for a wide range of use cases like retrieval-augmented generation (RAG), multi-agent workflows, and edge deployments.Function calling](https://developers.cloudflare.com/workers-ai/models/granite-4.0-h-micro)
+Granite 4.0 instruct models deliver strong performance across benchmarks, achieving industry-leading results in key agentic tasks like instruction following and function calling. These efficiencies make the models well-suited for a wide range of use cases like retrieval-augmented generation (RAG), multi-agent workflows, and edge deployments.
+- Function calling
+[fluxAutomatic Speech Recognition • DeepgramFlux is the first conversational speech recognition model built specifically for voice agents.PartnerReal-time](https://developers.cloudflare.com/workers-ai/models/flux)
+Flux is the first conversational speech recognition model built specifically for voice agents.
+- Partner
+- Real-time
+[pplamo-embedding-1bText Embeddings • pfnetPLaMo-Embedding-1B is a Japanese text embedding model developed by Preferred Networks, Inc.
+
+It can convert Japanese text input into numerical vectors and can be used for a wide range of applications, including information retrieval, text classification, and clustering.](https://developers.cloudflare.com/workers-ai/models/plamo-embedding-1b)
+PLaMo-Embedding-1B is a Japanese text embedding model developed by Preferred Networks, Inc. It can convert Japanese text input into numerical vectors and can be used for a wide range of applications, including information retrieval, text classification, and clustering.
+[agemma-sea-lion-v4-27b-itText Generation • aisingaporeSEA-LION stands for Southeast Asian Languages In One Network, which is a collection of Large Language Models (LLMs) which have been pretrained and instruct-tuned for the Southeast Asia (SEA) region.](https://developers.cloudflare.com/workers-ai/models/gemma-sea-lion-v4-27b-it)
+SEA-LION stands for Southeast Asian Languages In One Network, which is a collection of Large Language Models (LLMs) which have been pretrained and instruct-tuned for the Southeast Asia (SEA) region.
+[aindictrans2-en-indic-1BTranslation • ai4bharatIndicTrans2 is the first open-source transformer-based multilingual NMT model that supports high-quality translations across all the 22 scheduled Indic languages](https://developers.cloudflare.com/workers-ai/models/indictrans2-en-indic-1B)
+IndicTrans2 is the first open-source transformer-based multilingual NMT model that supports high-quality translations across all the 22 scheduled Indic languages
+[embeddinggemma-300mText Embeddings • GoogleEmbeddingGemma is a 300M parameter, state-of-the-art for its size, open embedding model from Google, built from Gemma 3 (with T5Gemma initialization) and the same research and technology used to create Gemini models. EmbeddingGemma produces vector representations of text, making it well-suited for search and retrieval tasks, including classification, clustering, and semantic similarity search. This model was trained with data in 100+ spoken languages.](https://developers.cloudflare.com/workers-ai/models/embeddinggemma-300m)
+EmbeddingGemma is a 300M parameter, state-of-the-art for its size, open embedding model from Google, built from Gemma 3 (with T5Gemma initialization) and the same research and technology used to create Gemini models. EmbeddingGemma produces vector representations of text, making it well-suited for search and retrieval tasks, including classification, clustering, and semantic similarity search. This model was trained with data in 100+ spoken languages.
+[aura-1Text-to-Speech • DeepgramAura is a context-aware text-to-speech (TTS) model that applies natural pacing, expressiveness, and fillers based on the context of the provided text. The quality of your text input directly impacts the naturalness of the audio output.BatchPartnerReal-time](https://developers.cloudflare.com/workers-ai/models/aura-1)
+Aura is a context-aware text-to-speech (TTS) model that applies natural pacing, expressiveness, and fillers based on the context of the provided text. The quality of your text input directly impacts the naturalness of the audio output.
+- Batch
+- Partner
+- Real-time
+
+# Models
+
+[lucid-originText-to-Image • LeonardoLucid Origin from Leonardo.AI is their most adaptable and prompt-responsive model to date. Whether you're generating images with sharp graphic design, stunning full-HD renders, or highly specific creative direction, it adheres closely to your prompts, renders text with accuracy, and supports a wide array of visual styles and aesthetics – from stylized concept art to crisp product mockups.
+Partner](https://developers.cloudflare.com/workers-ai/models/lucid-origin)
+Lucid Origin from Leonardo.AI is their most adaptable and prompt-responsive model to date. Whether you're generating images with sharp graphic design, stunning full-HD renders, or highly specific creative direction, it adheres closely to your prompts, renders text with accuracy, and supports a wide array of visual styles and aesthetics – from stylized concept art to crisp product mockups.
+- Partner
+[phoenix-1.0Text-to-Image • LeonardoPhoenix 1.0 is a model by Leonardo.Ai that generates images with exceptional prompt adherence and coherent text.Partner](https://developers.cloudflare.com/workers-ai/models/phoenix-1.0)
+Phoenix 1.0 is a model by Leonardo.Ai that generates images with exceptional prompt adherence and coherent text.
+- Partner
+[psmart-turn-v2Voice Activity Detection • pipecat-aiAn open source, community-driven, native audio turn detection model in 2nd versionBatchReal-time](https://developers.cloudflare.com/workers-ai/models/smart-turn-v2)
+An open source, community-driven, native audio turn detection model in 2nd version
+- Batch
+- Real-time
+[qwen3-embedding-0.6bText Embeddings • QwenThe Qwen3 Embedding model series is the latest proprietary model of the Qwen family, specifically designed for text embedding and ranking tasks.](https://developers.cloudflare.com/workers-ai/models/qwen3-embedding-0.6b)
+The Qwen3 Embedding model series is the latest proprietary model of the Qwen family, specifically designed for text embedding and ranking tasks.
+[nova-3Automatic Speech Recognition • DeepgramTranscribe audio using Deepgram’s speech-to-text modelBatchPartnerReal-time](https://developers.cloudflare.com/workers-ai/models/nova-3)
+Transcribe audio using Deepgram’s speech-to-text model
+- Batch
+- Partner
+- Real-time
+[qwen3-30b-a3b-fp8Text Generation • QwenQwen3 is the latest generation of large language models in Qwen series, offering a comprehensive suite of dense and mixture-of-experts (MoE) models. Built upon extensive training, Qwen3 delivers groundbreaking advancements in reasoning, instruction-following, agent capabilities, and multilingual support.BatchFunction calling](https://developers.cloudflare.com/workers-ai/models/qwen3-30b-a3b-fp8)
+Qwen3 is the latest generation of large language models in Qwen series, offering a comprehensive suite of dense and mixture-of-experts (MoE) models. Built upon extensive training, Qwen3 delivers groundbreaking advancements in reasoning, instruction-following, agent capabilities, and multilingual support.
+- Batch
+- Function calling
+[gemma-3-12b-itText Generation • GoogleGemma 3 models are well-suited for a variety of text generation and image understanding tasks, including question answering, summarization, and reasoning. Gemma 3 models are multimodal, handling text and image input and generating text output, with a large, 128K context window, multilingual support in over 140 languages, and is available in more sizes than previous versions.LoRA](https://developers.cloudflare.com/workers-ai/models/gemma-3-12b-it)
+Gemma 3 models are well-suited for a variety of text generation and image understanding tasks, including question answering, summarization, and reasoning. Gemma 3 models are multimodal, handling text and image input and generating text output, with a large, 128K context window, multilingual support in over 140 languages, and is available in more sizes than previous versions.
+- LoRA
+[mistral-small-3.1-24b-instructText Generation • MistralAIBuilding upon Mistral Small 3 (2501), Mistral Small 3.1 (2503) adds state-of-the-art vision understanding and enhances long context capabilities up to 128k tokens without compromising text performance. With 24 billion parameters, this model achieves top-tier capabilities in both text and vision tasks.Function calling](https://developers.cloudflare.com/workers-ai/models/mistral-small-3.1-24b-instruct)
+
+# Models
+
+Building upon Mistral Small 3 (2501), Mistral Small 3.1 (2503) adds state-of-the-art vision understanding and enhances long context capabilities up to 128k tokens without compromising text performance. With 24 billion parameters, this model achieves top-tier capabilities in both text and vision tasks.
+- Function calling
+[qwq-32bText Generation • QwenQwQ is the reasoning model of the Qwen series. Compared with conventional instruction-tuned models, QwQ, which is capable of thinking and reasoning, can achieve significantly enhanced performance in downstream tasks, especially hard problems. QwQ-32B is the medium-sized reasoning model, which is capable of achieving competitive performance against state-of-the-art reasoning models, e.g., DeepSeek-R1, o1-mini.LoRA](https://developers.cloudflare.com/workers-ai/models/qwq-32b)
+QwQ is the reasoning model of the Qwen series. Compared with conventional instruction-tuned models, QwQ, which is capable of thinking and reasoning, can achieve significantly enhanced performance in downstream tasks, especially hard problems. QwQ-32B is the medium-sized reasoning model, which is capable of achieving competitive performance against state-of-the-art reasoning models, e.g., DeepSeek-R1, o1-mini.
+- LoRA
+[qwen2.5-coder-32b-instructText Generation • QwenQwen2.5-Coder is the latest series of Code-Specific Qwen large language models (formerly known as CodeQwen). As of now, Qwen2.5-Coder has covered six mainstream model sizes, 0.5, 1.5, 3, 7, 14, 32 billion parameters, to meet the needs of different developers. Qwen2.5-Coder brings the following improvements upon CodeQwen1.5:LoRA](https://developers.cloudflare.com/workers-ai/models/qwen2.5-coder-32b-instruct)
+Qwen2.5-Coder is the latest series of Code-Specific Qwen large language models (formerly known as CodeQwen). As of now, Qwen2.5-Coder has covered six mainstream model sizes, 0.5, 1.5, 3, 7, 14, 32 billion parameters, to meet the needs of different developers. Qwen2.5-Coder brings the following improvements upon CodeQwen1.5:
+- LoRA
+[bbge-reranker-baseText Classification • baaiDifferent from embedding model, reranker uses question and document as input and directly output similarity instead of embedding. You can get a relevance score by inputting query and passage to the reranker. And the score can be mapped to a float value in [0,1] by sigmoid function.](https://developers.cloudflare.com/workers-ai/models/bge-reranker-base)
+Different from embedding model, reranker uses question and document as input and directly output similarity instead of embedding. You can get a relevance score by inputting query and passage to the reranker. And the score can be mapped to a float value in [0,1] by sigmoid function.
+[llama-guard-3-8bText Generation • MetaLlama Guard 3 is a Llama-3.1-8B pretrained model, fine-tuned for content safety classification. Similar to previous versions, it can be used to classify content in both LLM inputs (prompt classification) and in LLM responses (response classification). It acts as an LLM – it generates text in its output that indicates whether a given prompt or response is safe or unsafe, and if unsafe, it also lists the content categories violated.LoRA](https://developers.cloudflare.com/workers-ai/models/llama-guard-3-8b)
+Llama Guard 3 is a Llama-3.1-8B pretrained model, fine-tuned for content safety classification. Similar to previous versions, it can be used to classify content in both LLM inputs (prompt classification) and in LLM responses (response classification). It acts as an LLM – it generates text in its output that indicates whether a given prompt or response is safe or unsafe, and if unsafe, it also lists the content categories violated.
+- LoRA
+[deepseek-r1-distill-qwen-32bText Generation • DeepSeekDeepSeek-R1-Distill-Qwen-32B is a model distilled from DeepSeek-R1 based on Qwen2.5. It outperforms OpenAI-o1-mini across various benchmarks, achieving new state-of-the-art results for dense models.](https://developers.cloudflare.com/workers-ai/models/deepseek-r1-distill-qwen-32b)
+DeepSeek-R1-Distill-Qwen-32B is a model distilled from DeepSeek-R1 based on Qwen2.5. It outperforms OpenAI-o1-mini across various benchmarks, achieving new state-of-the-art results for dense models.
+
+# Models
+
+[llama-3.2-1b-instructText Generation • MetaThe Llama 3.2 instruction-tuned text only models are optimized for multilingual dialogue use cases, including agentic retrieval and summarization tasks.](https://developers.cloudflare.com/workers-ai/models/llama-3.2-1b-instruct)
+The Llama 3.2 instruction-tuned text only models are optimized for multilingual dialogue use cases, including agentic retrieval and summarization tasks.
+[llama-3.2-3b-instructText Generation • MetaThe Llama 3.2 instruction-tuned text only models are optimized for multilingual dialogue use cases, including agentic retrieval and summarization tasks.](https://developers.cloudflare.com/workers-ai/models/llama-3.2-3b-instruct)
+The Llama 3.2 instruction-tuned text only models are optimized for multilingual dialogue use cases, including agentic retrieval and summarization tasks.
+[llama-3.2-11b-vision-instructText Generation • Meta The Llama 3.2-Vision instruction-tuned models are optimized for visual recognition, image reasoning, captioning, and answering general questions about an image.LoRA](https://developers.cloudflare.com/workers-ai/models/llama-3.2-11b-vision-instruct)
+The Llama 3.2-Vision instruction-tuned models are optimized for visual recognition, image reasoning, captioning, and answering general questions about an image.
+- LoRA
+[flux-1-schnellText-to-Image • Black Forest LabsFLUX.1 [schnell] is a 12 billion parameter rectified flow transformer capable of generating images from text descriptions.](https://developers.cloudflare.com/workers-ai/models/flux-1-schnell)
+FLUX.1 [schnell] is a 12 billion parameter rectified flow transformer capable of generating images from text descriptions.
+[llama-3.1-8b-instruct-awqText Generation • MetaQuantized (int4) generative text model with 8 billion parameters from Meta.](https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct-awq)
+Quantized (int4) generative text model with 8 billion parameters from Meta.
+[llama-3.1-8b-instruct-fp8Text Generation • MetaLlama 3.1 8B quantized to FP8 precision](https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct-fp8)
+Llama 3.1 8B quantized to FP8 precision
+[mmelottsText-to-Speech • myshell-aiMeloTTS is a high-quality multi-lingual text-to-speech library by MyShell.ai.](https://developers.cloudflare.com/workers-ai/models/melotts)
+MeloTTS is a high-quality multi-lingual text-to-speech library by MyShell.ai.
+[llama-3.1-8b-instructText Generation • MetaThe Meta Llama 3.1 collection of multilingual large language models (LLMs) is a collection of pretrained and instruction tuned generative models. The Llama 3.1 instruction tuned text only models are optimized for multilingual dialogue use cases and outperform many of the available open source and closed chat models on common industry benchmarks.](https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct)
+The Meta Llama 3.1 collection of multilingual large language models (LLMs) is a collection of pretrained and instruction tuned generative models. The Llama 3.1 instruction tuned text only models are optimized for multilingual dialogue use cases and outperform many of the available open source and closed chat models on common industry benchmarks.
+[bbge-m3Text Embeddings • baaiMulti-Functionality, Multi-Linguality, and Multi-Granularity embeddings model.Batch](https://developers.cloudflare.com/workers-ai/models/bge-m3)
+Multi-Functionality, Multi-Linguality, and Multi-Granularity embeddings model.
+- Batch
+[mmeta-llama-3-8b-instructText Generation • meta-llamaGeneration over generation, Meta Llama 3 demonstrates state-of-the-art performance on a wide range of industry benchmarks and offers new capabilities, including improved reasoning.](https://developers.cloudflare.com/workers-ai/models/meta-llama-3-8b-instruct)
+Generation over generation, Meta Llama 3 demonstrates state-of-the-art performance on a wide range of industry benchmarks and offers new capabilities, including improved reasoning.
+[whisper-large-v3-turboAutomatic Speech Recognition • OpenAIWhisper is a pre-trained model for automatic speech recognition (ASR) and speech translation.](https://developers.cloudflare.com/workers-ai/models/whisper-large-v3-turbo)
+Whisper is a pre-trained model for automatic speech recognition (ASR) and speech translation.
+
+# Models
+
+[llama-3-8b-instruct-awqText Generation • MetaQuantized (int4) generative text model with 8 billion parameters from Meta.](https://developers.cloudflare.com/workers-ai/models/llama-3-8b-instruct-awq)
+Quantized (int4) generative text model with 8 billion parameters from Meta.
+[lllava-1.5-7b-hfBetaImage-to-Text • llava-hfLLaVA is an open-source chatbot trained by fine-tuning LLaMA/Vicuna on GPT-generated multimodal instruction-following data. It is an auto-regressive language model, based on the transformer architecture.](https://developers.cloudflare.com/workers-ai/models/llava-1.5-7b-hf)
+LLaVA is an open-source chatbot trained by fine-tuning LLaMA/Vicuna on GPT-generated multimodal instruction-following data. It is an auto-regressive language model, based on the transformer architecture.
+[funa-cybertron-7b-v2-bf16BetaText Generation • fblgitCybertron 7B v2 is a 7B MistralAI based model, best on it's series. It was trained with SFT, DPO and UNA (Unified Neural Alignment) on multiple datasets.Deprecated](https://developers.cloudflare.com/workers-ai/models/una-cybertron-7b-v2-bf16)
+Cybertron 7B v2 is a 7B MistralAI based model, best on it's series. It was trained with SFT, DPO and UNA (Unified Neural Alignment) on multiple datasets.
+- Deprecated
+[whisper-tiny-enBetaAutomatic Speech Recognition • OpenAIWhisper is a pre-trained model for automatic speech recognition (ASR) and speech translation. Trained on 680k hours of labelled data, Whisper models demonstrate a strong ability to generalize to many datasets and domains without the need for fine-tuning. This is the English-only version of the Whisper Tiny model which was trained on the task of speech recognition.](https://developers.cloudflare.com/workers-ai/models/whisper-tiny-en)
+Whisper is a pre-trained model for automatic speech recognition (ASR) and speech translation. Trained on 680k hours of labelled data, Whisper models demonstrate a strong ability to generalize to many datasets and domains without the need for fine-tuning. This is the English-only version of the Whisper Tiny model which was trained on the task of speech recognition.
+[llama-3-8b-instructText Generation • MetaGeneration over generation, Meta Llama 3 demonstrates state-of-the-art performance on a wide range of industry benchmarks and offers new capabilities, including improved reasoning.](https://developers.cloudflare.com/workers-ai/models/llama-3-8b-instruct)
+Generation over generation, Meta Llama 3 demonstrates state-of-the-art performance on a wide range of industry benchmarks and offers new capabilities, including improved reasoning.
+[mistral-7b-instruct-v0.2BetaText Generation • MistralAIThe Mistral-7B-Instruct-v0.2 Large Language Model (LLM) is an instruct fine-tuned version of the Mistral-7B-v0.2. Mistral-7B-v0.2 has the following changes compared to Mistral-7B-v0.1: 32k context window (vs 8k context in v0.1), rope-theta = 1e6, and no Sliding-Window Attention.LoRA](https://developers.cloudflare.com/workers-ai/models/mistral-7b-instruct-v0.2)
+The Mistral-7B-Instruct-v0.2 Large Language Model (LLM) is an instruct fine-tuned version of the Mistral-7B-v0.2. Mistral-7B-v0.2 has the following changes compared to Mistral-7B-v0.1: 32k context window (vs 8k context in v0.1), rope-theta = 1e6, and no Sliding-Window Attention.
+- LoRA
+[gemma-7b-it-loraBetaText Generation • Google  This is a Gemma-7B base model that Cloudflare dedicates for inference with LoRA adapters. Gemma is a family of lightweight, state-of-the-art open models from Google, built from the same research and technology used to create the Gemini models.LoRA](https://developers.cloudflare.com/workers-ai/models/gemma-7b-it-lora)
+This is a Gemma-7B base model that Cloudflare dedicates for inference with LoRA adapters. Gemma is a family of lightweight, state-of-the-art open models from Google, built from the same research and technology used to create the Gemini models.
+- LoRA
+[gemma-2b-it-loraBetaText Generation • GoogleThis is a Gemma-2B base model that Cloudflare dedicates for inference with LoRA adapters. Gemma is a family of lightweight, state-of-the-art open models from Google, built from the same research and technology used to create the Gemini models.LoRA](https://developers.cloudflare.com/workers-ai/models/gemma-2b-it-lora)
+
+# Models
+
+This is a Gemma-2B base model that Cloudflare dedicates for inference with LoRA adapters. Gemma is a family of lightweight, state-of-the-art open models from Google, built from the same research and technology used to create the Gemini models.
+- LoRA
+[mllama-2-7b-chat-hf-loraBetaText Generation • meta-llamaThis is a Llama2 base model that Cloudflare dedicated for inference with LoRA adapters. Llama 2 is a collection of pretrained and fine-tuned generative text models ranging in scale from 7 billion to 70 billion parameters. This is the repository for the 7B fine-tuned model, optimized for dialogue use cases and converted for the Hugging Face Transformers format. LoRA](https://developers.cloudflare.com/workers-ai/models/llama-2-7b-chat-hf-lora)
+This is a Llama2 base model that Cloudflare dedicated for inference with LoRA adapters. Llama 2 is a collection of pretrained and fine-tuned generative text models ranging in scale from 7 billion to 70 billion parameters. This is the repository for the 7B fine-tuned model, optimized for dialogue use cases and converted for the Hugging Face Transformers format.
+- LoRA
+[gemma-7b-itBetaText Generation • GoogleGemma is a family of lightweight, state-of-the-art open models from Google, built from the same research and technology used to create the Gemini models. They are text-to-text, decoder-only large language models, available in English, with open weights, pre-trained variants, and instruction-tuned variants.LoRA](https://developers.cloudflare.com/workers-ai/models/gemma-7b-it)
+Gemma is a family of lightweight, state-of-the-art open models from Google, built from the same research and technology used to create the Gemini models. They are text-to-text, decoder-only large language models, available in English, with open weights, pre-trained variants, and instruction-tuned variants.
+- LoRA
+[nstarling-lm-7b-betaBetaText Generation • nexusflowWe introduce Starling-LM-7B-beta, an open large language model (LLM) trained by Reinforcement Learning from AI Feedback (RLAIF). Starling-LM-7B-beta is trained from Openchat-3.5-0106 with our new reward model Nexusflow/Starling-RM-34B and policy optimization method Fine-Tuning Language Models from Human Preferences (PPO).Deprecated](https://developers.cloudflare.com/workers-ai/models/starling-lm-7b-beta)
+We introduce Starling-LM-7B-beta, an open large language model (LLM) trained by Reinforcement Learning from AI Feedback (RLAIF). Starling-LM-7B-beta is trained from Openchat-3.5-0106 with our new reward model Nexusflow/Starling-RM-34B and policy optimization method Fine-Tuning Language Models from Human Preferences (PPO).
+- Deprecated
+[nhermes-2-pro-mistral-7bBetaText Generation • nousresearchHermes 2 Pro on Mistral 7B is the new flagship 7B Hermes! Hermes 2 Pro is an upgraded, retrained version of Nous Hermes 2, consisting of an updated and cleaned version of the OpenHermes 2.5 Dataset, as well as a newly introduced Function Calling and JSON Mode dataset developed in-house.Function calling](https://developers.cloudflare.com/workers-ai/models/hermes-2-pro-mistral-7b)
+Hermes 2 Pro on Mistral 7B is the new flagship 7B Hermes! Hermes 2 Pro is an upgraded, retrained version of Nous Hermes 2, consisting of an updated and cleaned version of the OpenHermes 2.5 Dataset, as well as a newly introduced Function Calling and JSON Mode dataset developed in-house.
+- Function calling
+[mistral-7b-instruct-v0.2-loraBetaText Generation • MistralAIThe Mistral-7B-Instruct-v0.2 Large Language Model (LLM) is an instruct fine-tuned version of the Mistral-7B-v0.2.LoRA](https://developers.cloudflare.com/workers-ai/models/mistral-7b-instruct-v0.2-lora)
+The Mistral-7B-Instruct-v0.2 Large Language Model (LLM) is an instruct fine-tuned version of the Mistral-7B-v0.2.
+- LoRA
+[qwen1.5-1.8b-chatBetaText Generation • QwenQwen1.5 is the improved version of Qwen, the large language model series developed by Alibaba Cloud.Deprecated](https://developers.cloudflare.com/workers-ai/models/qwen1.5-1.8b-chat)
+Qwen1.5 is the improved version of Qwen, the large language model series developed by Alibaba Cloud.
+- Deprecated
+
+# Models
+
+[uuform-gen2-qwen-500mBetaImage-to-Text • unumUForm-Gen is a small generative vision-language model primarily designed for Image Captioning and Visual Question Answering. The model was pre-trained on the internal image captioning dataset and fine-tuned on public instructions datasets: SVIT, LVIS, VQAs datasets.](https://developers.cloudflare.com/workers-ai/models/uform-gen2-qwen-500m)
+UForm-Gen is a small generative vision-language model primarily designed for Image Captioning and Visual Question Answering. The model was pre-trained on the internal image captioning dataset and fine-tuned on public instructions datasets: SVIT, LVIS, VQAs datasets.
+[fbart-large-cnnBetaSummarization • facebookBART is a transformer encoder-encoder (seq2seq) model with a bidirectional (BERT-like) encoder and an autoregressive (GPT-like) decoder. You can use this model for text summarization.](https://developers.cloudflare.com/workers-ai/models/bart-large-cnn)
+BART is a transformer encoder-encoder (seq2seq) model with a bidirectional (BERT-like) encoder and an autoregressive (GPT-like) decoder. You can use this model for text summarization.
+[phi-2BetaText Generation • MicrosoftPhi-2 is a Transformer-based model with a next-word prediction objective, trained on 1.4T tokens from multiple passes on a mixture of Synthetic and Web datasets for NLP and coding.](https://developers.cloudflare.com/workers-ai/models/phi-2)
+Phi-2 is a Transformer-based model with a next-word prediction objective, trained on 1.4T tokens from multiple passes on a mixture of Synthetic and Web datasets for NLP and coding.
+[ttinyllama-1.1b-chat-v1.0BetaText Generation • tinyllamaThe TinyLlama project aims to pretrain a 1.1B Llama model on 3 trillion tokens. This is the chat model finetuned on top of TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T.Deprecated](https://developers.cloudflare.com/workers-ai/models/tinyllama-1.1b-chat-v1.0)
+The TinyLlama project aims to pretrain a 1.1B Llama model on 3 trillion tokens. This is the chat model finetuned on top of TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T.
+- Deprecated
+[qwen1.5-14b-chat-awqBetaText Generation • QwenQwen1.5 is the improved version of Qwen, the large language model series developed by Alibaba Cloud. AWQ is an efficient, accurate and blazing-fast low-bit weight quantization method, currently supporting 4-bit quantization.Deprecated](https://developers.cloudflare.com/workers-ai/models/qwen1.5-14b-chat-awq)
+Qwen1.5 is the improved version of Qwen, the large language model series developed by Alibaba Cloud. AWQ is an efficient, accurate and blazing-fast low-bit weight quantization method, currently supporting 4-bit quantization.
+- Deprecated
+[qwen1.5-7b-chat-awqBetaText Generation • QwenQwen1.5 is the improved version of Qwen, the large language model series developed by Alibaba Cloud. AWQ is an efficient, accurate and blazing-fast low-bit weight quantization method, currently supporting 4-bit quantization.Deprecated](https://developers.cloudflare.com/workers-ai/models/qwen1.5-7b-chat-awq)
+Qwen1.5 is the improved version of Qwen, the large language model series developed by Alibaba Cloud. AWQ is an efficient, accurate and blazing-fast low-bit weight quantization method, currently supporting 4-bit quantization.
+- Deprecated
+[qwen1.5-0.5b-chatBetaText Generation • QwenQwen1.5 is the improved version of Qwen, the large language model series developed by Alibaba Cloud.Deprecated](https://developers.cloudflare.com/workers-ai/models/qwen1.5-0.5b-chat)
+Qwen1.5 is the improved version of Qwen, the large language model series developed by Alibaba Cloud.
+- Deprecated
+[tdiscolm-german-7b-v1-awqBetaText Generation • theblokeDiscoLM German 7b is a Mistral-based large language model with a focus on German-language applications. AWQ is an efficient, accurate and blazing-fast low-bit weight quantization method, currently supporting 4-bit quantization.Deprecated](https://developers.cloudflare.com/workers-ai/models/discolm-german-7b-v1-awq)
+DiscoLM German 7b is a Mistral-based large language model with a focus on German-language applications. AWQ is an efficient, accurate and blazing-fast low-bit weight quantization method, currently supporting 4-bit quantization.
+- Deprecated
+
+# Models
+
+[tfalcon-7b-instructBetaText Generation • tiiuaeFalcon-7B-Instruct is a 7B parameters causal decoder-only model built by TII based on Falcon-7B and finetuned on a mixture of chat/instruct datasets.Deprecated](https://developers.cloudflare.com/workers-ai/models/falcon-7b-instruct)
+Falcon-7B-Instruct is a 7B parameters causal decoder-only model built by TII based on Falcon-7B and finetuned on a mixture of chat/instruct datasets.
+- Deprecated
+[oopenchat-3.5-0106BetaText Generation • openchatOpenChat is an innovative library of open-source language models, fine-tuned with C-RLFT - a strategy inspired by offline reinforcement learning.Deprecated](https://developers.cloudflare.com/workers-ai/models/openchat-3.5-0106)
+OpenChat is an innovative library of open-source language models, fine-tuned with C-RLFT - a strategy inspired by offline reinforcement learning.
+- Deprecated
+[dsqlcoder-7b-2BetaText Generation • defogThis model is intended to be used by non-technical users to understand data inside their SQL databases.](https://developers.cloudflare.com/workers-ai/models/sqlcoder-7b-2)
+This model is intended to be used by non-technical users to understand data inside their SQL databases.
+[deepseek-math-7b-instructBetaText Generation • DeepSeekDeepSeekMath-Instruct 7B is a mathematically instructed tuning model derived from DeepSeekMath-Base 7B. DeepSeekMath is initialized with DeepSeek-Coder-v1.5 7B and continues pre-training on math-related tokens sourced from Common Crawl, together with natural language and code data for 500B tokens.Deprecated](https://developers.cloudflare.com/workers-ai/models/deepseek-math-7b-instruct)
+DeepSeekMath-Instruct 7B is a mathematically instructed tuning model derived from DeepSeekMath-Base 7B. DeepSeekMath is initialized with DeepSeek-Coder-v1.5 7B and continues pre-training on math-related tokens sourced from Common Crawl, together with natural language and code data for 500B tokens.
+- Deprecated
+[fdetr-resnet-50BetaObject Detection • facebookDEtection TRansformer (DETR) model trained end-to-end on COCO 2017 object detection (118k annotated images).](https://developers.cloudflare.com/workers-ai/models/detr-resnet-50)
+DEtection TRansformer (DETR) model trained end-to-end on COCO 2017 object detection (118k annotated images).
+[bstable-diffusion-xl-lightningBetaText-to-Image • bytedanceSDXL-Lightning is a lightning-fast text-to-image generation model. It can generate high-quality 1024px images in a few steps.](https://developers.cloudflare.com/workers-ai/models/stable-diffusion-xl-lightning)
+SDXL-Lightning is a lightning-fast text-to-image generation model. It can generate high-quality 1024px images in a few steps.
+[ldreamshaper-8-lcmText-to-Image • lykonStable Diffusion model that has been fine-tuned to be better at photorealism without sacrificing range.](https://developers.cloudflare.com/workers-ai/models/dreamshaper-8-lcm)
+Stable Diffusion model that has been fine-tuned to be better at photorealism without sacrificing range.
+[rstable-diffusion-v1-5-img2imgBetaText-to-Image • runwaymlStable Diffusion is a latent text-to-image diffusion model capable of generating photo-realistic images. Img2img generate a new image from an input image with Stable Diffusion.](https://developers.cloudflare.com/workers-ai/models/stable-diffusion-v1-5-img2img)
+Stable Diffusion is a latent text-to-image diffusion model capable of generating photo-realistic images. Img2img generate a new image from an input image with Stable Diffusion.
+[rstable-diffusion-v1-5-inpaintingBetaText-to-Image • runwaymlStable Diffusion Inpainting is a latent text-to-image diffusion model capable of generating photo-realistic images given any text input, with the extra capability of inpainting the pictures by using a mask.](https://developers.cloudflare.com/workers-ai/models/stable-diffusion-v1-5-inpainting)
+Stable Diffusion Inpainting is a latent text-to-image diffusion model capable of generating photo-realistic images given any text input, with the extra capability of inpainting the pictures by using a mask.
+[tdeepseek-coder-6.7b-instruct-awqBetaText Generation • theblokeDeepseek Coder is composed of a series of code language models, each trained from scratch on 2T tokens, with a composition of 87% code and 13% natural language in both English and Chinese.Deprecated](https://developers.cloudflare.com/workers-ai/models/deepseek-coder-6.7b-instruct-awq)
+
+# Models
+
+Deepseek Coder is composed of a series of code language models, each trained from scratch on 2T tokens, with a composition of 87% code and 13% natural language in both English and Chinese.
+- Deprecated
+[tdeepseek-coder-6.7b-base-awqBetaText Generation • theblokeDeepseek Coder is composed of a series of code language models, each trained from scratch on 2T tokens, with a composition of 87% code and 13% natural language in both English and Chinese.Deprecated](https://developers.cloudflare.com/workers-ai/models/deepseek-coder-6.7b-base-awq)
+Deepseek Coder is composed of a series of code language models, each trained from scratch on 2T tokens, with a composition of 87% code and 13% natural language in both English and Chinese.
+- Deprecated
+[tllamaguard-7b-awqBetaText Generation • theblokeLlama Guard is a model for classifying the safety of LLM prompts and responses, using a taxonomy of safety risks.
+Deprecated](https://developers.cloudflare.com/workers-ai/models/llamaguard-7b-awq)
+Llama Guard is a model for classifying the safety of LLM prompts and responses, using a taxonomy of safety risks.
+- Deprecated
+[tneural-chat-7b-v3-1-awqBetaText Generation • theblokeThis model is a fine-tuned 7B parameter LLM on the Intel Gaudi 2 processor from the mistralai/Mistral-7B-v0.1 on the open source dataset Open-Orca/SlimOrca.Deprecated](https://developers.cloudflare.com/workers-ai/models/neural-chat-7b-v3-1-awq)
+This model is a fine-tuned 7B parameter LLM on the Intel Gaudi 2 processor from the mistralai/Mistral-7B-v0.1 on the open source dataset Open-Orca/SlimOrca.
+- Deprecated
+[topenhermes-2.5-mistral-7b-awqBetaText Generation • theblokeOpenHermes 2.5 Mistral 7B is a state of the art Mistral Fine-tune, a continuation of OpenHermes 2 model, which trained on additional code datasets.Deprecated](https://developers.cloudflare.com/workers-ai/models/openhermes-2.5-mistral-7b-awq)
+OpenHermes 2.5 Mistral 7B is a state of the art Mistral Fine-tune, a continuation of OpenHermes 2 model, which trained on additional code datasets.
+- Deprecated
+[tllama-2-13b-chat-awqBetaText Generation • theblokeLlama 2 13B Chat AWQ is an efficient, accurate and blazing-fast low-bit weight quantized Llama 2 variant.Deprecated](https://developers.cloudflare.com/workers-ai/models/llama-2-13b-chat-awq)
+Llama 2 13B Chat AWQ is an efficient, accurate and blazing-fast low-bit weight quantized Llama 2 variant.
+- Deprecated
+[tmistral-7b-instruct-v0.1-awqBetaText Generation • theblokeMistral 7B Instruct v0.1 AWQ is an efficient, accurate and blazing-fast low-bit weight quantized Mistral variant.Deprecated](https://developers.cloudflare.com/workers-ai/models/mistral-7b-instruct-v0.1-awq)
+Mistral 7B Instruct v0.1 AWQ is an efficient, accurate and blazing-fast low-bit weight quantized Mistral variant.
+- Deprecated
+[tzephyr-7b-beta-awqBetaText Generation • theblokeZephyr 7B Beta AWQ is an efficient, accurate and blazing-fast low-bit weight quantized Zephyr model variant.Deprecated](https://developers.cloudflare.com/workers-ai/models/zephyr-7b-beta-awq)
+Zephyr 7B Beta AWQ is an efficient, accurate and blazing-fast low-bit weight quantized Zephyr model variant.
+- Deprecated
+[stable-diffusion-xl-base-1.0BetaText-to-Image • Stability.aiDiffusion-based text-to-image generative model by Stability AI. Generates and modify images based on text prompts.](https://developers.cloudflare.com/workers-ai/models/stable-diffusion-xl-base-1.0)
+Diffusion-based text-to-image generative model by Stability AI. Generates and modify images based on text prompts.
+[bbge-large-en-v1.5Text Embeddings • baaiBAAI general embedding (Large) model that transforms any given text into a 1024-dimensional vectorBatch](https://developers.cloudflare.com/workers-ai/models/bge-large-en-v1.5)
+BAAI general embedding (Large) model that transforms any given text into a 1024-dimensional vector
+- Batch
+[bbge-small-en-v1.5Text Embeddings • baaiBAAI general embedding (Small) model that transforms any given text into a 384-dimensional vectorBatch](https://developers.cloudflare.com/workers-ai/models/bge-small-en-v1.5)
+BAAI general embedding (Small) model that transforms any given text into a 384-dimensional vector
+- Batch
+[llama-2-7b-chat-fp16Text Generation • MetaFull precision (fp16) generative text model with 7 billion parameters from Meta](https://developers.cloudflare.com/workers-ai/models/llama-2-7b-chat-fp16)
+Full precision (fp16) generative text model with 7 billion parameters from Meta
+
+# Models
+
+[mistral-7b-instruct-v0.1Text Generation • MistralAIInstruct fine-tuned version of the Mistral-7b generative text model with 7 billion parametersLoRA](https://developers.cloudflare.com/workers-ai/models/mistral-7b-instruct-v0.1)
+Instruct fine-tuned version of the Mistral-7b generative text model with 7 billion parameters
+- LoRA
+[bbge-base-en-v1.5Text Embeddings • baaiBAAI general embedding (Base) model that transforms any given text into a 768-dimensional vectorBatch](https://developers.cloudflare.com/workers-ai/models/bge-base-en-v1.5)
+BAAI general embedding (Base) model that transforms any given text into a 768-dimensional vector
+- Batch
+[distilbert-sst-2-int8Text Classification • HuggingFaceDistilled BERT model that was finetuned on SST-2 for sentiment classification](https://developers.cloudflare.com/workers-ai/models/distilbert-sst-2-int8)
+Distilled BERT model that was finetuned on SST-2 for sentiment classification
+[llama-2-7b-chat-int8Text Generation • MetaQuantized (int8) generative text model with 7 billion parameters from Meta](https://developers.cloudflare.com/workers-ai/models/llama-2-7b-chat-int8)
+Quantized (int8) generative text model with 7 billion parameters from Meta
+[m2m100-1.2bTranslation • MetaMultilingual encoder-decoder (seq-to-seq) model trained for Many-to-Many multilingual translationBatch](https://developers.cloudflare.com/workers-ai/models/m2m100-1.2b)
+Multilingual encoder-decoder (seq-to-seq) model trained for Many-to-Many multilingual translation
+- Batch
+[resnet-50Image Classification • Microsoft50 layers deep image classification CNN trained on more than 1M images from ImageNet](https://developers.cloudflare.com/workers-ai/models/resnet-50)
+50 layers deep image classification CNN trained on more than 1M images from ImageNet
+[whisperAutomatic Speech Recognition • OpenAIWhisper is a general-purpose speech recognition model. It is trained on a large dataset of diverse audio and is also a multitasking model that can perform multilingual speech recognition, speech translation, and language identification.](https://developers.cloudflare.com/workers-ai/models/whisper)
+Whisper is a general-purpose speech recognition model. It is trained on a large dataset of diverse audio and is also a multitasking model that can perform multilingual speech recognition, speech translation, and language identification.
+[llama-3.1-70b-instructText Generation • MetaThe Meta Llama 3.1 collection of multilingual large language models (LLMs) is a collection of pretrained and instruction tuned generative models. The Llama 3.1 instruction tuned text only models are optimized for multilingual dialogue use cases and outperform many of the available open source and closed chat models on common industry benchmarks.](https://developers.cloudflare.com/workers-ai/models/llama-3.1-70b-instruct)
+The Meta Llama 3.1 collection of multilingual large language models (LLMs) is a collection of pretrained and instruction tuned generative models. The Llama 3.1 instruction tuned text only models are optimized for multilingual dialogue use cases and outperform many of the available open source and closed chat models on common industry benchmarks.
+
+## Was this helpful?
+
+[Previous  Dashboard](https://developers.cloudflare.com/workers-ai/get-started/dashboard/)
+[Next  Workers Bindings](https://developers.cloudflare.com/workers-ai/configuration/bindings/)
+-  Resources 
+-  [API](https://developers.cloudflare.com/api/) 
+-  [New to Cloudflare?](https://developers.cloudflare.com/fundamentals/) 
+-  [Directory](https://developers.cloudflare.com/directory/) 
+-  [Sponsorships](https://developers.cloudflare.com/sponsorships/) 
+-  [Open Source](https://github.com/cloudflare) 
+[API](https://developers.cloudflare.com/api/)
+[New to Cloudflare?](https://developers.cloudflare.com/fundamentals/)
+[Directory](https://developers.cloudflare.com/directory/)
+[Sponsorships](https://developers.cloudflare.com/sponsorships/)
+[Open Source](https://github.com/cloudflare)
+-  Support 
+-  [Help Center](https://support.cloudflare.com/) 
+-  [System Status](https://www.cloudflarestatus.com/) 
+-  [Compliance](https://www.cloudflare.com/trust-hub/compliance-resources/) 
+-  [GDPR](https://www.cloudflare.com/trust-hub/gdpr/) 
+[Help Center](https://support.cloudflare.com/)
+[System Status](https://www.cloudflarestatus.com/)
+[Compliance](https://www.cloudflare.com/trust-hub/compliance-resources/)
+[GDPR](https://www.cloudflare.com/trust-hub/gdpr/)
+-  Company 
+-  [cloudflare.com](https://www.cloudflare.com/) 
+-  [Our team](https://www.cloudflare.com/people/) 
+-  [Careers](https://www.cloudflare.com/careers/) 
+[cloudflare.com](https://www.cloudflare.com/)
+[Our team](https://www.cloudflare.com/people/)
+[Careers](https://www.cloudflare.com/careers/)
+-  Tools 
+-  [Cloudflare Radar](https://radar.cloudflare.com/) 
+-  [Speed Test](https://speed.cloudflare.com/) 
+-  [Is BGP Safe Yet?](https://isbgpsafeyet.com/) 
+-  [RPKI Toolkit](https://rpki.cloudflare.com/) 
+-  [Certificate Transparency](https://ct.cloudflare.com/) 
+[Cloudflare Radar](https://radar.cloudflare.com/)
+[Speed Test](https://speed.cloudflare.com/)
+[Is BGP Safe Yet?](https://isbgpsafeyet.com/)
+[RPKI Toolkit](https://rpki.cloudflare.com/)
+[Certificate Transparency](https://ct.cloudflare.com/)
+-  Community 
+-  [X](https://x.com/cloudflare) 
+-  [Discord](http://discord.cloudflare.com/) 
+-  [YouTube](https://www.youtube.com/cloudflare) 
+-  [GitHub](https://github.com/cloudflare/cloudflare-docs) 
+[X](https://x.com/cloudflare)
+[Discord](http://discord.cloudflare.com/)
+[YouTube](https://www.youtube.com/cloudflare)
+[GitHub](https://github.com/cloudflare/cloudflare-docs)
+- © 2025 Cloudflare, Inc.
+-  [Privacy Policy](https://www.cloudflare.com/privacypolicy/) 
+-  [Terms of Use](https://www.cloudflare.com/website-terms/) 
+-  [Report Security Issues](https://www.cloudflare.com/disclosure/) 
+-  [Trademark](https://www.cloudflare.com/trademark/) 
+-   
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	function OptanonWrapper() {}
+   Cookie Settings    
+[Privacy Policy](https://www.cloudflare.com/privacypolicy/)
+[Terms of Use](https://www.cloudflare.com/website-terms/)
+[Report Security Issues](https://www.cloudflare.com/disclosure/)
+[Trademark](https://www.cloudflare.com/trademark/)

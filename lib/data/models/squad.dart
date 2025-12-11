@@ -28,6 +28,18 @@ enum SquadRole {
   final String nameBn;
 }
 
+/// Kitchen Capacity Status
+enum CapacityStatus {
+  open('OPEN', 'খোলা'),
+  busy('BUSY', 'ব্যস্ত'),
+  full('FULL', 'পূর্ণ');
+
+  const CapacityStatus(this.key, this.nameBn);
+
+  final String key;
+  final String nameBn;
+}
+
 /// Squad member model
 @immutable
 class SquadMember {
@@ -276,7 +288,10 @@ class Squad {
   final double trustScore; // New field
   final DateTime createdAt;
   final DateTime lastUpdated;
+
   final Map<String, dynamic>? metadata;
+  final CapacityStatus capacityStatus;
+  final int maxOrderCapacity;
 
   const Squad({
     required this.id,
@@ -291,7 +306,10 @@ class Squad {
     this.trustScore = 50.0,
     required this.createdAt,
     required this.lastUpdated,
+
     this.metadata,
+    this.capacityStatus = CapacityStatus.open,
+    this.maxOrderCapacity = 20,
   });
 
   /// Get safe wallet (returns empty if null)
@@ -340,6 +358,8 @@ class Squad {
     DateTime? createdAt,
     DateTime? lastUpdated,
     Map<String, dynamic>? metadata,
+    CapacityStatus? capacityStatus,
+    int? maxOrderCapacity,
   }) {
     return Squad(
       id: id ?? this.id,
@@ -355,6 +375,8 @@ class Squad {
       createdAt: createdAt ?? this.createdAt,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       metadata: metadata ?? this.metadata,
+      capacityStatus: capacityStatus ?? this.capacityStatus,
+      maxOrderCapacity: maxOrderCapacity ?? this.maxOrderCapacity,
     );
   }
 
@@ -372,6 +394,8 @@ class Squad {
       'created_at': createdAt.toIso8601String(),
       'updated_at': lastUpdated.toIso8601String(),
       'metadata': metadata,
+      'capacity_status': capacityStatus.key,
+      'max_order_capacity': maxOrderCapacity,
     };
   }
 
@@ -405,6 +429,11 @@ class Squad {
       createdAt: DateTime.parse(json['created_at'] as String),
       lastUpdated: DateTime.parse(json['updated_at'] ?? json['last_updated'] ?? DateTime.now().toIso8601String()),
       metadata: json['metadata'] as Map<String, dynamic>?,
+      capacityStatus: CapacityStatus.values.firstWhere(
+        (e) => e.key == (json['capacity_status'] ?? 'OPEN'),
+        orElse: () => CapacityStatus.open,
+      ),
+      maxOrderCapacity: (json['max_order_capacity'] as int?) ?? 20,
     );
   }
 

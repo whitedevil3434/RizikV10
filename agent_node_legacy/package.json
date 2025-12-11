@@ -1,0 +1,20 @@
+{
+  "name": "agent",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@livekit/agents": "^1.1.0",
+    "@livekit/agents-plugin-google": "^1.0.23",
+    "dotenv": "^17.2.3",
+    "livekit-client": "^2.16.0",
+    "livekit-server-sdk": "^2.14.2"
+  }
+}

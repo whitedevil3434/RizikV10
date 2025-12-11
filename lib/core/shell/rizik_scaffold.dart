@@ -57,16 +57,8 @@ class _RizikScaffoldState extends ConsumerState<RizikScaffold> {
           ),
           
           // 3. Dictation Overlay (Global Position)
-          // Positioned above the FAB (FAB is usually ~70-80px high + margin)
-          // We center it horizontally.
-          const Positioned(
-            bottom: 100, 
-            left: 0, 
-            right: 0,
-            child: Center(
-              child: DictationOverlay(),
-            ),
-          ),
+          // Self-managed positioning (Align + Padding)
+          const DictationOverlay(),
         ],
       ),
       bottomNavigationBar: RizikBottomNav(

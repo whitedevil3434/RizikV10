@@ -19,15 +19,7 @@ class SduiService {
       }
     } catch (e) {
       print('Error fetching screen data: $e');
-      // Return a fallback error UI
-      return {
-        'type': 'center',
-        'child': {
-          'type': 'text',
-          'data': 'Error loading screen. Please check connection.',
-          'style': 'error',
-        }
-      };
+      rethrow; // Let the UI handle the error
     }
   }
 }

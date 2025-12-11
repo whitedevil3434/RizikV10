@@ -36,12 +36,23 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
 
 dependencies {
     implementation("androidx.multidex:multidex:2.0.1")
+    modules {
+        module("com.twilio:audioswitch") {
+            replacedBy("com.github.davidliu:audioswitch", "Use the fork required by flutter_webrtc")
+        }
+    }
+}
+
+configurations.all {
+    exclude(group = "com.twilio", module = "audioswitch")
 }
 
 flutter {
