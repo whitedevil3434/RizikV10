@@ -11,6 +11,7 @@ import 'features/source/home/source_dashboard_screen.dart';
 import 'features/force/dashboard/force_dashboard_screen.dart';
 // import 'features/connect/presentation/call_screen.dart'; // RealtimeKit REST API + WebRTC
 import 'features/connect/presentation/call_screen_realtimekit.dart';
+import 'features/connect/presentation/screens/chat_screen.dart';
 import 'package:rizik_v4/features/voice/presentation/live_agent_screen.dart';
 // import 'features/voice/presentation/voice_mode_screen.dart'; // Removed legacy
 import 'features/squad/presentation/screens/squad_dashboard_screen.dart';
@@ -104,6 +105,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/connect',
         name: 'rizik_connect',
         builder: (context, state) => const CallScreenRealtimeKit(),
+      ),
+      GoRoute(
+        path: '/chat',
+        name: 'squad_chat',
+        builder: (context, state) => const ChatScreen(),
       ),
       GoRoute(
         path: '/live-agent',
