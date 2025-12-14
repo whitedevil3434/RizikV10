@@ -1,0 +1,29 @@
+name = "rizik-backend"
+main = "functions/api/index.ts"
+compatibility_date = "2024-02-08"
+
+# Enable Smart Placement (Speeds up backend by running close to DB/User)
+# smart_placement = { mode = "smart" }
+
+[vars]
+ENVIRONMENT = "production"
+
+# Durable Objects for Realtime State (Chat, Calls, Order Tracking)
+[durable_objects]
+bindings = [
+  { name = "MEETING_ROOM", class_name = "MeetingRoom" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["MeetingRoom"]
+
+# R2 Buckets for Storage (Images, Proofs)
+[[r2_buckets]]
+binding = "RIZIK_STORAGE"
+bucket_name = "rizik-storage-v1"
+
+# Hyperdrive for Supabase Connection Pooling
+# [[hyperdrive]]
+# binding = "DB"
+# id = "your-hyperdrive-id-here"
