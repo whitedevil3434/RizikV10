@@ -18,3 +18,11 @@ new_classes = ["ChatRoom"]
 [[migrations]]
 tag = "v2"
 new_classes = ["VoiceAgent"]
+
+[vars]
+ENVIRONMENT = "production"
+
+# R2 Buckets for Storage (Images, Proofs)
+[[r2_buckets]]
+binding = "RIZIK_STORAGE"
+bucket_name = "rizik-storage-v1"
