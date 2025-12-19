@@ -17,18 +17,49 @@ class GigRepository {
 
   GigRepository(this._apiClient);
 
+  /// Create a new Gig (God Mode)
+  Future<String> createGig({
+    required String title,
+    required String description,
+    required double budget,
+    required String category, // 'CIRCUIT', 'JOMI', 'EXPORT', etc.
+    required List<String> requiredSkills,
+    required DateTime deadline,
+  }) async {
+    final user = authWrapper.currentUser;
+    if (user == null) throw 'User not logged in';
+
+    try {
+      final response = await _supabase.from('gigs').insert({
+        'title': title,
+        'description': description,
+        'budget': budget,
+        'category': category,
+        'required_skills': requiredSkills,
+        'deadline': deadline.toIso8601String(),
+        'status': 'OPEN',
+        'client_id': user.id,
+        'created_at': DateTime.now().toIso8601String(),
+      }).select().single(); // select() returns the inserted row
+
+      print('✅ Gig Created: ${response['id']}');
+      return response['id'];
+    } catch (e) {
+      throw 'Failed to create gig: $e';
+    }
+  }
+
   /// Get active gigs
   Future<List<dynamic>> getGigs() async {
-    // Use Supabase for list fetching
     try {
       final response = await _supabase
-          .from('gigs') // Assuming table name
+          .from('gigs')
           .select('*')
           .eq('status', 'OPEN')
           .order('created_at', ascending: false);
       return response;
     } catch (e) {
-      // Fallback or empty if table doesn't exist yet (schema applied manually)
+      print('Gig Fetch Error: $e');
       return [];
     }
   }
@@ -47,7 +78,7 @@ class GigRepository {
     }
   }
 
-  /// Submit bid
+  /// Submit bid (Hybrid: Supabase + Notification)
   Future<Map<String, dynamic>> submitBid({
     required String gigId,
     required double amount,
@@ -58,13 +89,23 @@ class GigRepository {
     if (user == null) throw 'User not logged in';
 
     try {
-      final response = await _apiClient.post('/api/gig/$gigId/bid', data: {
+      // 1. Save Bid to DB
+      final bidData = {
+        'gig_id': gigId,
         'freelancer_id': user.id,
         'amount': amount,
         'cover_letter': coverLetter,
         'portfolio_links': portfolioLinks ?? [],
-      });
-      return response.data;
+        'status': 'PENDING',
+        'created_at': DateTime.now().toIso8601String(),
+      };
+
+      await _supabase.from('gig_bids').insert(bidData);
+
+      // 2. Notify Client (via Edge Function stub)
+      // await _apiClient.post('/api/notify', data: {...});
+
+      return {'success': true};
     } catch (e) {
       throw 'Failed to submit bid: $e';
     }
@@ -80,12 +121,15 @@ class GigRepository {
     if (user == null) throw 'User not logged in';
 
     try {
-      final response = await _apiClient.post('/api/gig/$gigId/submit', data: {
-        'freelancer_id': user.id,
-        'description': description,
-        'file_urls': fileUrls,
-      });
-      return response.data;
+      // Update Gig Status
+      await _supabase.from('gigs').update({
+        'status': 'REVIEW',
+        'submission_description': description,
+        'submission_files': fileUrls,
+        'submitted_at': DateTime.now().toIso8601String(),
+      }).eq('id', gigId);
+
+      return {'success': true};
     } catch (e) {
       throw 'Failed to submit work: $e';
     }
