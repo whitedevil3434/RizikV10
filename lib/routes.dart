@@ -30,7 +30,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: navigatorKey,
-    initialLocation: EnvConfig.isDev ? '/seeker' : '/splash', // অ্যাপ এখান থেকেই শুরু হবে
+    // GOD MODE: Hard-switch to Seeker Home (Bypassing Splash/Login)
+    initialLocation: '/seeker',
     debugLogDiagnostics: true,   // ডেভেলপমেন্টের সময় লগ দেখার জন্য
 
     // 🔄 Refresh Logic: যখনই লগইন/লগআউট হবে, রাউটার অটোমেটিক রিফ্রেশ হবে
@@ -126,29 +127,28 @@ final routerProvider = Provider<GoRouter>((ref) {
 
     // 🔒 SECURITY GUARD (Redirect Logic)
     redirect: (context, state) {
-      // 0. DEVELOPMENT BYPASS (Auth Disabled for Dev)
-      if (EnvConfig.isDev) {
-        return null; // Allow direct access to any route
-      }
+      // 0. GOD MODE BYPASS (Auth Disabled for Preview)
+      // Force allow all routes, bypassing checks
+      return null;
 
-      // 1. চেক করুন ইউজার লগইন করা আছে কিনা
+      /*
+      // Original Logic Preserved for Reference
+      if (EnvConfig.isDev) {
+        return null;
+      }
       final isLoggedIn = authState.isAuthenticated;
       final isLoggingIn = state.uri.toString() == '/auth';
       final isSplash = state.uri.toString() == '/splash';
 
-      // 2. যদি লগইন না থাকে, এবং অথ পেজে না থাকে -> সোজা লগইন পেজে পাঠাও
       if (!isLoggedIn && !isLoggingIn && !isSplash) {
         return '/auth';
       }
 
-      // 3. যদি লগইন করা থাকে কিন্তু অথ পেজে থাকে -> সোজা হোমে পাঠাও
       if (isLoggedIn && isLoggingIn) {
-        // ডিফল্ট রোল অনুযায়ী রিডাইরেক্ট (এখানে Seeker ডিফল্ট)
         return '/seeker'; 
       }
-
-      // কোনো সমস্যা না থাকলে, যেখানে যাওয়ার কথা সেখানেই যাও
       return null;
+      */
     },
   );
 });

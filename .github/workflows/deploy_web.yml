@@ -33,12 +33,18 @@ jobs:
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} \
             --dart-define=SUPABASE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy build/web --project-name=rizik-web
+      - name: Deploy to Cloudflare Pages (Clean Syntax)
+        run: |
+          npm install -g wrangler
+          # Correct syntax for project creation
+          npx wrangler pages project create rizik-web --production-branch=main || true
+          # Correct syntax for deployment (Relies on Env Vars for Auth)
+          npx wrangler pages deploy build/web \
+            --project-name=rizik-web \
+            --branch=main \
+            --commit-dirty=true
         env:
-          # Using Global API Key & Email for authentication
-          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
+          CI: true
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
+          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
