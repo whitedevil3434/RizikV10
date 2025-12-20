@@ -17,9 +17,9 @@ class VoiceAssistantPalette extends ConsumerStatefulWidget {
       barrierColor: Colors.black.withOpacity(0.1), // Subtle dimming
       builder: (context) => const VoiceAssistantPalette(),
     );
-    // Cleanup when sheet closes
-    final container = ProviderScope.containerOf(context, listen: false);
-    container.read(voiceSessionProvider.notifier).endSession();
+    // Cleanup when sheet closes - Handle safely
+    // Note: ProviderScope might be tricky if context is unmounted, but standard Flutter
+    // practice allows read if context was valid.
   }
 
   @override
@@ -36,6 +36,13 @@ class _VoiceAssistantPaletteState extends ConsumerState<VoiceAssistantPalette> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(voiceSessionProvider.notifier).startSession();
     });
+  }
+
+  @override
+  void dispose() {
+    // Explicitly end session when this widget dies
+    ref.read(voiceSessionProvider.notifier).endSession();
+    super.dispose();
   }
 
   void _scrollToBottom() {
