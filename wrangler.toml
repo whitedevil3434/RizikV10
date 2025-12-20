@@ -4,10 +4,14 @@ compatibility_date = "2024-04-01"
 
 [durable_objects]
 bindings = [
-  { name = "CHAT_ROOM", class_name = "ChatRoom" }
+  { name = "CHAT_ROOM", class_name = "ChatRoom" },
+  { name = "VOICE_AGENT", class_name = "VoiceAgent" }
 ]
+
+[ai]
+binding = "AI"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["ChatRoom"]
+new_classes = ["ChatRoom", "VoiceAgent"]
 new_sqlite_classes = ["ChatRoom"]
