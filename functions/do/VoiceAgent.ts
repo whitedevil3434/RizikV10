@@ -3,7 +3,10 @@ import { DurableObject } from "cloudflare:workers";
 
 interface Env {
   AI: any;
-  GROQ_API_KEY?: string; // Optional for Brain Swap
+  GROQ_API_KEY?: string;
+  CLOUDFLARE_API_TOKEN: string;
+  CLOUDFLARE_ACCOUNT_ID: string;
+  CALLS_APP_ID: string; // The Calls App ID
 }
 
 export class VoiceAgent extends DurableObject {
@@ -15,71 +18,74 @@ export class VoiceAgent extends DurableObject {
   }
 
   async fetch(request: Request) {
-    // 1. Handle WebSocket Upgrade for Realtime Voice
+    const url = new URL(request.url);
+
+    // 1. WebSocket Upgrade (Signaling)
     if (request.headers.get("Upgrade") === "websocket") {
       const pair = new WebSocketPair();
       const [client, server] = Object.values(pair);
-
       this.ctx.acceptWebSocket(server);
-      console.log("🎙️ Voice Agent: WebSocket Connected");
-
       return new Response(null, { status: 101, webSocket: client });
     }
 
-    return new Response("Rizik Voice Agent Active", { status: 200 });
+    // 2. Create Calls Session (WebRTC Uplink)
+    if (url.pathname.endsWith("/session") && request.method === "POST") {
+      return this._createCallsSession();
+    }
+
+    return new Response("Voice Agent Active", { status: 200 });
+  }
+
+  async _createCallsSession() {
+    // Call Cloudflare Calls API to create a session
+    const endpoint = `https://rtc.live.cloudflare.com/v1/apps/${this.env.CALLS_APP_ID}/sessions/new`;
+    
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${this.env.CLOUDFLARE_API_TOKEN}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      const data = await response.json();
+      return Response.json(data);
+    } catch (e) {
+      return Response.json({ error: e.message }, { status: 500 });
+    }
   }
 
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
-    // This is where the magic happens.
-    // Input: Text/Audio tokens from client.
-    // Output: Text tokens from LLM.
-    
+    // Handle Signaling (SDP/ICE) or Text fallback
     try {
       const data = JSON.parse(message as string);
       
       if (data.type === 'text_input') {
-        // Trigger the Brain
         const responseText = await this._orchestrateBrain(data.text);
-        
-        // Stream back to client
-        ws.send(JSON.stringify({
-          type: 'text_stream',
-          content: responseText
-        }));
+        ws.send(JSON.stringify({ type: 'text_stream', content: responseText }));
       }
+      
+      // We can also proxy WebRTC signaling here if needed
     } catch (e) {
-      console.error("Voice Processing Error:", e);
+      console.error("Error:", e);
     }
   }
 
-  /**
-   * 🧠 The Brain Orchestrator
-   * Swaps between Workers AI (Llama) and Groq based on config/latency needs.
-   */
   async _orchestrateBrain(input: string): Promise<string> {
-    // Feature Flag: Use Groq if key exists (Lower Latency)
     if (this.env.GROQ_API_KEY) {
-      return this._callGroq(input);
+      return "Groq Response (Placeholder)";
     }
-
-    // Default: Cloudflare Workers AI (Zero Egress Cost)
     try {
       const response = await this.env.AI.run('@cf/meta/llama-3-8b-instruct', {
         messages: [
-          { role: 'system', content: 'You are Rizik, a helpful assistant. Reply in Bengali or English.' },
+          { role: 'system', content: 'You are Rizik. Reply in Bengali or English.' },
           { role: 'user', content: input }
         ]
       });
       return response.response;
     } catch (e) {
-      console.error("Workers AI Failed:", e);
-      return "দুঃখিত, আমি এখন চিন্তা করতে পারছি না।"; // Fallback
+      return "দুঃখিত, আমি বুঝতে পারিনি।";
     }
-  }
-
-  async _callGroq(input: string): Promise<string> {
-    // Placeholder for Groq implementation
-    // Would fetch https://api.groq.com/openai/v1/chat/completions
-    return "Groq response placeholder";
   }
 }
