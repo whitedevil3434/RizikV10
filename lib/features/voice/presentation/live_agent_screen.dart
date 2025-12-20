@@ -1,37 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:rizik_v4/services/gemini_live_service.dart';
+import 'package:rizik_v4/features/voice/state/voice_session_provider.dart';
 
-class LiveAgentScreen extends StatefulWidget {
+class LiveAgentScreen extends ConsumerStatefulWidget {
   const LiveAgentScreen({super.key});
 
   @override
-  State<LiveAgentScreen> createState() => _LiveAgentScreenState();
+  ConsumerState<LiveAgentScreen> createState() => _LiveAgentScreenState();
 }
 
-class _LiveAgentScreenState extends State<LiveAgentScreen> {
-  final GeminiLiveService _geminiService = GeminiLiveService();
+class _LiveAgentScreenState extends ConsumerState<LiveAgentScreen> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  
-  // Chat History: {role: 'user'|'agent', text: String}
-  List<Map<String, dynamic>> chatHistory = [];
   String _status = "Initializing...";
 
   @override
   void initState() {
     super.initState();
     _connect();
-    
-    // Listen for incoming transcripts/text from Gemini
-    _geminiService.transcriptStream.listen((text) {
-      if (mounted) {
-        setState(() {
-          chatHistory.add({"role": "agent", "text": text});
-        });
-        _scrollToBottom();
-      }
-    });
   }
 
   Future<void> _connect() async {
@@ -43,8 +30,8 @@ class _LiveAgentScreenState extends State<LiveAgentScreen> {
 
     try {
       setState(() => _status = "Connecting...");
-      await _geminiService.connect();
-      setState(() => _status = "Rizik Active (Gemini 2.0)");
+      ref.read(voiceSessionProvider.notifier).startSession();
+      setState(() => _status = "Rizik Active (Cloudflare Edition)");
     } catch (e) {
       setState(() => _status = "Error: $e");
     }
@@ -54,11 +41,7 @@ class _LiveAgentScreenState extends State<LiveAgentScreen> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
-    setState(() {
-      chatHistory.add({"role": "user", "text": text});
-    });
-
-    _geminiService.sendTextMessage(text);
+    ref.read(voiceSessionProvider.notifier).sendText(text);
     _textController.clear();
     _scrollToBottom();
   }
@@ -78,7 +61,9 @@ class _LiveAgentScreenState extends State<LiveAgentScreen> {
   @override
   void dispose() {
     print("🧹 Cleaning up voice agent...");
-    _geminiService.disconnect();
+    // We don't necessarily want to kill the session just by leaving the screen in a Riverpod architecture,
+    // but for now, let's keep it clean.
+    // ref.read(voiceSessionProvider.notifier).endSession();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -88,6 +73,8 @@ class _LiveAgentScreenState extends State<LiveAgentScreen> {
   Widget build(BuildContext context) {
     // Handling keyboard overlap
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    final sessionState = ref.watch(voiceSessionProvider);
+    final chatHistory = sessionState.transcripts;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -96,8 +83,8 @@ class _LiveAgentScreenState extends State<LiveAgentScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.black),
-          onPressed: () async {
-            await _geminiService.disconnect();
+          onPressed: () {
+            ref.read(voiceSessionProvider.notifier).endSession();
             if (context.mounted) Navigator.pop(context);
           },
         ),
@@ -125,7 +112,7 @@ class _LiveAgentScreenState extends State<LiveAgentScreen> {
               itemCount: chatHistory.length,
               itemBuilder: (context, index) {
                 final item = chatHistory[index];
-                final isUser = item['role'] == 'user';
+                final isUser = item.isUser;
                 
                 return Align(
                   alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -143,7 +130,7 @@ class _LiveAgentScreenState extends State<LiveAgentScreen> {
                       ),
                     ),
                     child: Text(
-                      item['text'],
+                      item.text,
                       style: TextStyle(
                         color: isUser ? Colors.white : Colors.black87,
                         fontSize: 16,
