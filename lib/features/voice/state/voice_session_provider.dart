@@ -6,49 +6,38 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rizik_v4/core/state/mojo_provider.dart';
 import 'package:rizik_v4/services/tts/edge_tts_client.dart';
 import 'package:rizik_v4/services/player/universal_player.dart';
-import 'package:rizik_v4/services/recorder/universal_recorder.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:rizik_v4/core/config/env_config.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_webrtc/flutter_webrtc.dart'; // WebRTC Uplink
 
-/// State of the voice session
-enum VoiceSessionStatus {
-  disconnected,
-  connecting,
-  connected,
-  reconnecting,
-}
+enum VoiceSessionStatus { disconnected, connecting, connected }
 
-/// Transcript Entry Model
 class TranscriptEntry {
   final String text;
   final bool isUser;
-
   TranscriptEntry({required this.text, required this.isUser});
 }
 
 class VoiceSessionState {
   final VoiceSessionStatus status;
   final List<TranscriptEntry> transcripts;
-  final double currentAmplitude;
   final String? error;
 
   VoiceSessionState({
     this.status = VoiceSessionStatus.disconnected,
     this.transcripts = const [],
-    this.currentAmplitude = 0.0,
     this.error,
   });
 
   VoiceSessionState copyWith({
     VoiceSessionStatus? status,
     List<TranscriptEntry>? transcripts,
-    double? currentAmplitude,
     String? error,
   }) {
     return VoiceSessionState(
       status: status ?? this.status,
       transcripts: transcripts ?? this.transcripts,
-      currentAmplitude: currentAmplitude ?? this.currentAmplitude,
       error: error ?? this.error,
     );
   }
@@ -58,148 +47,79 @@ final voiceSessionProvider = StateNotifierProvider<VoiceSessionNotifier, VoiceSe
   return VoiceSessionNotifier(ref);
 });
 
-/// 🧠 The Orchestrator (MIT-Grade Implementation)
-/// Connects "The Brain" (Cloudflare DO) with "The Mouth" (Edge TTS) and "The Ear" (Recorder).
 class VoiceSessionNotifier extends StateNotifier<VoiceSessionState> {
   final Ref _ref;
-  
-  // The Mouth
   final RizikEdgeTTSClient _ttsClient = RizikEdgeTTSClient();
-  
-  // The Ear & Voice (Playback)
-  final UniversalRecorder _recorder = UniversalRecorder();
   final UniversalPlayer _player = UniversalPlayer();
   
-  // The Brain Connection
-  WebSocketChannel? _doChannel;
-  StreamSubscription? _ttsAudioSub;
-  StreamSubscription? _recorderSub;
+  WebSocketChannel? _signalChannel;
+  RTCPeerConnection? _peerConnection;
+  MediaStream? _localStream;
 
   VoiceSessionNotifier(this._ref) : super(VoiceSessionState());
 
-  /// 🚀 Ignite the Session
   Future<void> startSession() async {
-    if (state.status == VoiceSessionStatus.connected) return;
-
-    state = state.copyWith(status: VoiceSessionStatus.connecting, error: null);
-    
+    state = state.copyWith(status: VoiceSessionStatus.connecting);
     try {
-      // 1. Initialize Subsystems (Parallel Execution)
       await Future.wait([
         _ttsClient.init(),
-        _player.initialize(sampleRate: 24000), // Edge TTS Standard
-        // _recorder.init() // if needed
+        _player.initialize(sampleRate: 24000),
       ]);
 
-      // 2. Connect "The Mouth" to "The Speaker"
-      // Stream audio bytes directly from TTS client to Player buffer
-      await _ttsAudioSub?.cancel();
-      await _ttsClient.connect(); // Connect to Microsoft Swarm
-      _ttsAudioSub = _ttsClient.audioStream.listen((audioChunk) {
-        _player.playChunk(audioChunk);
-        
-        // Visual Feedback: Mojo talks
-        _ref.read(mojoProvider.notifier).setMojoState(MojoState.speaking);
-      });
-
-      // 3. Connect "The Brain" (Cloudflare Durable Object)
-      // Note: We use a hardcoded room ID 'demo' for now, but this should be dynamic.
+      // 1. Connect Signaling (WebSocket)
       final wsUrl = Uri.parse('${EnvConfig.backendUrl}/api/chat/room/voice_demo/ws').replace(scheme: 'wss');
-      _doChannel = WebSocketChannel.connect(wsUrl);
-      
-      _doChannel!.stream.listen(_handleBrainSignal, 
-        onError: (e) => _handleError("Brain Connection Lost: $e"),
-        onDone: () => endSession()
-      );
+      _signalChannel = WebSocketChannel.connect(wsUrl);
+      _signalChannel!.stream.listen(_handleSignal);
 
-      // 4. Connect "The Ear" (Microphone)
-      if (await _recorder.hasPermission()) {
-        final stream = StreamController<Uint8List>();
-        _recorderSub = stream.stream.listen((audioData) {
-           // Future: Stream audio to STT via Cloudflare
-           // For V1 Text-Mode, we skip this
-        });
-        // await _recorder.start(stream.sink); // Disabled for Text-First V1
-      }
+      // 2. Connect WebRTC Uplink (Audio)
+      await _connectWebRTC();
 
       state = state.copyWith(status: VoiceSessionStatus.connected);
       _ref.read(mojoProvider.notifier).setMojoState(MojoState.listening);
-
     } catch (e) {
-      _handleError("Initialization Failed: $e");
+      state = state.copyWith(status: VoiceSessionStatus.disconnected, error: e.toString());
     }
   }
 
-  /// 🧠 Handle Signals from Cloudflare DO
-  void _handleBrainSignal(dynamic data) {
-    try {
-      final msg = jsonDecode(data);
-      
-      if (msg['type'] == 'text_stream') {
-        final text = msg['content'];
-        
-        // 1. Update UI Transcript
-        _addTranscript(text, isUser: false);
-        
-        // 2. Feed the Mouth (TTS)
-        _ttsClient.synthesize(text);
-        
-        // 3. Mojo Feedback
-        _ref.read(mojoProvider.notifier).setMojoState(MojoState.processing);
-      }
-    } catch (e) {
-      print("Signal Parse Error: $e");
+  Future<void> _connectWebRTC() async {
+    // 1. Get Session from Cloudflare
+    final response = await http.post(Uri.parse('${EnvConfig.backendUrl}/api/chat/room/voice_demo/session'));
+    final sessionData = jsonDecode(response.body);
+    final sessionId = sessionData['sessionId'];
+
+    // 2. Create Peer Connection
+    _peerConnection = await createPeerConnection({
+      'iceServers': [{'urls': 'stun:stun.cloudflare.com:3478'}]
+    });
+
+    // 3. Add Microphone Track
+    _localStream = await navigator.mediaDevices.getUserMedia({'audio': true});
+    _localStream!.getTracks().forEach((track) {
+      _peerConnection!.addTrack(track, _localStream!);
+    });
+
+    // 4. Create Offer & Send to Cloudflare (WHIP/WHEP Logic would go here)
+    // For V1, we just establish the PeerConnection object to prove the Uplink.
+    // Full WHIP exchange requires specific SDP negotiation which we will handle via the WebSocket signal channel in Phase 4.
+    print("✅ WebRTC PeerConnection Initialized for Session: $sessionId");
+  }
+
+  void _handleSignal(dynamic data) {
+    final msg = jsonDecode(data);
+    if (msg['type'] == 'text_stream') {
+      _ttsClient.synthesize(msg['content']);
+      _ref.read(mojoProvider.notifier).setMojoState(MojoState.speaking);
     }
   }
 
-  /// 📨 Send User Input (Text Mode for V1)
   void sendText(String text) {
-    if (state.status != VoiceSessionStatus.connected) return;
-    
-    // 1. UI Update
-    _addTranscript(text, isUser: true);
-    
-    // 2. Send to Brain
-    final payload = {
-      'type': 'text_input',
-      'text': text,
-      'timestamp': DateTime.now().millisecondsSinceEpoch
-    };
-    _doChannel?.sink.add(jsonEncode(payload));
+    _signalChannel?.sink.add(jsonEncode({'type': 'text_input', 'text': text}));
   }
-
-  void _addTranscript(String text, {required bool isUser}) {
-    final current = List<TranscriptEntry>.from(state.transcripts);
-    current.add(TranscriptEntry(text: text, isUser: isUser));
-    if (current.length > 50) current.removeAt(0); // Buffer safety
-    state = state.copyWith(transcripts: current);
-  }
-
-  void _handleError(String errorMsg) {
-    state = state.copyWith(
-      status: VoiceSessionStatus.disconnected,
-      error: errorMsg,
-    );
-    _ref.read(mojoProvider.notifier).setMojoState(MojoState.idle);
-    disconnect();
-  }
-
-  Future<void> endSession() async => disconnect();
 
   Future<void> disconnect() async {
-    await _ttsAudioSub?.cancel();
-    await _recorderSub?.cancel();
-    await _recorder.stop();
-    await _player.stop();
-    _doChannel?.sink.close();
-    _ttsClient.dispose();
-    
+    await _localStream?.dispose();
+    await _peerConnection?.close();
+    _signalChannel?.sink.close();
     state = state.copyWith(status: VoiceSessionStatus.disconnected);
-  }
-
-  @override
-  void dispose() {
-    disconnect();
-    super.dispose();
   }
 }
