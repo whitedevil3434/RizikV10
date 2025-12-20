@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rizik_v4/core/state/mojo_provider.dart';
 import 'package:rizik_v4/services/tts/edge_tts_client.dart';
 import 'package:rizik_v4/services/player/universal_player.dart';
+import 'package:rizik_v4/services/recorder/universal_recorder.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:rizik_v4/core/config/env_config.dart';
 import 'package:http/http.dart' as http;
@@ -51,6 +52,7 @@ class VoiceSessionNotifier extends StateNotifier<VoiceSessionState> {
   final Ref _ref;
   final RizikEdgeTTSClient _ttsClient = RizikEdgeTTSClient();
   final UniversalPlayer _player = UniversalPlayer();
+  final UniversalRecorder _recorder = UniversalRecorder(); // Add recorder
   
   WebSocketChannel? _signalChannel;
   RTCPeerConnection? _peerConnection;
@@ -99,8 +101,6 @@ class VoiceSessionNotifier extends StateNotifier<VoiceSessionState> {
     });
 
     // 4. Create Offer & Send to Cloudflare (WHIP/WHEP Logic would go here)
-    // For V1, we just establish the PeerConnection object to prove the Uplink.
-    // Full WHIP exchange requires specific SDP negotiation which we will handle via the WebSocket signal channel in Phase 4.
     print("✅ WebRTC PeerConnection Initialized for Session: $sessionId");
   }
 
@@ -120,6 +120,7 @@ class VoiceSessionNotifier extends StateNotifier<VoiceSessionState> {
     await _localStream?.dispose();
     await _peerConnection?.close();
     _signalChannel?.sink.close();
+    await _player.stop();
     state = state.copyWith(status: VoiceSessionStatus.disconnected);
   }
 }
