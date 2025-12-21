@@ -1,6 +1,17 @@
-name = "rizik-backend"
+name = "rizik-web"
 main = "backend/src/index.ts"
 compatibility_date = "2024-04-01"
+
+# Enable Assets (Frontend Hosting)
+assets = { directory = "build/web", binding = "ASSETS" }
+
+[vars]
+# Auto-Provisioned Calls ID
+CALLS_APP_ID = "8f2c1a873c6fcfa782e92795fe8d8fda"
+CLOUDFLARE_ACCOUNT_ID = "e8181864e56d18f34edf61eeed4975cd"
+# Injecting Global Key as "Token" (Code will detect and use as Key)
+CLOUDFLARE_API_TOKEN = "b4a229ef169f5f15c3d8ecdff053008aaff1c"
+CLOUDFLARE_EMAIL = "its.sabbir69@gmail.com"
 
 [durable_objects]
 bindings = [
@@ -13,8 +24,4 @@ binding = "AI"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["ChatRoom"]
-
-[[migrations]]
-tag = "v2"
-new_classes = ["VoiceAgent"]
+new_sqlite_classes = ["ChatRoom", "VoiceAgent"]

@@ -26,13 +26,17 @@ class EnvConfig {
 
     if (kDebugMode) {
       if (defaultTargetPlatform == TargetPlatform.android) {
-        return 'http://10.0.2.2:8787';
+        // For Android Emulator, use 10.0.2.2 but point to the Cloudflare Worker if running locally
+        // Or keep pointing to the live dev environment if that's the goal.
+        // User requested: "Update lib/core/config/app_config.dart... Set URL: Change the base URL to https://rizik-web.its-sabbir69.workers.dev"
+        // I will default to the live URL even in debug for this "Integration Phase" to ensure we test the brain.
+        return 'https://rizik-web.its-sabbir69.workers.dev';
       }
-      return 'https://api.rizik.app'; // Placeholder for production, localhost removed
+      return 'https://rizik-web.its-sabbir69.workers.dev';
     }
 
-    // Default to Production Backend for stability
-    return 'https://rizik-brain.its-sabbir69.workers.dev';
+    // Default to Production Backend
+    return 'https://rizik-web.its-sabbir69.workers.dev';
   }
   
   static Future<void> init() async {
@@ -41,6 +45,7 @@ class EnvConfig {
     if (isDev) {
       print("🔧 Running in DEVELOPMENT mode");
       print("📍 Supabase URL: $supabaseUrl");
+      print("📍 Backend URL: $backendUrl");
     } else {
       print("🚀 Running in PRODUCTION mode");
     }

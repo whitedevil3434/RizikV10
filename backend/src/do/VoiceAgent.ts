@@ -5,6 +5,7 @@ interface Env {
   AI: any;
   GROQ_API_KEY?: string;
   CLOUDFLARE_API_TOKEN: string;
+  CLOUDFLARE_EMAIL?: string; // Added for Global Auth support
   CLOUDFLARE_ACCOUNT_ID: string;
   CALLS_APP_ID: string;
 }
@@ -38,13 +39,25 @@ export class VoiceAgent extends DurableObject {
 
   async _createCallsSession() {
     const endpoint = `https://rtc.live.cloudflare.com/v1/apps/${this.env.CALLS_APP_ID}/sessions/new`;
+
+    // Construct Headers based on Auth Type
+    let headers: Record<string, string> = {
+      "Content-Type": "application/json"
+    };
+
+    if (this.env.CLOUDFLARE_EMAIL && this.env.CLOUDFLARE_API_TOKEN) {
+      // Global API Key Auth
+      headers["X-Auth-Email"] = this.env.CLOUDFLARE_EMAIL;
+      headers["X-Auth-Key"] = this.env.CLOUDFLARE_API_TOKEN; // Using TOKEN var as KEY
+    } else {
+      // Token Auth
+      headers["Authorization"] = `Bearer ${this.env.CLOUDFLARE_API_TOKEN}`;
+    }
+
     try {
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${this.env.CLOUDFLARE_API_TOKEN}`,
-          "Content-Type": "application/json"
-        }
+        headers: headers
       });
       const data = await response.json();
       return Response.json(data);
@@ -92,16 +105,12 @@ export class VoiceAgent extends DurableObject {
       // Consume the stream
       const reader = stream.getReader();
       const decoder = new TextDecoder();
-      let buffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        // Workers AI stream format is "data: {response: 'token'}"
-        // We need to parse this SSE format manually or use a library.
-        // For simplicity in this raw DO, we parse the string.
         
         const lines = chunk.split('\n');
         for (const line of lines) {
@@ -123,9 +132,6 @@ export class VoiceAgent extends DurableObject {
           }
         }
       }
-      
-      // End of Stream Signal (optional)
-      // ws.send(JSON.stringify({ type: 'text_end' }));
 
     } catch (e) {
       console.error("Brain Error:", e);
