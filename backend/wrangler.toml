@@ -1,0 +1,22 @@
+name = "rizik-backend"
+main = "src/index.ts"
+compatibility_date = "2024-04-01"
+
+# 🧠 The Brain (Durable Objects)
+[[durable_objects.bindings]]
+name = "CHAT_ROOM"
+class_name = "ChatRoom"
+
+[[durable_objects.bindings]]
+name = "VOICE_AGENT"
+class_name = "VoiceAgent"
+
+# 🤖 The Intelligence
+[ai]
+binding = "AI"
+
+# 🏗️ Migrations (Allowed in Workers)
+[[migrations]]
+tag = "v1"
+new_classes = ["ChatRoom", "VoiceAgent"]
+new_sqlite_classes = ["ChatRoom"]
