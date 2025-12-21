@@ -1,4 +1,4 @@
-name = "rizik-backend"
+name = "rizik-brain"
 main = "src/index.ts"
 compatibility_date = "2024-04-01"
 
@@ -6,19 +6,12 @@ compatibility_date = "2024-04-01"
 bindings = [
   { name = "CHAT_ROOM", class_name = "ChatRoom" },
   { name = "VOICE_AGENT", class_name = "VoiceAgent" }
-  # Removed bindings for MeetingRoom and VoiceAgentV2 as we are deleting them.
 ]
 
 [ai]
 binding = "AI"
 
-# Migration History
-# v6: Add VoiceAgent (SQLite)
+# Fresh Start!
 [[migrations]]
-tag = "v6"
-new_sqlite_classes = ["VoiceAgent"]
-
-# v7: Delete legacy classes
-[[migrations]]
-tag = "v7"
-deleted_classes = ["MeetingRoom", "VoiceAgentV2"]
+tag = "v1"
+new_sqlite_classes = ["ChatRoom", "VoiceAgent"]
