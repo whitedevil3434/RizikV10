@@ -6,6 +6,7 @@ compatibility_date = "2024-04-01"
 bindings = [
   { name = "CHAT_ROOM", class_name = "ChatRoom" },
   { name = "VOICE_AGENT", class_name = "VoiceAgent" }
+  # Removed bindings for MeetingRoom and VoiceAgentV2 as we are deleting them.
 ]
 
 [ai]
@@ -17,11 +18,7 @@ binding = "AI"
 tag = "v6"
 new_sqlite_classes = ["VoiceAgent"]
 
-# v7: Clean up legacy classes that Cloudflare complains about missing exports for.
-# We must export them in the code to perform this migration, then we can delete them.
-# Wait, if we use deleted_classes, we don't need to export them anymore?
-# The error says: "New version of script does not export class ... which is depended on ... use a delete-class migration"
-# So YES, we can use delete_classes.
+# v7: Delete legacy classes
 [[migrations]]
 tag = "v7"
 deleted_classes = ["MeetingRoom", "VoiceAgentV2"]
