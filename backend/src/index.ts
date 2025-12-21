@@ -1,7 +1,8 @@
 
 import { ChatRoom } from "./do/ChatRoom";
+import { VoiceAgent } from "./do/VoiceAgent";
 
-export { ChatRoom };
+export { ChatRoom, VoiceAgent };
 
 export default {
   async fetch(request, env) {
@@ -18,7 +19,16 @@ export default {
       
       return stub.fetch(request);
     }
+    
+    // Route: /api/voice/session
+    // Handled by VoiceAgent Durable Object (Singleton or per-user?)
+    // For now, let's use a singleton named "global_brain" or per user session
+    if (url.pathname.startsWith("/api/voice/session")) {
+        const id = env.VOICE_AGENT.idFromName("global_brain"); // Or unique ID
+        const stub = env.VOICE_AGENT.get(id);
+        return stub.fetch(request);
+    }
 
-    return new Response("Rizik Backend Worker", { status: 200 });
+    return new Response("Rizik Backend Worker Active", { status: 200 });
   }
 };
