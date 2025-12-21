@@ -5,14 +5,25 @@ compatibility_date = "2024-04-01"
 [durable_objects]
 bindings = [
   { name = "CHAT_ROOM", class_name = "ChatRoom" },
-  { name = "VOICE_AGENT", class_name = "VoiceAgent" }
+  { name = "VOICE_AGENT", class_name = "VoiceAgent" },
+  # We must bind it if we export it, or just export it? 
+  # Actually, if we want to DELETE it, we should use a migration.
+  # But the error said "New version of script does not export class 'MeetingRoom'".
+  # So we MUST export it. We don't necessarily need to bind it if we don't use it in code, 
+  # but Cloudflare checks exports.
 ]
 
 [ai]
 binding = "AI"
 
-# Assuming ChatRoom exists in v1-v5 history (Legacy or SQLite).
-# We add VoiceAgent in v6 as SQLite (Required for Free Plan).
+# Migration History Reconstruction (Best Effort)
+# v6: Add VoiceAgent (SQLite)
 [[migrations]]
 tag = "v6"
 new_sqlite_classes = ["VoiceAgent"]
+
+# v7: Delete MeetingRoom? 
+# No, let's just KEEP it for now to pass the check.
+# The error was that we REMOVED it from exports.
+# By putting it back in exports, we solve the error.
+# We don't need a migration to "keep" it.
