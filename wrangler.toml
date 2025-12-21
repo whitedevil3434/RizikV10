@@ -2,21 +2,9 @@ name = "rizik-web"
 compatibility_date = "2024-04-01"
 pages_build_output_dir = "build/web"
 
-# 🧠 The Brain (Durable Objects)
-[[durable_objects.bindings]]
-name = "CHAT_ROOM"
-class_name = "ChatRoom"
+# 🧠 Service Bindings (Connect Pages to Backend Worker)
+[[services]]
+binding = "BACKEND"
+service = "rizik-backend"
 
-[[durable_objects.bindings]]
-name = "VOICE_AGENT"
-class_name = "VoiceAgent"
-
-# 🤖 The Intelligence
-[ai]
-binding = "AI"
-
-# 🏗️ Migrations (Required for DO)
-[[migrations]]
-tag = "v1"
-new_classes = ["ChatRoom", "VoiceAgent"]
-new_sqlite_classes = ["ChatRoom"] # SQLite enabled
+# ❌ No Migrations in Pages (Handled by rizik-backend)
