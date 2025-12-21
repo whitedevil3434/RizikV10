@@ -6,7 +6,7 @@ interface Env {
   GROQ_API_KEY?: string;
   CLOUDFLARE_API_TOKEN: string;
   CLOUDFLARE_ACCOUNT_ID: string;
-  CALLS_APP_ID: string; // The Calls App ID
+  CALLS_APP_ID: string;
 }
 
 export class VoiceAgent extends DurableObject {
@@ -20,7 +20,7 @@ export class VoiceAgent extends DurableObject {
   async fetch(request: Request) {
     const url = new URL(request.url);
 
-    // 1. WebSocket Upgrade (Signaling)
+    // 1. WebSocket Upgrade
     if (request.headers.get("Upgrade") === "websocket") {
       const pair = new WebSocketPair();
       const [client, server] = Object.values(pair);
@@ -28,18 +28,16 @@ export class VoiceAgent extends DurableObject {
       return new Response(null, { status: 101, webSocket: client });
     }
 
-    // 2. Create Calls Session (WebRTC Uplink)
+    // 2. Create Calls Session
     if (url.pathname.endsWith("/session") && request.method === "POST") {
       return this._createCallsSession();
     }
 
-    return new Response("Voice Agent Active", { status: 200 });
+    return new Response("Rizik Voice Brain Active", { status: 200 });
   }
 
   async _createCallsSession() {
-    // Call Cloudflare Calls API to create a session
     const endpoint = `https://rtc.live.cloudflare.com/v1/apps/${this.env.CALLS_APP_ID}/sessions/new`;
-    
     try {
       const response = await fetch(endpoint, {
         method: "POST",
@@ -48,7 +46,6 @@ export class VoiceAgent extends DurableObject {
           "Content-Type": "application/json"
         }
       });
-
       const data = await response.json();
       return Response.json(data);
     } catch (e) {
@@ -57,35 +54,82 @@ export class VoiceAgent extends DurableObject {
   }
 
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
-    // Handle Signaling (SDP/ICE) or Text fallback
     try {
       const data = JSON.parse(message as string);
       
       if (data.type === 'text_input') {
-        const responseText = await this._orchestrateBrain(data.text);
-        ws.send(JSON.stringify({ type: 'text_stream', content: responseText }));
+        // Trigger Streaming Brain
+        await this._streamBrainResponse(data.text, ws);
       }
-      
-      // We can also proxy WebRTC signaling here if needed
     } catch (e) {
       console.error("Error:", e);
     }
   }
 
-  async _orchestrateBrain(input: string): Promise<string> {
-    if (this.env.GROQ_API_KEY) {
-      return "Groq Response (Placeholder)";
-    }
+  /**
+   * 🧠 Streaming Intelligence (Workers AI)
+   */
+  async _streamBrainResponse(input: string, ws: WebSocket) {
     try {
-      const response = await this.env.AI.run('@cf/meta/llama-3-8b-instruct', {
-        messages: [
-          { role: 'system', content: 'You are Rizik. Reply in Bengali or English.' },
-          { role: 'user', content: input }
-        ]
+      const messages = [
+        { 
+          role: 'system', 
+          content: `You are Rizik, the super-intelligent AI assistant for the Rizik Super App in Bangladesh.
+          - Speak in a mix of Bengali and English (Banglish) where natural.
+          - Be helpful, witty, and concise.
+          - You have access to Kitchen OS, Logistics, and Escrow services.
+          - If the user asks for food, suggest from the menu.
+          - If the user asks about a loan, mention Rizik Dhaar.` 
+        },
+        { role: 'user', content: input }
+      ];
+
+      const stream = await this.env.AI.run('@cf/meta/llama-3-8b-instruct', {
+        messages,
+        stream: true // Enable Streaming
       });
-      return response.response;
+
+      // Consume the stream
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        // Workers AI stream format is "data: {response: 'token'}"
+        // We need to parse this SSE format manually or use a library.
+        // For simplicity in this raw DO, we parse the string.
+        
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const jsonStr = line.slice(6);
+            if (jsonStr === '[DONE]') break;
+            try {
+              const jsonObj = JSON.parse(jsonStr);
+              if (jsonObj.response) {
+                // Send Token to Client
+                ws.send(JSON.stringify({
+                  type: 'text_stream',
+                  content: jsonObj.response
+                }));
+              }
+            } catch (e) {
+              // Ignore partial JSON
+            }
+          }
+        }
+      }
+      
+      // End of Stream Signal (optional)
+      // ws.send(JSON.stringify({ type: 'text_end' }));
+
     } catch (e) {
-      return "দুঃখিত, আমি বুঝতে পারিনি।";
+      console.error("Brain Error:", e);
+      ws.send(JSON.stringify({ type: 'text_stream', content: " দুঃখিত, সার্ভারে সমস্যা হচ্ছে।" }));
     }
   }
 }
