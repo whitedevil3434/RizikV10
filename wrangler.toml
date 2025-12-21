@@ -1,10 +1,20 @@
-name = "rizik-web"
+name = "rizik-backend"
+main = "backend/src/index.ts"
 compatibility_date = "2024-04-01"
-pages_build_output_dir = "build/web"
 
-# 🧠 Service Bindings (Connect Pages to Backend Worker)
-[[services]]
-binding = "BACKEND"
-service = "rizik-backend"
+[durable_objects]
+bindings = [
+  { name = "CHAT_ROOM", class_name = "ChatRoom" },
+  { name = "VOICE_AGENT", class_name = "VoiceAgent" }
+]
 
-# ❌ No Migrations in Pages (Handled by rizik-backend)
+[ai]
+binding = "AI"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["ChatRoom"]
+
+[[migrations]]
+tag = "v2"
+new_classes = ["VoiceAgent"]
