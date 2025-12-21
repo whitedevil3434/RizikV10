@@ -4,9 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 interface Env {
   AI: any;
   GROQ_API_KEY?: string;
-  CLOUDFLARE_API_TOKEN?: string;
-  CLOUDFLARE_EMAIL?: string;
-  CLOUDFLARE_API_KEY?: string;
+  CLOUDFLARE_API_TOKEN: string;
   CLOUDFLARE_ACCOUNT_ID: string;
   CALLS_APP_ID: string;
 }
@@ -41,17 +39,11 @@ export class VoiceAgent extends DurableObject {
   async _createCallsSession() {
     const endpoint = `https://rtc.live.cloudflare.com/v1/apps/${this.env.CALLS_APP_ID}/sessions/new`;
 
-    // Auth Strategy: Legacy Global Key Priority
-    let headers: Record<string, string> = {
-      "Content-Type": "application/json"
+    // Standard Token Auth (Correct Protocol for RTC.LIVE)
+    const headers = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${this.env.CLOUDFLARE_API_TOKEN}`
     };
-
-    if (this.env.CLOUDFLARE_EMAIL && this.env.CLOUDFLARE_API_KEY) {
-      headers["X-Auth-Email"] = this.env.CLOUDFLARE_EMAIL;
-      headers["X-Auth-Key"] = this.env.CLOUDFLARE_API_KEY;
-    } else if (this.env.CLOUDFLARE_API_TOKEN) {
-      headers["Authorization"] = `Bearer ${this.env.CLOUDFLARE_API_TOKEN}`;
-    }
 
     try {
       const response = await fetch(endpoint, {
@@ -86,8 +78,7 @@ export class VoiceAgent extends DurableObject {
           role: 'system', 
           content: `You are Rizik, the super-intelligent AI assistant for the Rizik Super App in Bangladesh.
           - Speak in a mix of Bengali and English (Banglish) where natural.
-          - Be helpful, witty, and concise.
-          - You have access to Kitchen OS, Logistics, and Escrow services.`
+          - Be helpful, witty, and concise.`
         },
         { role: 'user', content: input }
       ];
