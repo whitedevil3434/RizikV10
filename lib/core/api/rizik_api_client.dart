@@ -6,9 +6,9 @@ import 'package:rizik_v4/core/wrappers/auth_wrapper.dart';
 final rizikApiClientProvider = Provider((ref) => RizikApiClient());
 
 /// RizikApiClient - Core API Handler for Cloudflare Backend
-/// Handles all requests to https://rizik-backend.its-sabbir69.workers.dev
+/// Handles all requests to https://rizik-brain.its-sabbir69.workers.dev
 class RizikApiClient {
-  static const String baseUrl = 'https://rizik-backend.its-sabbir69.workers.dev';
+  static const String baseUrl = 'https://rizik-brain.its-sabbir69.workers.dev';
   
   late final Dio _dio;
 
