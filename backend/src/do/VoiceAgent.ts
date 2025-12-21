@@ -4,8 +4,9 @@ import { DurableObject } from "cloudflare:workers";
 interface Env {
   AI: any;
   GROQ_API_KEY?: string;
-  CLOUDFLARE_API_TOKEN: string;
-  CLOUDFLARE_EMAIL?: string; // Added for Global Auth support
+  CLOUDFLARE_API_TOKEN?: string;
+  CLOUDFLARE_EMAIL?: string;
+  CLOUDFLARE_API_KEY?: string; // Added for explicit Global Key support
   CLOUDFLARE_ACCOUNT_ID: string;
   CALLS_APP_ID: string;
 }
@@ -41,15 +42,16 @@ export class VoiceAgent extends DurableObject {
     const endpoint = `https://rtc.live.cloudflare.com/v1/apps/${this.env.CALLS_APP_ID}/sessions/new`;
 
     // Construct Headers based on Auth Type
+    // Priority: Global Key (Master Override) > API Token
     let headers: Record<string, string> = {
       "Content-Type": "application/json"
     };
 
-    if (this.env.CLOUDFLARE_EMAIL && this.env.CLOUDFLARE_API_TOKEN) {
-      // Global API Key Auth
+    if (this.env.CLOUDFLARE_EMAIL && this.env.CLOUDFLARE_API_KEY) {
+      // Global API Key Auth (Master Key)
       headers["X-Auth-Email"] = this.env.CLOUDFLARE_EMAIL;
-      headers["X-Auth-Key"] = this.env.CLOUDFLARE_API_TOKEN; // Using TOKEN var as KEY
-    } else {
+      headers["X-Auth-Key"] = this.env.CLOUDFLARE_API_KEY;
+    } else if (this.env.CLOUDFLARE_API_TOKEN) {
       // Token Auth
       headers["Authorization"] = `Bearer ${this.env.CLOUDFLARE_API_TOKEN}`;
     }
@@ -57,7 +59,8 @@ export class VoiceAgent extends DurableObject {
     try {
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: headers
+        headers: headers,
+        body: JSON.stringify({}) // Ensure body is present for POST
       });
       const data = await response.json();
       return Response.json(data);
@@ -79,9 +82,6 @@ export class VoiceAgent extends DurableObject {
     }
   }
 
-  /**
-   * 🧠 Streaming Intelligence (Workers AI)
-   */
   async _streamBrainResponse(input: string, ws: WebSocket) {
     try {
       const messages = [
@@ -90,19 +90,16 @@ export class VoiceAgent extends DurableObject {
           content: `You are Rizik, the super-intelligent AI assistant for the Rizik Super App in Bangladesh.
           - Speak in a mix of Bengali and English (Banglish) where natural.
           - Be helpful, witty, and concise.
-          - You have access to Kitchen OS, Logistics, and Escrow services.
-          - If the user asks for food, suggest from the menu.
-          - If the user asks about a loan, mention Rizik Dhaar.` 
+          - You have access to Kitchen OS, Logistics, and Escrow services.`
         },
         { role: 'user', content: input }
       ];
 
       const stream = await this.env.AI.run('@cf/meta/llama-3-8b-instruct', {
         messages,
-        stream: true // Enable Streaming
+        stream: true
       });
 
-      // Consume the stream
       const reader = stream.getReader();
       const decoder = new TextDecoder();
 
@@ -120,15 +117,12 @@ export class VoiceAgent extends DurableObject {
             try {
               const jsonObj = JSON.parse(jsonStr);
               if (jsonObj.response) {
-                // Send Token to Client
                 ws.send(JSON.stringify({
                   type: 'text_stream',
                   content: jsonObj.response
                 }));
               }
-            } catch (e) {
-              // Ignore partial JSON
-            }
+            } catch (e) {}
           }
         }
       }

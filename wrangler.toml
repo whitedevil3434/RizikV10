@@ -9,8 +9,6 @@ assets = { directory = "build/web", binding = "ASSETS" }
 # Auto-Provisioned Calls ID
 CALLS_APP_ID = "8f2c1a873c6fcfa782e92795fe8d8fda"
 CLOUDFLARE_ACCOUNT_ID = "e8181864e56d18f34edf61eeed4975cd"
-# CLOUDFLARE_API_TOKEN is now managed via `wrangler secret put` to ensure validity
-# Removing dead/invalid token from vars
 
 [durable_objects]
 bindings = [
