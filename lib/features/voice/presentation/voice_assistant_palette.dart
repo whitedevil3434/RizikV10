@@ -17,9 +17,7 @@ class VoiceAssistantPalette extends ConsumerStatefulWidget {
       barrierColor: Colors.black.withOpacity(0.1), // Subtle dimming
       builder: (context) => const VoiceAssistantPalette(),
     );
-    // Cleanup when sheet closes - Handle safely
-    // Note: ProviderScope might be tricky if context is unmounted, but standard Flutter
-    // practice allows read if context was valid.
+    // Note: Can't easily access provider here after close without context issues
   }
 
   @override
@@ -32,7 +30,6 @@ class _VoiceAssistantPaletteState extends ConsumerState<VoiceAssistantPalette> {
   @override
   void initState() {
     super.initState();
-    // Auto-connect when palette opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(voiceSessionProvider.notifier).startSession();
     });
@@ -40,7 +37,6 @@ class _VoiceAssistantPaletteState extends ConsumerState<VoiceAssistantPalette> {
 
   @override
   void dispose() {
-    // Explicitly end session when this widget dies
     ref.read(voiceSessionProvider.notifier).endSession();
     super.dispose();
   }
@@ -59,7 +55,6 @@ class _VoiceAssistantPaletteState extends ConsumerState<VoiceAssistantPalette> {
   Widget build(BuildContext context) {
     final sessionState = ref.watch(voiceSessionProvider);
     
-    // Auto-scroll on new transcript
     ref.listen(voiceSessionProvider, (previous, next) {
       if (next.transcripts.length > (previous?.transcripts.length ?? 0)) {
         Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
@@ -71,9 +66,9 @@ class _VoiceAssistantPaletteState extends ConsumerState<VoiceAssistantPalette> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          height: MediaQuery.of(context).size.height * 0.5, // Half screen height
+          height: MediaQuery.of(context).size.height * 0.5,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9), // Glassmorphism base
+            color: Colors.white.withOpacity(0.9),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
             boxShadow: [
                BoxShadow(
@@ -86,7 +81,6 @@ class _VoiceAssistantPaletteState extends ConsumerState<VoiceAssistantPalette> {
           child: Column(
             mainAxisSize: MainAxisSize.max,
             children: [
-              // 1. Drag Handle
               Center(
                 child: Container(
                   margin: const EdgeInsets.only(top: 12, bottom: 8),
@@ -98,8 +92,6 @@ class _VoiceAssistantPaletteState extends ConsumerState<VoiceAssistantPalette> {
                   ),
                 ),
               ),
-
-              // 2. Transcript Area (Chat-like)
               Expanded(
                 child: ListView.builder(
                   controller: _scrollController,
@@ -107,31 +99,29 @@ class _VoiceAssistantPaletteState extends ConsumerState<VoiceAssistantPalette> {
                   itemCount: sessionState.transcripts.length,
                   itemBuilder: (context, index) {
                     final entry = sessionState.transcripts[index];
-                    final text = entry.text;
-                    final isUser = entry.isUser;
                     
                     return Align(
-                      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment: entry.isUser ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
-                          color: isUser 
+                          color: entry.isUser 
                               ? RizikBrandColors.brandPurple.withOpacity(0.1) 
                               : Colors.grey.withOpacity(0.05),
                           borderRadius: BorderRadius.only(
                              topLeft: const Radius.circular(16),
                              topRight: const Radius.circular(16),
-                             bottomLeft: isUser ? const Radius.circular(16) : Radius.zero,
-                             bottomRight: isUser ? Radius.zero : const Radius.circular(16),
+                             bottomLeft: entry.isUser ? const Radius.circular(16) : Radius.zero,
+                             bottomRight: entry.isUser ? Radius.zero : const Radius.circular(16),
                           ),
                         ),
                         child: Text(
-                          text,
+                          entry.text,
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.black87,
-                            fontWeight: isUser ? FontWeight.w500 : FontWeight.w400,
+                            fontWeight: entry.isUser ? FontWeight.w500 : FontWeight.w400,
                           ),
                         ),
                       ),
@@ -139,8 +129,6 @@ class _VoiceAssistantPaletteState extends ConsumerState<VoiceAssistantPalette> {
                   },
                 ),
               ),
-
-              // 3. Status Indicator (Connecting/Error)
               if (sessionState.status == VoiceSessionStatus.connecting)
                  const Padding(
                    padding: EdgeInsets.only(bottom: 8.0),
@@ -152,14 +140,11 @@ class _VoiceAssistantPaletteState extends ConsumerState<VoiceAssistantPalette> {
                    padding: const EdgeInsets.only(bottom: 8.0),
                    child: Text("Error: ${sessionState.error}", style: const TextStyle(color: Colors.red, fontSize: 12)),
                  ),
-
-              // 4. Controls Dock
               Container(
                 padding: const EdgeInsets.fromLTRB(32, 16, 32, 40),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Close Button
                     _CircleButton(
                       icon: Icons.close_rounded,
                       color: Colors.grey.shade200,
@@ -169,18 +154,13 @@ class _VoiceAssistantPaletteState extends ConsumerState<VoiceAssistantPalette> {
                         Navigator.of(context).pop();
                       },
                     ),
-
-                    // THE ORB (Centerpiece)
                     SizedBox(
                       width: 80,
                       height: 80,
                       child: RizikMojo(
-                        amplitude: sessionState.currentAmplitude, // Reactive!
-                        
+                        amplitude: sessionState.currentAmplitude, 
                       ),
                     ),
-
-                    // Keyboard/Input Button
                     _CircleButton(
                       icon: Icons.keyboard_rounded,
                       color: Colors.grey.shade200,
