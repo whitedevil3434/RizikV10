@@ -11,8 +11,8 @@ bindings = [
 [ai]
 binding = "AI"
 
-# Assuming ChatRoom exists in v1-v5 history.
-# We only add VoiceAgent in v6.
+# Assuming ChatRoom exists in v1-v5 history (Legacy or SQLite).
+# We add VoiceAgent in v6 as SQLite (Required for Free Plan).
 [[migrations]]
 tag = "v6"
-new_classes = ["VoiceAgent"]
+new_sqlite_classes = ["VoiceAgent"]
