@@ -6,12 +6,13 @@ compatibility_date = "2024-04-01"
 assets = { directory = "build/web", binding = "ASSETS" }
 
 [vars]
-# Auto-Provisioned Calls ID
+# Auto-Provisioned Calls ID (Recovered from Global Key run)
 CALLS_APP_ID = "8f2c1a873c6fcfa782e92795fe8d8fda"
 CLOUDFLARE_ACCOUNT_ID = "e8181864e56d18f34edf61eeed4975cd"
-# Injecting Global Key as "Token" (Code will detect and use as Key)
-CLOUDFLARE_API_TOKEN = "b4a229ef169f5f15c3d8ecdff053008aaff1c"
-CLOUDFLARE_EMAIL = "its.sabbir69@gmail.com"
+# Injecting User-Provided Token for Runtime Auth
+CLOUDFLARE_API_TOKEN = "mg1jua-f9OVYWsxoh6v6tn9OjSrrw_pXUAW44D_Y"
+# Removing Email as we are trying strict Bearer Auth now
+# CLOUDFLARE_EMAIL = "..."
 
 [durable_objects]
 bindings = [

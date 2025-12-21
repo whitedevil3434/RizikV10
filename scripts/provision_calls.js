@@ -3,44 +3,58 @@ const fs = require('fs');
 
 async function provisionCalls() {
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const email = process.env.CLOUDFLARE_EMAIL;
-  const apiKey = process.env.CLOUDFLARE_API_KEY;
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
 
-  if (!accountId || !email || !apiKey) {
-    console.error("❌ Missing Cloudflare Credentials");
+  if (!accountId || !apiToken) {
+    console.error("Missing Credentials");
     process.exit(1);
   }
 
   const headers = {
     'Content-Type': 'application/json',
-    'X-Auth-Email': email,
-    'X-Auth-Key': apiKey
+    'Authorization': `Bearer ${apiToken}`
   };
 
-  const appId = "8f2c1a873c6fcfa782e92795fe8d8fda";
+  const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/calls/apps`;
+  const appName = "rizik-voice-node";
 
   try {
-    console.log(`🧪 Testing Session Creation via Standard API (Proxy)...`);
-    // Guessing the endpoint structure based on CF patterns
-    const sessionUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/calls/apps/${appId}/sessions/new`;
+    // 1. List Apps
+    const listRes = await fetch(baseUrl, { headers });
+    const listData = await listRes.json();
 
-    const sessionRes = await fetch(sessionUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({})
-    });
-
-    const sessionData = await sessionRes.json();
-    console.log("Response:", JSON.stringify(sessionData));
-
-    if (sessionData.success) {
-       console.log("✅ Success! Standard API Proxy works.");
-    } else {
-       console.log("❌ Standard API Proxy failed.");
+    if (!listData.success) {
+      console.error(JSON.stringify(listData.errors));
+      process.exit(1);
     }
 
+    let appId = null;
+    const existingApp = listData.result.find(app => app.name === appName);
+
+    if (existingApp) {
+      appId = existingApp.uid;
+    } else {
+      // 2. Create App
+      const createRes = await fetch(baseUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: appName })
+      });
+      const createData = await createRes.json();
+
+      if (!createData.success) {
+        console.error(JSON.stringify(createData.errors));
+        process.exit(1);
+      }
+      appId = createData.result.uid;
+    }
+
+    // Output ONLY the ID
+    console.log(appId);
+
   } catch (error) {
-    console.error("💥 Test Failed:", error);
+    console.error(error);
+    process.exit(1);
   }
 }
 
