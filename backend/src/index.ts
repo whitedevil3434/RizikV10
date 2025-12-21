@@ -1,10 +1,8 @@
 
 import { ChatRoom } from "./do/ChatRoom";
 import { VoiceAgent } from "./do/VoiceAgent";
-import { MeetingRoom } from "./do/MeetingRoom";
-import { VoiceAgentV2 } from "./do/VoiceAgentV2";
 
-export { ChatRoom, VoiceAgent, MeetingRoom, VoiceAgentV2 };
+export { ChatRoom, VoiceAgent };
 
 export default {
   async fetch(request, env) {
