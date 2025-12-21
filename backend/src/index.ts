@@ -2,8 +2,9 @@
 import { ChatRoom } from "./do/ChatRoom";
 import { VoiceAgent } from "./do/VoiceAgent";
 import { MeetingRoom } from "./do/MeetingRoom";
+import { VoiceAgentV2 } from "./do/VoiceAgentV2";
 
-export { ChatRoom, VoiceAgent, MeetingRoom };
+export { ChatRoom, VoiceAgent, MeetingRoom, VoiceAgentV2 };
 
 export default {
   async fetch(request, env) {
@@ -22,10 +23,8 @@ export default {
     }
     
     // Route: /api/voice/session
-    // Handled by VoiceAgent Durable Object (Singleton or per-user?)
-    // For now, let's use a singleton named "global_brain" or per user session
     if (url.pathname.startsWith("/api/voice/session")) {
-        const id = env.VOICE_AGENT.idFromName("global_brain"); // Or unique ID
+        const id = env.VOICE_AGENT.idFromName("global_brain"); 
         const stub = env.VOICE_AGENT.get(id);
         return stub.fetch(request);
     }
