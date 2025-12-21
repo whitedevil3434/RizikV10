@@ -2,21 +2,17 @@ name = "rizik-backend"
 main = "src/index.ts"
 compatibility_date = "2024-04-01"
 
-# 🧠 The Brain (Durable Objects)
-[[durable_objects.bindings]]
-name = "CHAT_ROOM"
-class_name = "ChatRoom"
+[durable_objects]
+bindings = [
+  { name = "CHAT_ROOM", class_name = "ChatRoom" },
+  { name = "VOICE_AGENT", class_name = "VoiceAgent" }
+]
 
-[[durable_objects.bindings]]
-name = "VOICE_AGENT"
-class_name = "VoiceAgent"
-
-# 🤖 The Intelligence
 [ai]
 binding = "AI"
 
-# 🏗️ Migrations (Allowed in Workers)
+# Assuming ChatRoom exists in v1-v5 history.
+# We only add VoiceAgent in v6.
 [[migrations]]
-tag = "v1"
-new_classes = ["ChatRoom", "VoiceAgent"]
-new_sqlite_classes = ["ChatRoom"]
+tag = "v6"
+new_classes = ["VoiceAgent"]
