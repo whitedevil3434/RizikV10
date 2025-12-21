@@ -6,8 +6,8 @@ compatibility_date = "2024-04-01"
 assets = { directory = "build/web", binding = "ASSETS" }
 
 [vars]
-# CLEAN SLATE: New App ID
-CALLS_APP_ID = "4a1ee37f274f1dee2232d05c7642893d"
+# App with Secret Discovery
+CALLS_APP_ID = "8841f81b0447329c269ce0d120c9865a"
 CLOUDFLARE_ACCOUNT_ID = "e8181864e56d18f34edf61eeed4975cd"
 
 [durable_objects]
