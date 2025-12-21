@@ -36,7 +36,7 @@ class RizikEdgeTTSClient {
       }
     } catch (e) {
       print("⚠️ TTS Config Error: $e. Using fallback.");
-      // Fallback (Not recommended, but prevents crash)
+      // Fallback
       _wssUrl = "wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1";
       _trustedToken = "6A5AA1D4EAFF4E9FB37E23D68491D6F4"; 
       _voice = "bn-BD-PradeepNeural";
@@ -52,17 +52,21 @@ class RizikEdgeTTSClient {
 
     _channel!.stream.listen(
       (message) {
+        // --- 🛡️ TYPE CHECK LOGIC (THE FIX) ---
         if (message is String) {
-          // Check for "Path:audio" metadata in string (rare)
-        } else if (message is Uint8List) {
-          _parseBinary(message);
+          // It's a metadata message (JSON)
+          // We can parse it to find markers like "Path:turn.start" but mostly ignore for now
+        } else if (message is List<int>) {
+          // It's Binary Audio Data
+          // Convert to Uint8List and parse
+          _parseBinary(Uint8List.fromList(message));
         }
       },
       onError: (e) => print("TTS WS Error: $e"),
       onDone: () => print("TTS WS Closed"),
     );
 
-    // Initial Handshake (Required by Edge Protocol)
+    // Initial Handshake
     _sendText("Content-Type:application/json; charset=utf-8\r\n\r\nPath:speech.config\r\n\r\n" +
         jsonEncode({
           "context": {
@@ -101,20 +105,15 @@ class RizikEdgeTTSClient {
     _channel?.sink.add(data);
   }
 
-  /// 4. Parse Binary Audio from Edge Protocol
-  /// The protocol sends headers + binary audio in one blob. We need to strip headers.
+  /// 4. Parse Binary Audio
   void _parseBinary(Uint8List data) {
-    // Find the sequence "Path:audio\r\n" to confirm it's audio
-    // Then find the double CRLF "\r\n\r\n" which separates headers from body
-    
-    // Simplistic parser: Look for the audio marker (binary check is better but text search works for protocol)
     try {
-      final headerString = String.fromCharCodes(data.take(128)); // Peek headers
+      final headerString = String.fromCharCodes(data.take(128)); 
       if (headerString.contains("Path:audio")) {
         // Find split point
         int splitIndex = -1;
         for (int i = 0; i < data.length - 3; i++) {
-          if (data[i] == 13 && data[i+1] == 10 && data[i+2] == 13 && data[i+3] == 10) { // \r\n\r\n
+          if (data[i] == 13 && data[i+1] == 10 && data[i+2] == 13 && data[i+3] == 10) { 
             splitIndex = i + 4;
             break;
           }
