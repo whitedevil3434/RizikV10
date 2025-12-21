@@ -6,8 +6,8 @@ compatibility_date = "2024-04-01"
 assets = { directory = "build/web", binding = "ASSETS" }
 
 [vars]
-# Auto-Provisioned Calls ID
-CALLS_APP_ID = "8f2c1a873c6fcfa782e92795fe8d8fda"
+# Trying "rizik-connect" (Oldest App)
+CALLS_APP_ID = "50a858662556c7b7a1bfb6249fd6af1d"
 CLOUDFLARE_ACCOUNT_ID = "e8181864e56d18f34edf61eeed4975cd"
 
 [durable_objects]
