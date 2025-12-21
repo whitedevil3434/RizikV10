@@ -32,7 +32,7 @@ class EnvConfig {
     }
 
     // Default to Production Backend for stability
-    return 'https://rizik-backend.its-sabbir69.workers.dev';
+    return 'https://rizik-brain.its-sabbir69.workers.dev';
   }
   
   static Future<void> init() async {
