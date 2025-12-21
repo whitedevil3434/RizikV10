@@ -4,9 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 interface Env {
   AI: any;
   GROQ_API_KEY?: string;
-  CLOUDFLARE_API_TOKEN?: string;
-  CLOUDFLARE_EMAIL?: string;
-  CLOUDFLARE_API_KEY?: string; // Added for explicit Global Key support
+  CLOUDFLARE_API_TOKEN: string;
   CLOUDFLARE_ACCOUNT_ID: string;
   CALLS_APP_ID: string;
 }
@@ -41,26 +39,14 @@ export class VoiceAgent extends DurableObject {
   async _createCallsSession() {
     const endpoint = `https://rtc.live.cloudflare.com/v1/apps/${this.env.CALLS_APP_ID}/sessions/new`;
 
-    // Construct Headers based on Auth Type
-    // Priority: Global Key (Master Override) > API Token
-    let headers: Record<string, string> = {
-      "Content-Type": "application/json"
-    };
-
-    if (this.env.CLOUDFLARE_EMAIL && this.env.CLOUDFLARE_API_KEY) {
-      // Global API Key Auth (Master Key)
-      headers["X-Auth-Email"] = this.env.CLOUDFLARE_EMAIL;
-      headers["X-Auth-Key"] = this.env.CLOUDFLARE_API_KEY;
-    } else if (this.env.CLOUDFLARE_API_TOKEN) {
-      // Token Auth
-      headers["Authorization"] = `Bearer ${this.env.CLOUDFLARE_API_TOKEN}`;
-    }
-
     try {
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: headers,
-        body: JSON.stringify({}) // Ensure body is present for POST
+        headers: {
+          "Authorization": `Bearer ${this.env.CLOUDFLARE_API_TOKEN}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({})
       });
       const data = await response.json();
       return Response.json(data);
