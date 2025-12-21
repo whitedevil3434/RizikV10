@@ -10,7 +10,7 @@ import 'package:rizik_v4/services/recorder/universal_recorder.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:rizik_v4/core/config/env_config.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_webrtc/flutter_webrtc.dart'; // WebRTC Uplink
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 enum VoiceSessionStatus { disconnected, connecting, connected }
 
@@ -23,7 +23,7 @@ class TranscriptEntry {
 class VoiceSessionState {
   final VoiceSessionStatus status;
   final List<TranscriptEntry> transcripts;
-  final double currentAmplitude; // Restored for Legacy UI
+  final double currentAmplitude; 
   final String? error;
 
   VoiceSessionState({
@@ -73,12 +73,10 @@ class VoiceSessionNotifier extends StateNotifier<VoiceSessionState> {
         _player.initialize(sampleRate: 24000),
       ]);
 
-      // 1. Connect Signaling (WebSocket)
       final wsUrl = Uri.parse('${EnvConfig.backendUrl}/api/chat/room/voice_demo/ws').replace(scheme: 'wss');
       _signalChannel = WebSocketChannel.connect(wsUrl);
       _signalChannel!.stream.listen(_handleSignal);
 
-      // 2. Connect WebRTC Uplink (Audio)
       await _connectWebRTC();
 
       state = state.copyWith(status: VoiceSessionStatus.connected);
@@ -89,42 +87,62 @@ class VoiceSessionNotifier extends StateNotifier<VoiceSessionState> {
   }
 
   Future<void> _connectWebRTC() async {
-    // 1. Get Session from Cloudflare
     final response = await http.post(Uri.parse('${EnvConfig.backendUrl}/api/chat/room/voice_demo/session'));
     final sessionData = jsonDecode(response.body);
     final sessionId = sessionData['sessionId'];
 
-    // 2. Create Peer Connection
     _peerConnection = await createPeerConnection({
       'iceServers': [{'urls': 'stun:stun.cloudflare.com:3478'}]
     });
 
-    // 3. Add Microphone Track
     _localStream = await navigator.mediaDevices.getUserMedia({'audio': true});
     _localStream!.getTracks().forEach((track) {
       _peerConnection!.addTrack(track, _localStream!);
     });
 
-    print("✅ WebRTC PeerConnection Initialized for Session: $sessionId");
+    print("✅ WebRTC Session: $sessionId");
   }
 
   void _handleSignal(dynamic data) {
-    final msg = jsonDecode(data);
-    if (msg['type'] == 'text_stream') {
-      _ttsClient.synthesize(msg['content']);
-      // Simulate amplitude for now based on text length or random
-      state = state.copyWith(currentAmplitude: 0.5); 
-      _ref.read(mojoProvider.notifier).setMojoState(MojoState.speaking);
+    try {
+      final msg = jsonDecode(data);
       
-      // Reset amplitude after short delay
-      Future.delayed(const Duration(milliseconds: 500), () {
-         if (mounted) state = state.copyWith(currentAmplitude: 0.0);
-      });
+      // 🌊 STREAMING LOGIC
+      if (msg['type'] == 'text_stream') {
+        final token = msg['content'];
+        
+        // 1. Update UI (Append Mode)
+        _updateLastTranscript(token);
+        
+        // 2. Speak Immediately (No waiting for full sentence in V1)
+        _ttsClient.synthesize(token);
+        _ref.read(mojoProvider.notifier).setMojoState(MojoState.speaking);
+        
+        Future.delayed(const Duration(milliseconds: 300), () {
+           if (mounted) _ref.read(mojoProvider.notifier).setMojoState(MojoState.listening);
+        });
+      }
+    } catch (e) {
+      print('Signal Error: $e');
     }
   }
 
+  void _updateLastTranscript(String token) {
+    final currentList = List<TranscriptEntry>.from(state.transcripts);
+    
+    if (currentList.isNotEmpty && !currentList.last.isUser) {
+      // Append to last AI message
+      final lastMsg = currentList.removeLast();
+      currentList.add(TranscriptEntry(text: lastMsg.text + token, isUser: false));
+    } else {
+      // Start new AI message
+      currentList.add(TranscriptEntry(text: token, isUser: false));
+    }
+    
+    state = state.copyWith(transcripts: currentList);
+  }
+
   void sendText(String text) {
-    // Add local transcript immediately
     final current = List<TranscriptEntry>.from(state.transcripts);
     current.add(TranscriptEntry(text: text, isUser: true));
     state = state.copyWith(transcripts: current);
