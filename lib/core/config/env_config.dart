@@ -28,11 +28,19 @@ class EnvConfig {
       if (defaultTargetPlatform == TargetPlatform.android) {
         return 'http://10.0.2.2:8787';
       }
-      return 'https://api.rizik.app'; // Placeholder for production, localhost removed
+      // FORCE PRODUCTION URL for Voice Agent Testing (Localhost crashes on Whisper)
+      return 'https://rizik-backend.its-sabbir69.workers.dev'; 
     }
 
     // Default to Production Backend for stability
-    return 'https://rizik-brain.its-sabbir69.workers.dev';
+    // Default to Production Backend for stability
+    return 'https://rizik-backend.its-sabbir69.workers.dev';
+  }
+
+  static String get agentWebSocketUrl {
+    final httpUrl = backendUrl;
+    final wsUrl = httpUrl.replaceFirst(RegExp(r'^http'), 'ws');
+    return '$wsUrl/api/agent/voice';
   }
   
   static Future<void> init() async {

@@ -8,5 +8,6 @@ abstract class UniversalPlayer {
 
   Future<void> initialize({int sampleRate = 16000});
   Future<void> playChunk(Uint8List data);
+  Future<void> playAudio(Uint8List data);
   Future<void> stop();
 }

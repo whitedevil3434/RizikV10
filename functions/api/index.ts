@@ -1,9 +1,13 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { VoiceAgentV2 } from '../agent/voice_agent';
+export { VoiceAgentV2 }; // Export for Cloudflare Workers runtime
 
 // Define the environment bindings
 type Bindings = {
   MEETING_ROOM: DurableObjectNamespace;
+  VOICE_AGENT: DurableObjectNamespace;
+  AI: any; // Binding for Workers AI
   ENVIRONMENT: string;
 };
 
@@ -69,6 +73,34 @@ app.post('/api/realtime/meeting/:id/participants', async (c) => {
   } catch (e) {
     return c.json({ success: false, error: 'Invalid request' }, 400);
   }
+});
+
+// Voice Agent Route
+app.get('/api/agent/voice', async (c) => {
+  const upgradeHeader = c.req.header('Upgrade');
+  console.log(`[VoiceAgent] Incoming Upgrade Header: '${upgradeHeader}'`);
+  console.log(`[VoiceAgent] All Headers:`, JSON.stringify(c.req.header()));
+
+  if (!upgradeHeader || upgradeHeader.toLowerCase() !== 'websocket') {
+    return c.text('Expected Upgrade: websocket', 426);
+  }
+
+  // Create a unique ID for this session (or reuse based on user)
+  // For now, new session per connection
+  const id = c.env.VOICE_AGENT.newUniqueId();
+  const stub = c.env.VOICE_AGENT.get(id);
+
+  // Rewrite URL to match what RealtimeAgent expects (likely just the root or 'websocket')
+  const newUrl = new URL(c.req.raw.url);
+  newUrl.pathname = '/agentsInternal/ws'; // Secrets of the SDK revealed!
+
+  // Create new request with explicit headers to avoid stripping/normalization issues
+  const newReq = new Request(newUrl.toString(), c.req.raw);
+  newReq.headers.set('Upgrade', 'WebSocket');
+  newReq.headers.set('Connection', 'Upgrade');
+
+  // Forward the WebSocket handshake to the Durable Object
+  return stub.fetch(newReq);
 });
 
 export default app;

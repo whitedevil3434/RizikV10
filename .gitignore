@@ -49,3 +49,12 @@ node_modules/
 backend/node_modules/
 .env
 .dev.vars
+
+# Cloudflare Wrangler
+.wrangler/
+
+# Temporary Output
+repomix-output.xml
+
+# Media
+*.mp4

@@ -20,12 +20,13 @@ class SDUIScreen extends StatefulWidget {
 }
 
 class _SDUIScreenState extends State<SDUIScreen> {
-  final SduiService _sduiService = SduiService();
+  late final SduiService _sduiService;
   late Future<Map<String, dynamic>> _screenDataFuture;
 
   @override
   void initState() {
     super.initState();
+    _sduiService = SduiService();
     _loadData();
   }
 

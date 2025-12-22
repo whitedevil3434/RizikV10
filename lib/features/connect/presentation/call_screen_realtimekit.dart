@@ -128,14 +128,18 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
     setState(() {
       _isMicEnabled = !_isMicEnabled;
     });
-    _meeting.toggleMic(onSuccess: (status) {}, onError: (error) {});
+    // TODO: Fix undefined method 'toggleMic' for version 0.1.4
+    // _meeting.toggleMic(onSuccess: (status) {}, onError: (error) {});
+    print("⚠️ toggleMic not implemented for this version");
   }
 
   void _toggleCamera() {
     setState(() {
       _isCameraEnabled = !_isCameraEnabled;
     });
-    _meeting.toggleWebcam(onSuccess: (status) {}, onError: (error) {});
+    // TODO: Fix undefined method 'toggleWebcam' for version 0.1.4
+    // _meeting.toggleWebcam(onSuccess: (status) {}, onError: (error) {});
+    print("⚠️ toggleWebcam not implemented for this version");
   }
 
   void _leaveCall() {

@@ -1,8 +1,5 @@
-
-import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rizik_v4/services/cloudflare_agent_service.dart';
 import 'package:rizik_v4/core/state/mojo_provider.dart';
 import 'package:rizik_v4/services/tts/edge_tts_client.dart';
 import 'package:rizik_v4/services/player/universal_player.dart';
@@ -49,10 +46,15 @@ class VoiceSessionState {
 }
 
 final voiceSessionProvider = StateNotifierProvider<VoiceSessionNotifier, VoiceSessionState>((ref) {
-  return VoiceSessionNotifier(ref);
+  final agentService = CloudflareAgentService();
+  return VoiceSessionNotifier(agentService, ref);
 });
 
+// -----------------------------------------------------------------------------
+// 2. Controller/Notifier (Logic Layer)
+// -----------------------------------------------------------------------------
 class VoiceSessionNotifier extends StateNotifier<VoiceSessionState> {
+  final CloudflareAgentService _agentService;
   final Ref _ref;
   final RizikEdgeTTSClient _ttsClient = RizikEdgeTTSClient();
   final UniversalPlayer _player = UniversalPlayer();
@@ -62,25 +64,39 @@ class VoiceSessionNotifier extends StateNotifier<VoiceSessionState> {
   RTCPeerConnection? _peerConnection;
   MediaStream? _localStream;
 
-  VoiceSessionNotifier(this._ref) : super(VoiceSessionState());
+  VoiceSessionNotifier(this._agentService, this._ref) : super(VoiceSessionState());
 
   Future<void> startSession() async {
-    if (state.status == VoiceSessionStatus.connected) return;
-    state = state.copyWith(status: VoiceSessionStatus.connecting);
+    if (state.status == VoiceSessionStatus.connected || state.status == VoiceSessionStatus.connecting) return;
+
+    state = state.copyWith(status: VoiceSessionStatus.connecting, error: null);
+
+    // Initialize Audio Engine & Permissions
+    await _agentService.init();
+
+    // Listen to transcript stream
+    _agentService.transcriptStream.listen((text) {
+        final current = List<TranscriptEntry>.from(state.transcripts);
+        current.add(TranscriptEntry(text: text, isUser: false)); // AI Response
+        if (current.length > 50) current.removeAt(0); // Keep buffer size reasonable
+        
+        state = state.copyWith(transcripts: current);
+        
+        // Pulse Mojo
+        _ref.read(mojoProvider.notifier).setMojoState(MojoState.processing);
+        Future.delayed(const Duration(seconds: 2), () {
+             if (state.status == VoiceSessionStatus.connected) {
+                _ref.read(mojoProvider.notifier).setMojoState(MojoState.listening);
+             }
+        });
+    }, onError: (e) {
+        state = state.copyWith(error: e.toString());
+    });
+
     try {
-      await Future.wait([
-        _ttsClient.init(),
-        _player.initialize(sampleRate: 24000),
-      ]);
-
-      final wsUrl = Uri.parse('${EnvConfig.backendUrl}/api/chat/room/voice_demo/ws').replace(scheme: 'wss');
-      _signalChannel = WebSocketChannel.connect(wsUrl);
-      _signalChannel!.stream.listen(_handleSignal);
-
-      await _connectWebRTC();
-
-      state = state.copyWith(status: VoiceSessionStatus.connected);
-      _ref.read(mojoProvider.notifier).setMojoState(MojoState.listening);
+      await _agentService.connect();
+       state = state.copyWith(status: VoiceSessionStatus.connected);
+       _ref.read(mojoProvider.notifier).setMojoState(MojoState.listening);
     } catch (e) {
       state = state.copyWith(status: VoiceSessionStatus.disconnected, error: e.toString());
     }
@@ -147,16 +163,19 @@ class VoiceSessionNotifier extends StateNotifier<VoiceSessionState> {
     current.add(TranscriptEntry(text: text, isUser: true));
     state = state.copyWith(transcripts: current);
 
-    _signalChannel?.sink.add(jsonEncode({'type': 'text_input', 'text': text}));
+    // 2. Send to Agent
+    _agentService.sendTextMessage(text);
   }
 
-  Future<void> endSession() async => disconnect();
+  Future<void> endSession() async {
+    await _agentService.disconnect();
+    state = state.copyWith(status: VoiceSessionStatus.disconnected);
+    _ref.read(mojoProvider.notifier).setMojoState(MojoState.idle);
+  }
 
-  Future<void> disconnect() async {
-    await _localStream?.dispose();
-    await _peerConnection?.close();
-    _signalChannel?.sink.close();
-    await _player.stop();
-    state = state.copyWith(status: VoiceSessionStatus.disconnected, currentAmplitude: 0.0);
+  @override
+  void dispose() {
+    _agentService.disconnect();
+    super.dispose();
   }
 }
