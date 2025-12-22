@@ -6,7 +6,7 @@ compatibility_date = "2024-04-01"
 assets = { directory = "build/web", binding = "ASSETS" }
 
 [vars]
-# App with Secret Discovery
+# Clean App with Secret Discovery (Using manually injected Token now)
 CALLS_APP_ID = "8841f81b0447329c269ce0d120c9865a"
 CLOUDFLARE_ACCOUNT_ID = "e8181864e56d18f34edf61eeed4975cd"
 

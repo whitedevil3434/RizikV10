@@ -4,8 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 interface Env {
   AI: any;
   GROQ_API_KEY?: string;
-  CLOUDFLARE_API_TOKEN?: string; // Optional/Deprecated
-  CALLS_APP_SECRET: string; // New Basic Auth Secret
+  CLOUDFLARE_API_TOKEN: string;
   CLOUDFLARE_ACCOUNT_ID: string;
   CALLS_APP_ID: string;
 }
@@ -40,11 +39,10 @@ export class VoiceAgent extends DurableObject {
   async _createCallsSession() {
     const endpoint = `https://rtc.live.cloudflare.com/v1/apps/${this.env.CALLS_APP_ID}/sessions/new`;
 
-    // BASIC AUTH STRATEGY (App Credentials)
-    const credentials = btoa(`${this.env.CALLS_APP_ID}:${this.env.CALLS_APP_SECRET}`);
+    // Standard Bearer Auth (Required for rtc.live)
     const headers = {
       "Content-Type": "application/json",
-      "Authorization": `Basic ${credentials}`
+      "Authorization": `Bearer ${this.env.CLOUDFLARE_API_TOKEN}`
     };
 
     try {
