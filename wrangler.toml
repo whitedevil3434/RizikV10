@@ -6,8 +6,8 @@ compatibility_date = "2024-04-01"
 assets = { directory = "build/web", binding = "ASSETS" }
 
 [vars]
-# Trying "rizik-connect" (Oldest App) with User Token
-CALLS_APP_ID = "50a858662556c7b7a1bfb6249fd6af1d"
+# rizik-nuclear-v1 (Verified Existing App)
+CALLS_APP_ID = "4a1ee37f274f1dee2232d05c7642893d"
 CLOUDFLARE_ACCOUNT_ID = "e8181864e56d18f34edf61eeed4975cd"
 
 [durable_objects]
