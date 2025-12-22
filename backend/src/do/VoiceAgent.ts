@@ -38,13 +38,18 @@ export class VoiceAgent extends DurableObject {
 
   async _createCallsSession() {
     const endpoint = `https://rtc.live.cloudflare.com/v1/apps/${this.env.CALLS_APP_ID}/sessions/new`;
+
+    // Standard Bearer Auth (Required for rtc.live)
+    const headers = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${this.env.CLOUDFLARE_API_TOKEN}`
+    };
+
     try {
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${this.env.CLOUDFLARE_API_TOKEN}`,
-          "Content-Type": "application/json"
-        }
+        headers: headers,
+        body: JSON.stringify({})
       });
       const data = await response.json();
       return Response.json(data);
@@ -66,9 +71,6 @@ export class VoiceAgent extends DurableObject {
     }
   }
 
-  /**
-   * 🧠 Streaming Intelligence (Workers AI)
-   */
   async _streamBrainResponse(input: string, ws: WebSocket) {
     try {
       const messages = [
@@ -76,32 +78,24 @@ export class VoiceAgent extends DurableObject {
           role: 'system', 
           content: `You are Rizik, the super-intelligent AI assistant for the Rizik Super App in Bangladesh.
           - Speak in a mix of Bengali and English (Banglish) where natural.
-          - Be helpful, witty, and concise.
-          - You have access to Kitchen OS, Logistics, and Escrow services.
-          - If the user asks for food, suggest from the menu.
-          - If the user asks about a loan, mention Rizik Dhaar.` 
+          - Be helpful, witty, and concise.`
         },
         { role: 'user', content: input }
       ];
 
       const stream = await this.env.AI.run('@cf/meta/llama-3-8b-instruct', {
         messages,
-        stream: true // Enable Streaming
+        stream: true
       });
 
-      // Consume the stream
       const reader = stream.getReader();
       const decoder = new TextDecoder();
-      let buffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        // Workers AI stream format is "data: {response: 'token'}"
-        // We need to parse this SSE format manually or use a library.
-        // For simplicity in this raw DO, we parse the string.
         
         const lines = chunk.split('\n');
         for (const line of lines) {
@@ -111,21 +105,15 @@ export class VoiceAgent extends DurableObject {
             try {
               const jsonObj = JSON.parse(jsonStr);
               if (jsonObj.response) {
-                // Send Token to Client
                 ws.send(JSON.stringify({
                   type: 'text_stream',
                   content: jsonObj.response
                 }));
               }
-            } catch (e) {
-              // Ignore partial JSON
-            }
+            } catch (e) {}
           }
         }
       }
-      
-      // End of Stream Signal (optional)
-      // ws.send(JSON.stringify({ type: 'text_end' }));
 
     } catch (e) {
       console.error("Brain Error:", e);

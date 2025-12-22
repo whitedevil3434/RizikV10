@@ -1,6 +1,14 @@
-name = "rizik-backend"
+name = "rizik-web"
 main = "backend/src/index.ts"
 compatibility_date = "2024-04-01"
+
+# Enable Assets (Frontend Hosting)
+assets = { directory = "build/web", binding = "ASSETS" }
+
+[vars]
+# rizik-nuclear-v1 (Verified Existing App)
+CALLS_APP_ID = "4a1ee37f274f1dee2232d05c7642893d"
+CLOUDFLARE_ACCOUNT_ID = "e8181864e56d18f34edf61eeed4975cd"
 
 [durable_objects]
 bindings = [
@@ -13,8 +21,4 @@ binding = "AI"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["ChatRoom"]
-
-[[migrations]]
-tag = "v2"
-new_classes = ["VoiceAgent"]
+new_sqlite_classes = ["ChatRoom", "VoiceAgent"]
