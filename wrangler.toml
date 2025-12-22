@@ -6,8 +6,8 @@ compatibility_date = "2024-04-01"
 assets = { directory = "build/web", binding = "ASSETS" }
 
 [vars]
-# Clean App with Secret Discovery (Using manually injected Token now)
-CALLS_APP_ID = "8841f81b0447329c269ce0d120c9865a"
+# Trying "rizik-connect" (Oldest App) with User Token
+CALLS_APP_ID = "50a858662556c7b7a1bfb6249fd6af1d"
 CLOUDFLARE_ACCOUNT_ID = "e8181864e56d18f34edf61eeed4975cd"
 
 [durable_objects]
