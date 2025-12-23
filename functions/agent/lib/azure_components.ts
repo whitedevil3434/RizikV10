@@ -32,8 +32,8 @@ export class AzureSTT implements AgentComponent {
             // Convert to Base64 (Required for Whisper Turbo)
             const base64Audio = uint8ArrayToBase64(wavFile);
 
-            // Using Whisper Turbo via Workers AI
-            const response = await this.env.AI.run('@cf/openai/whisper-large-v3-turbo', {
+            // Using Standard Whisper (Better for Bangla/accuracy than Turbo)
+            const response = await this.env.AI.run('@cf/openai/whisper', {
                 audio: base64Audio,
                 language: 'bn'
             });

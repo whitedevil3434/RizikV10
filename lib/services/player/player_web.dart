@@ -53,6 +53,32 @@ class _PlayerWeb implements UniversalPlayer {
   }
 
   @override
+  Future<void> playAudio(Uint8List data) async {
+    if (_audioContext == null) return;
+
+    if (_audioContext!.state == 'suspended') {
+      try {
+        await _audioContext!.resume().toDart;
+      } catch (e) {
+        print("WEB PLAYER: Failed to resume context: $e");
+      }
+    }
+
+    try {
+      // Decode audio data (MP3/WAV)
+      // data.buffer.toJS converts Dart ByteBuffer to JS ArrayBuffer
+      final audioBuffer = await _audioContext!.decodeAudioData(data.buffer.toJS).toDart;
+      
+      final source = _audioContext!.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(_audioContext!.destination);
+      source.start();
+    } catch (e) {
+      print("WEB PLAYER: Failed to play audio: $e");
+    }
+  }
+
+  @override
   Future<void> stop() async {
     _audioContext?.close();
   }

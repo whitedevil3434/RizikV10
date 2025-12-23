@@ -70,6 +70,12 @@ class Mission {
         'createdAt': createdAt.toIso8601String(),
       };
 
+  // Aliases for compatibility
+  double get pickupLat => pickupLatitude;
+  double get pickupLng => pickupLongitude;
+  double get deliveryLat => deliveryLatitude;
+  double get deliveryLng => deliveryLongitude;
+
   factory Mission.fromJson(Map<String, dynamic> json) => Mission(
         id: json['id'],
         orderId: json['orderId'],

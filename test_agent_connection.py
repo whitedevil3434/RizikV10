@@ -4,7 +4,7 @@ import json
 import ssl
 
 async def test_agent():
-    uri = "ws://127.0.0.1:8789/api/agent/voice"
+    uri = "wss://rizik-backend.its-sabbir69.workers.dev/api/voice/session"
     print(f"🔌 Connecting to {uri}...")
     try:
         async with websockets.connect(uri) as websocket:
@@ -21,13 +21,17 @@ async def test_agent():
             print(f"out > [Binary Audio: {len(dummy_audio)} bytes]")
             await websocket.send(dummy_audio)
 
-            # 3. Listen for response
-            print("👂 Listening for response (5s timeout)...")
-            try:
-                response = await asyncio.wait_for(websocket.recv(), timeout=5.0)
-                print(f"in < {response}")
-            except asyncio.TimeoutError:
-                print("❌ No response received within 5 seconds.")
+            # 3. Listen for response loop
+            print("👂 Listening for response stream...")
+            while True:
+                try:
+                    response = await asyncio.wait_for(websocket.recv(), timeout=5.0)
+                    data = json.loads(response)
+                    if data.get("type") == "text_stream":
+                        print(f"Token: {data.get('content')}")
+                except asyncio.TimeoutError:
+                    print("✅ Stream finished (Timeout).")
+                    break
             
     except Exception as e:
         print(f"❌ Connection Failed: {e}")

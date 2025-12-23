@@ -82,15 +82,20 @@ export class VoiceAgentV2 extends RealtimeAgent<Env> {
     /**
      * Handle Raw Audio Stream (VAD -> Buffer -> STT)
      */
+    private readonly MAX_BUFFER_SIZE = 320000; // 10 seconds of audio (16kHz * 2 bytes * 10s)
+
+    /**
+     * Handle Raw Audio Stream (VAD -> Buffer -> STT)
+     */
     private async handleAudioStream(client: WebSocket, chunkBuffer: ArrayBuffer) {
         const newData = new Uint8Array(chunkBuffer);
 
         // VAD Process (RMS)
         const int16Data = new Int16Array(newData.buffer, newData.byteOffset, newData.byteLength / 2);
 
-        // 🎚️ SOFTWARE PRE-AMP (Digital Gain)
-        // User reports low volume / choppy VAD. Boosting signal.
-        const GAIN = 50.0;
+        // 🎚️ SOFTWARE PRE-AMP (Digital Gain) - ADJUSTED
+        // Reduced from 50.0 to 3.0 to prevent noise from triggering VAD indefinitely.
+        const GAIN = 3.0;
         let sumSquares = 0;
 
         for (let i = 0; i < int16Data.length; i++) {
@@ -111,13 +116,23 @@ export class VoiceAgentV2 extends RealtimeAgent<Env> {
             this.log(client, `🎤 Chunk #${this.chunkCount} | Size: ${newData.length} | RMS: ${chunkRMS.toFixed(2)} | VAD: ${this.vad.isSpeech ? 'YES' : 'NO'}`);
         }
 
-        if (this.vad.process(chunkRMS)) {
+        const isSpeech = this.vad.process(chunkRMS);
+
+        // Safety: If buffer exceeds MAX_BUFFER_SIZE, Force Flush
+        const isBufferFull = this.audioChunkBuffer.length > this.MAX_BUFFER_SIZE;
+
+        if (isSpeech && !isBufferFull) {
             // Speech
             for (let i = 0; i < newData.length; i++) { this.audioChunkBuffer.push(newData[i]); }
         } else {
-            // Silence -> Flush
-            if (this.audioChunkBuffer.length > 0) {
+            // Silence OR Buffer Full -> Flush
+            if (isBufferFull) {
+                this.log(client, "⚠️ Buffer Full (10s). Forcing Flush.");
+            } else if (this.audioChunkBuffer.length > 0) {
                 this.log(client, `🤫 End of Utterance. Buffer: ${this.audioChunkBuffer.length}. Processing...`);
+            }
+
+            if (this.audioChunkBuffer.length > 0) {
                 // Ensure sufficient duration (e.g. > 0.5s of audio)
                 // 16kHz * 2 bytes * 0.5s = 16000 bytes.
                 if (this.audioChunkBuffer.length < 8000) {

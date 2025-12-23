@@ -1,6 +1,11 @@
-name = "rizik-brain"
+name = "rizik-backend"
 main = "src/index.ts"
 compatibility_date = "2024-04-01"
+
+# Environment variables for AI models (change here, not in code!)
+[vars]
+AI_MODEL_NAME = "@cf/meta/llama-3.1-8b-instruct"     # Fast, no reasoning tags
+AI_MODEL_FALLBACK = "@cf/meta/llama-3.1-8b-instruct"  # Fallback model
 
 [durable_objects]
 bindings = [
@@ -11,7 +16,6 @@ bindings = [
 [ai]
 binding = "AI"
 
-# Fresh Start!
+# Match existing migration on rizik-backend
 [[migrations]]
-tag = "v1"
-new_sqlite_classes = ["ChatRoom", "VoiceAgent"]
+tag = "v7"

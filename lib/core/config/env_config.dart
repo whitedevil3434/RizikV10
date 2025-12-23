@@ -24,16 +24,12 @@ class EnvConfig {
     const String envUrl = String.fromEnvironment('BACKEND_URL');
     if (envUrl.isNotEmpty) return envUrl;
 
-    if (kDebugMode) {
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        return 'http://10.0.2.2:8787';
-      }
-      // FORCE PRODUCTION URL for Voice Agent Testing (Localhost crashes on Whisper)
-      return 'https://rizik-backend.its-sabbir69.workers.dev'; 
-    }
+    // ❌ Localhost (Commented out as per instruction)
+    // if (kDebugMode && defaultTargetPlatform == TargetPlatform.android) {
+    //   return 'http://10.0.2.2:8787';
+    // }
 
-    // Default to Production Backend for stability
-    // Default to Production Backend for stability
+    // ✅ Live Production Server (rizik-backend worker - has secrets configured)
     return 'https://rizik-backend.its-sabbir69.workers.dev';
   }
 

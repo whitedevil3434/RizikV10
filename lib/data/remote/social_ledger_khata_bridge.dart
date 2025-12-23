@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:rizik_v4/data/models/khata_entry.dart';
+import 'package:rizik_v4/data/models/khata.dart';
 import 'package:rizik_v4/features/seeker/household/logic/khata_provider.dart';
 import 'package:rizik_v4/data/remote/moneybag_transaction_orchestrator.dart';
 

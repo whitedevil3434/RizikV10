@@ -1,4 +1,4 @@
-import 'package:rizik_v4/models/chat/pinnable_object.dart';
+import 'package:rizik_v4/data/models/chat/pinnable_object.dart';
 
 class ChatConversation {
   final String id;

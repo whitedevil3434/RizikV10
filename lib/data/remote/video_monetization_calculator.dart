@@ -18,7 +18,7 @@ class VideoMonetizationCalculator {
   static const int superViralViewThreshold = 100000;
 
   // Trust Score bonuses
-  static const Map<double, double> trustScoreBonuses = {
+  static final Map<double, double> trustScoreBonuses = {
     5.0: 1.5, // 50% bonus for perfect trust score
     4.5: 1.3, // 30% bonus
     4.0: 1.2, // 20% bonus

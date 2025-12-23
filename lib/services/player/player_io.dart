@@ -11,15 +11,19 @@ class _PlayerIO implements UniversalPlayer {
   soloud.AudioSource? _streamSource;
   soloud.SoundHandle? _streamHandle;
 
+  final List<int> _pcmBuffer = [];
+  static const int _minBufferSize = 4096; // ~128ms at 16kHz 16bit
+
   @override
-  Future<void> initialize({int sampleRate = 24000}) async {
+  Future<void> initialize({int sampleRate = 16000}) async {
+    // 🛑 DISABLED SoLoud (Causing Crashes & Unused for MP3)
+    /*
     if (!_soloud.isInitialized) {
       // Initialize with default settings
       await _soloud.init();
     }
     
     // Create a PCM stream source
-    // setBufferStream is synchronous in v3.x and takes named arguments
     try {
       _streamSource = _soloud.setBufferStream(
         sampleRate: sampleRate,
@@ -39,15 +43,23 @@ class _PlayerIO implements UniversalPlayer {
         print("❌ SoLoud Play Error: $e");
       }
     }
+    */
+    print("✅ Audio Player Initialized (MP3 Only Mode)");
   }
 
   @override
   Future<void> playChunk(Uint8List pcmData) async {
     if (_streamSource != null) {
-      try {
-        _soloud.addAudioDataStream(_streamSource!, pcmData);
-      } catch (e) {
-        // print("❌ SoLoud Stream Error: $e"); // Silenced to avoid flood
+      // Buffer small chunks to prevent Jitter/Buzzing
+      _pcmBuffer.addAll(pcmData);
+
+      if (_pcmBuffer.length >= _minBufferSize) {
+          try {
+            _soloud.addAudioDataStream(_streamSource!, Uint8List.fromList(_pcmBuffer));
+            _pcmBuffer.clear();
+          } catch (e) {
+             print("⚠️ SoLoud Stream Error: $e");
+          }
       }
     }
   }
@@ -69,9 +81,13 @@ class _PlayerIO implements UniversalPlayer {
   Future<void> stop() async {
     // Stop SoLoud
     if (_streamHandle != null) {
-      try {
-        await _soloud.stop(_streamHandle!);
-      } catch (_) {}
+      if (_soloud.isInitialized) {
+        try {
+          await _soloud.stop(_streamHandle!);
+        } catch (e) {
+          print("⚠️ SoLoud Stop Error: $e");
+        }
+      }
       _streamHandle = null;
     }
     
@@ -81,11 +97,13 @@ class _PlayerIO implements UniversalPlayer {
     } catch (_) {}
     
     if (_streamSource != null) {
+      if (_soloud.isInitialized) {
         try {
            // disposeSound -> disposeSource (Correct API)
            await _soloud.disposeSource(_streamSource!);
         } catch (_) {}
-        _streamSource = null;
+      }
+      _streamSource = null;
     }
   }
 }

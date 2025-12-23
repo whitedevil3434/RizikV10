@@ -31,13 +31,18 @@ class _VoiceAssistantPaletteState extends ConsumerState<VoiceAssistantPalette> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(voiceSessionProvider.notifier).startSession();
+      // Small delay to ensure widget is stable and prevent race conditions with initial build
+      Future.delayed(const Duration(milliseconds: 250), () {
+        if (mounted) {
+          ref.read(voiceSessionProvider.notifier).startSession();
+        }
+      });
     });
   }
 
   @override
   void dispose() {
-    ref.read(voiceSessionProvider.notifier).endSession();
+    // ref.read(voiceSessionProvider.notifier).endSession(); // Handled by autoDispose
     super.dispose();
   }
 
@@ -135,10 +140,13 @@ class _VoiceAssistantPaletteState extends ConsumerState<VoiceAssistantPalette> {
                    child: Text("Connecting to Rizik Voice Brain...", style: TextStyle(color: Colors.grey, fontSize: 12)),
                  ),
               
-              if (sessionState.error != null)
-                 Padding(
-                   padding: const EdgeInsets.only(bottom: 8.0),
-                   child: Text("Error: ${sessionState.error}", style: const TextStyle(color: Colors.red, fontSize: 12)),
+               if (sessionState.error != null)
+                 Container(
+                   constraints: const BoxConstraints(maxHeight: 100),
+                   padding: const EdgeInsets.only(bottom: 8.0, left: 24, right: 24),
+                   child: SingleChildScrollView(
+                     child: Text("Error: ${sessionState.error}", style: const TextStyle(color: Colors.red, fontSize: 12)),
+                   ),
                  ),
               Container(
                 padding: const EdgeInsets.fromLTRB(32, 16, 32, 40),

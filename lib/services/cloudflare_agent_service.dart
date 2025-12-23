@@ -1,168 +1,213 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/io.dart';
 import 'package:rizik_v4/core/config/env_config.dart';
-import 'recorder/universal_recorder.dart'; 
-import 'player/universal_player.dart'; 
-import 'package:flutter/foundation.dart';
 
 class CloudflareAgentService {
-  // --- Configuration ---
-  // API Key is now handled securely by the Cloudflare Agent!
+  // Config
+  final String _baseUrl = EnvConfig.backendUrl;
+  IOWebSocketChannel? _brainChannel;
+  final StreamController<String> _aiResponseController = StreamController.broadcast();
+  final StreamController<String> _sttResultController = StreamController.broadcast();
 
-  // --- State Variables ---
-  WebSocketChannel? _channel;
-  StreamSubscription? _audioSub;
-  
-  final UniversalRecorder _audioRecorder = UniversalRecorder(); 
-  final UniversalPlayer _player = UniversalPlayer();
-  final _audioStreamController = StreamController<Uint8List>.broadcast();
+  Stream<String> get aiStream => _aiResponseController.stream;
+  Stream<String> get sttStream => _sttResultController.stream;
+  final StreamController<void> _interruptController = StreamController.broadcast();
+  Stream<void> get interruptStream => _interruptController.stream;
 
-  bool _isConnected = false;
-
-  // --- API Streams ---
-  final _transcriptController = StreamController<String>.broadcast();
-  Stream<String> get transcriptStream => _transcriptController.stream;
-
-  /// Initializes audio sessions
+  /// Initializes service (Permissions check moved to Logic Layer)
   Future<void> init() async {
-    if (!await _audioRecorder.hasPermission()) {
-      print("❌ Microphone permission denied");
-      return;
-    }
-    await _player.initialize(sampleRate: 24000); // StandardHz
-    print("✅ Cloudflare Agent Service Initialized");
+    print("✅ Cloudflare Agent Service Initialized (HTTP + WS Mode)");
   }
 
-  /// Connects to Cloudflare Voice Agent
-  Future<void> connect() async {
-    if (_isConnected) await disconnect(); 
+  /// 🔌 Connect to Brain (WebSocket) for AI Responses
+  void connectBrain() {
+    try {
+      // Convert https:// -> wss:// and use /connect for Brain WebSocket
+      final wsUrl = _baseUrl.replaceFirst('https://', 'wss://') + '/api/voice/connect';
+      print("🧠 Connecting to Rizik Brain: $wsUrl");
+      
+      _brainChannel = IOWebSocketChannel.connect(Uri.parse(wsUrl));
+      print("🧠 Channel created, setting up listeners...");
+      
+      _brainChannel!.stream.listen((message) {
+        print("🧠 RAW Brain Message: $message");
+        try {
+          final data = jsonDecode(message);
+          print("🧠 Parsed message type: ${data['type']}");
+          if (data['type'] == 'ai_response') {
+            final text = data['text'];
+            print("🗣️ Rizik Brain Says: $text");
+            _aiResponseController.add(text);
+          } else if (data['type'] == 'ping') {
+            print("🏓 Ping received: ${data['message']}");
+          } else if (data['type'] == 'text_stream') {
+            print("📝 Stream chunk: ${data['content']}");
+          } else if (data['type'] == 'stt_result') {
+            final text = data['text'];
+            print("🎤 STT Final: $text");
+             _sttResultController.add(text);
+          } else if (data['type'] == 'interrupt') {
+             print("🛑 Interrupt Signal Received");
+             _interruptController.add(null);
+          }
+        } catch (e) {
+          print("⚠️ Brain Message Error: $e");
+        }
+      }, onError: (e) {
+        print("❌ Brain Connection Error: $e");
+      }, onDone: () {
+        print("🛑 Brain Connection Closed");
+      });
+      
+      print("✅ Brain listeners set up, connection pending...");
+    } catch (e) {
+      print("❌ Failed to connect Brain: $e");
+    }
+  }
+
+  /// 🚀 Signal backend that client is ready
+  void sendReady() {
+    if (_brainChannel != null) {
+      print("📤 Sending 'ready' signal to Brain...");
+      _brainChannel!.sink.add(jsonEncode({'type': 'ready'}));
+    } else {
+      print("⚠️ Cannot send ready: Brain not connected");
+    }
+  }
+
+  /// 📝 Send text input to Brain
+  void sendInput(String text) {
+    if (_brainChannel != null) {
+      print("📤 Sending text input to Brain: $text");
+      _brainChannel!.sink.add(jsonEncode({
+        'type': 'text_input',
+        'text': text
+      }));
+    } else {
+      print("⚠️ Cannot send input: Brain not connected");
+    }
+  }
+
+  /// 🎤 Send audio chunk (binary) to Brain
+  void sendAudioChunk(Uint8List bytes) {
+    if (_brainChannel != null && _brainChannel!.sink != null) {
+      _brainChannel!.sink.add(bytes);
+    }
+  }
+
+
+
+
+  /// Creates a new Voice Session via HTTP
+  /// Returns { sessionId, callsAppId }
+  Future<Map<String, String>> createSession() async {
+    // 1. Create Session on Backend
+    final url = Uri.parse('$_baseUrl/api/voice/session');
+    print("🔌 Creating Session via HTTP: $url");
 
     try {
-      final url = EnvConfig.agentWebSocketUrl;
-      print("🔌 Connecting to Agent: $url");
-      
-      _channel = WebSocketChannel.connect(Uri.parse(url));
-      _isConnected = true;
-
-      _channel!.stream.listen(
-        (message) {
-          if (!_isConnected) return;
-          _handleIncomingData(message);
-        },
-        onError: (error) {
-          print("🚨 socket Error: $error");
-          disconnect();
-        },
-        onDone: () {
-          print("🔌 Connection Closed");
-          disconnect();
-        },
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
       );
 
-      // Start Sending Audio (No Setup Message needed for Stateful Agent)
-      // Start Sending Audio (No Setup Message needed for Stateful Agent)
-      await _startRecording(); 
-      print("⏩ Starting Audio Recording...");
-
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print("🔍 Full Backend Response: ${response.body}");
+        
+        if (data['sessionId'] == null) {
+          throw Exception("Backend returned null sessionId. Data: $data");
+        }
+        
+        print("✅ Session Created: ${data['sessionId']}");
+        return {
+          'sessionId': data['sessionId'],
+          'callsAppId': data['callsAppId'] ?? '',
+        };
+      } else {
+        throw Exception("Failed to create session: ${response.statusCode} - ${response.body}");
+      }
     } catch (e) {
-      print("❌ Connection Failed: $e");
-      disconnect();
+      print("❌ Error creating session: $e");
+      rethrow;
     }
   }
 
-  Future<void> _startRecording() async {
-    await _audioSub?.cancel();
-    
-    // Stream Binary Audio directly
-    _audioSub = _audioStreamController.stream.listen((data) {
-       if (!_isConnected || _channel == null) return;
-       // Sending RAW BINARY (Uint8List)
-       // The Realtime Agent STT provider (Whisper) should handle valid audio frames
-       _channel?.sink.add(data);
-    });
+  /// 2. Publish Track (Signaling)
+  /// Sends the local SDP Offer to Backend Proxy -> Cloudflare Calls.
+  /// 2. Publish Track (Signaling)
+  /// Sends the local SDP Offer to Backend Proxy -> Cloudflare Calls.
+  Future<Map<String, dynamic>> publishTrack({
+    required String sessionId,
+    required String sdpOffer,
+    required String trackName,
+  }) async {
+    final url = Uri.parse('$_baseUrl/api/voice/session/tracks/new');
 
-    await _audioRecorder.start(_audioStreamController.sink);
-    print("🎤 Streaming Audio to Cloudflare Agent");
-  }
+    // 1. Create Body Map
+    final Map<String, dynamic> requestBodyMap = {
+      "sessionId": sessionId,
+      "sessionDescription": {
+        "sdp": sdpOffer,
+        "type": "offer",
+      },
+      "trackName": trackName,
+    };
 
-  void _handleIncomingData(dynamic message) {
-    print("📩 Received Data Type: ${message.runtimeType}");
+    // 2. Encode to String explicitly
+    final String jsonBodyString = jsonEncode(requestBodyMap);
+
+    print("📡 Negotiating Track via Backend: $url");
+    print('📦 Sending Body (Check if this starts with { ): $jsonBodyString');
+
     try {
-      // 1. Binary Audio (TTS Response)
-      if (message is Uint8List || message is List<int>) {
-        final bytes = Uint8List.fromList(message);
-        print("🎧 Received Audio Chunk: ${bytes.length} bytes");
-        // Use playAudio for full files (MP3/WAV) instead of playChunk (PCM stream)
-        _player.playAudio(bytes);
-        return;
-      }
+      // 3. Send Request
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonBodyString,
+      );
 
-      // 2. JSON Messages (Transcripts / Tools)
-      if (message is String) {
-        final data = jsonDecode(message);
-        
-        // Handle Transcript
-        if (data is Map && data.containsKey('transcript')) {
-           _transcriptController.add(data['transcript']);
-        }
-        
-        if (data is Map && data.containsKey('toolCall')) {
-           print("🔧 Tool Call Received: ${data['toolCall']}");
-           // TODO: Implement Tool Execution
-        }
-
-        // 3. Debug Logs (From Server)
-        if (data is Map && data.containsKey('type') && data['type'] == 'debug_log') {
-           print("🔍 Server: ${data['message']}");
-        }
+      // 4. Check Response
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        print("❌ Backend Error: ${response.body}");
+        throw Exception("Failed to negotiate track: ${response.statusCode} - ${response.body}");
       }
+      
+      print("✅ Track Negotiated. Response: ${response.body}");
+      
+      final data = jsonDecode(response.body);
+
+      // 1. Smart Check: Is data wrapped or direct?
+      // If 'sessionDescription' key exists, use it; otherwise, the data itself is the answer.
+      final answerMap = data.containsKey('sessionDescription') 
+          ? data['sessionDescription'] 
+          : data;
+
+      if (answerMap['sdp'] == null) {
+          throw Exception("Missing SDP in response: $data");
+      }
+      
+      print('✅ Received Remote Description: ${answerMap['type']}');
+
+      // Return consistent structure for the consumer (VoiceSessionProvider)
+      // We reconstruct the map so consumers don't break if they expect 'sessionDescription' key
+      return {
+        'sessionDescription': answerMap
+      };
     } catch (e) {
-      print("⚠️ Parse Error: $e");
+      print("❌ WebRTC Connection Failed: $e");
+      rethrow;
     }
   }
 
-  void sendTextMessage(String text) {
-     if (!_isConnected) return;
-     print("📤 Sending Text: $text");
-     final msg = jsonEncode({
-       "type": "text_input",
-       "text": text
-     });
-     _channel?.sink.add(msg);
-  }
-
+  /// Cleanup (No active connections to close in this stateless service)
   Future<void> disconnect() async {
-    if (!_isConnected) return;
-    _isConnected = false;
-    print("🛑 Disconnecting Agent...");
-
-    try {
-      await _audioStreamController.close();
-      await _audioSub?.cancel();
-    } catch (e) {
-      print("⚠️ Error closing audio streams: $e");
-    }
-    _audioSub = null;
-    
-    try {
-      if (_channel != null) {
-        await _channel!.sink.close();
-      }
-    } catch (e) {
-      print("⚠️ Error closing socket: $e");
-    }
-    _channel = null;
-
-    // Wait a bit before killing the player to prevent FFI race conditions
-    await Future.delayed(const Duration(milliseconds: 200));
-
-    try {
-      await _audioRecorder.stop();
-      await _player.stop();
-    } catch (e) {
-      print("⚠️ Error stopping media: $e");
-    }
+    print("🛑 Service Disconnected");
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rizik_v4/core/api/rizik_api_client.dart';
 import 'package:rizik_v4/core/wrappers/auth_wrapper.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Sourcing Repository Provider
 final sourcingRepositoryProvider = Provider((ref) {

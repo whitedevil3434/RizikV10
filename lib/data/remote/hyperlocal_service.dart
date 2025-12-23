@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:rizik_v4/data/remote/hyperlocal_service.dart';
+import 'package:rizik_v4/data/models/hyperlocal_service.dart';
 
 /// Service layer for Hyperlocal Services
 class HyperlocalServiceService {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart' hide Badge;
 import 'package:rizik_v4/data/models/trust_score.dart';
-import '../widgets/trust_score_warning.dart';
+import 'package:rizik_v4/widgets/trust_improvement_screen.dart';
 
 /// Service for handling trust score notifications and warnings
 class TrustNotificationService {

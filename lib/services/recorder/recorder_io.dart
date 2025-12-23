@@ -22,8 +22,11 @@ class _RecorderIO implements UniversalRecorder {
     final stream = await _audioRecorder.startStream(
       const RecordConfig(
         encoder: AudioEncoder.pcm16bits, 
-        sampleRate: 16000, // 16kHz is standard for STT/Voice AI
+        sampleRate: 16000, 
         numChannels: 1,
+        autoGain: true,
+        echoCancellation: true,
+        noiseSuppression: true,
       ),
     );
 

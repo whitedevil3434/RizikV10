@@ -12,15 +12,12 @@ bindings = [
 binding = "AI"
 
 [[migrations]]
-tag = "v1"
-new_classes = ["ChatRoom"]
-
-[[migrations]]
-tag = "v2"
-new_classes = ["VoiceAgent"]
+tag = "v6"
+new_sqlite_classes = ["ChatRoom", "VoiceAgent"]
 
 [vars]
 ENVIRONMENT = "production"
+CALLS_APP_ID = "1e976218463f682ebf0f56c0667a5482"
 
 # R2 Buckets for Storage (Images, Proofs)
 [[r2_buckets]]
