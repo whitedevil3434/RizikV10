@@ -166,7 +166,7 @@ class _VoiceAssistantPaletteState extends ConsumerState<VoiceAssistantPalette> {
                       width: 80,
                       height: 80,
                       child: RizikMojo(
-                        amplitude: sessionState.currentAmplitude, 
+                        amplitude: 0.0, // TODO: Get amplitude from LiveKit track 
                       ),
                     ),
                     _CircleButton(

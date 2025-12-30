@@ -81,6 +81,7 @@ dependencies:
   sound_stream: ^0.4.0
   permission_handler: ^11.0.0
   just_audio: ^0.10.5
+  livekit_client: ^2.4.1
   
 dev_dependencies:
   flutter_test:

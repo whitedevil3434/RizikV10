@@ -30,7 +30,10 @@ class EnvConfig {
     // }
 
     // ✅ Live Production Server (rizik-backend worker - has secrets configured)
-    return 'https://rizik-backend.its-sabbir69.workers.dev';
+    // return 'https://rizik-backend.its-sabbir69.workers.dev';
+    
+    // 🔥 DEBUG: Local Token Server (Bypass Worker)
+    return 'http://127.0.0.1:3000';
   }
 
   static String get agentWebSocketUrl {

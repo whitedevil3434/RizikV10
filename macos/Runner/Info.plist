@@ -32,5 +32,10 @@
 	<string>Rizik needs camera access for video calls.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Rizik needs microphone access for voice calls and AI assistant.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

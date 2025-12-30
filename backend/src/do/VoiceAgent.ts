@@ -36,17 +36,6 @@ export class VoiceAgent extends DurableObject {
       return new Response(null, { status: 101, webSocket: client });
     }
 
-    // 2. Create Calls Session
-    if (url.pathname.endsWith("/session") && request.method === "POST") {
-      console.log("📞 Creating Calls Session...");
-      return this._createCallsSession();
-    }
-
-    // 3. Negotiate Track (Signaling)
-    if (url.pathname.endsWith("/tracks/new") && request.method === "POST") {
-      console.log("🎤 Negotiating Track...");
-      return this._negotiateTrack(request);
-    }
 
     // 4. TTS Config (with Sec-MS-GEC token)
     if (url.pathname.endsWith("/config")) {
@@ -97,115 +86,6 @@ export class VoiceAgent extends DurableObject {
     return hashArray.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join('');
   }
 
-  async _createCallsSession() {
-    const endpoint = `https://rtc.live.cloudflare.com/v1/apps/${this.env.CALLS_APP_ID}/sessions/new`;
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${this.env.CLOUDFLARE_API_TOKEN}`,
-          "Content-Type": "application/json"
-        }
-      });
-      const data = await response.json();
-      return Response.json(data);
-    } catch (e) {
-      return Response.json({ error: e.message }, { status: 500 });
-    }
-  }
-
-  async _negotiateTrack(request: Request) {
-    // 1. Flutter Data Extraction
-    const reqBody: any = await request.json();
-    const { sessionId, sessionDescription, trackName } = reqBody;
-
-    if (!sessionId || !sessionDescription) {
-      return Response.json({ error: "Missing sessionId or sessionDescription" }, { status: 400 });
-    }
-
-    // Credentials
-    const appId = this.env.CALLS_APP_ID.trim();
-    const token = this.env.CLOUDFLARE_API_TOKEN.trim();
-
-    // 2. URL
-    const cfUrl = `https://rtc.live.cloudflare.com/v1/apps/${appId}/sessions/${sessionId}/tracks/new`;
-
-    // 3. Prepare Payload (CORRECT SCHEMA)
-    // Cloudflare Calls requires 'tracks' array with 'trackName' and 'mid'.
-    const payloadString = JSON.stringify({
-      sessionDescription: sessionDescription,
-      tracks: [{
-        trackName: trackName || 'audio', // Use provided name or default
-        mid: "0", // Default to first media section
-        location: 'local' // Required: 'local' for client-initiated tracks
-      }]
-    });
-
-    console.log(`📡 [Worker] Sending Payload (Schema Fix): ${payloadString}`);
-    console.log(`🔗 URL: ${cfUrl}`);
-
-    try {
-      // 🔥 PRODUCTION MODE: Call Cloudflare
-      const response = await fetch(cfUrl, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: payloadString,
-      });
-
-      const respText = await response.text();
-
-      if (!response.ok) {
-        console.error(`❌ [Worker] Cloudflare Rejected: ${respText}`);
-        // Attempt to parse detail
-        try {
-          const details = JSON.parse(respText);
-          return new Response(JSON.stringify({
-            error: "Cloudflare Error",
-            details: details
-          }), { status: 400 });
-        } catch (e) {
-          return new Response(JSON.stringify({
-            error: "Cloudflare Error",
-            details: respText
-          }), { status: 400 });
-        }
-      }
-
-      // Success - Return Real Answer
-      // ✅ WebRTC Successful. Now Trigger the Log Checker for AI.
-      // Using 'fire-and-forget' via waitUntil
-      // @ts-ignore
-      this.ctx.waitUntil(this.processAudioLoop(sessionId));
-
-      return new Response(respText, {
-        headers: { "Content-Type": "application/json" }
-      });
-
-    } catch (err) {
-      console.error(`❌ [Worker] Exception: ${err.message}`);
-      return new Response(JSON.stringify({
-        error: "Fetch Failed",
-        details: err.message
-      }), { status: 500 });
-    }
-  }
-
-  async processAudioLoop(sessionId: string) {
-    console.log(`🧠 Rizik Brain Activated for Session: ${sessionId}`);
-    console.log("🎤 Real-time Audio Pipeline Ready. Waiting for VAD triggers...");
-
-    // DISABLED SIMULATION: Only real voice triggers AI now.
-    /*
-    try {
-      // ... (Simulated Whisper/LLM code removed to avoid confusion) ...
-    } catch (error) {
-      console.error("❌ Brain Failure:", error);
-    }
-    */
-  }
 
   /**
    * 🔌 Called when WebSocket connection opens
@@ -247,8 +127,8 @@ export class VoiceAgent extends DurableObject {
 
   // VAD Constants
   // VAD Constants
-  readonly GAIN = 3.0;
-  readonly VAD_THRESHOLD = 0.1; // HIGH Threshold (Noise Gate)
+  readonly GAIN = 1.0; // No server-side gain (client has autoGain:true)
+  readonly VAD_THRESHOLD = 0.04; // Tuned: User speech is ~0.05-0.08 RMS
   readonly SILENCE_DURATION_MS = 1500;
   readonly MAX_RECORDING_MS = 15000;
 
@@ -261,8 +141,11 @@ export class VoiceAgent extends DurableObject {
   // Audio Buffering State
   audioBuffer: number[] = [];
 
+  // 🧠 Conversation History (Persistent Context)
+  conversationHistory: { role: string, content: string }[] = [];
+
   async _handleAudioChunk(chunk: ArrayBuffer, ws: WebSocket) {
-    // 1. Convert to Int16 for Analysis & Apply Gain
+    // NO BYTE-SWAP - Use audio directly (little-endian is correct)
     const originalData = new Int16Array(chunk);
     const amplifiedData = new Int16Array(originalData.length);
 
@@ -280,23 +163,24 @@ export class VoiceAgent extends DurableObject {
       sumSquares += normalizedVal * normalizedVal;
     }
 
-    // 2. Append bytes
-    const bytes = new Uint8Array(amplifiedData.buffer);
-    for (let i = 0; i < bytes.length; i++) {
-      this.audioBuffer.push(bytes[i]);
-    }
-
     const rms = Math.sqrt(sumSquares / amplifiedData.length);
 
     // 3. Dynamic VAD (Smart Barge-In)
     // If Agent Speaking: Threshold = 0.4 (Must yell to interrupt).
-    // If Silent: Threshold = 0.05 (Normal sensitivity).
-    const effectiveThreshold = this.isAgentSpeaking ? 0.4 : 0.05;
+    // If Silent: Use VAD_THRESHOLD (tuned for sensitivity).
+    const effectiveThreshold = this.isAgentSpeaking ? 0.4 : this.VAD_THRESHOLD;
     const isLoud = rms > effectiveThreshold;
 
-    // VERBOSE LOGGING + CLIENT DEBUG
-    // console.log(`📊 Chunk RMS: ${rms.toFixed(5)} | Loud: ${isLoud}`);
+    // 🔥 CRITICAL FIX: Only buffer audio when SPEAKING (not silence)
+    // This prevents sending noise/silence to Whisper
+    if (isLoud || this.isSpeaking) {
+      const bytes = new Uint8Array(amplifiedData.buffer);
+      for (let i = 0; i < bytes.length; i++) {
+        this.audioBuffer.push(bytes[i]);
+      }
+    }
 
+    // VERBOSE LOGGING + CLIENT DEBUG
     if (Math.random() < 0.2) {
       ws.send(JSON.stringify({
         type: 'debug_info',
@@ -318,10 +202,11 @@ export class VoiceAgent extends DurableObject {
 
         // 🔥 INTERRUPT SIGNAL
         if (this.isAgentSpeaking) {
-          console.log("🛑 BARGE-IN DETECTED! Sending Interrupt Signal...");
+          console.log("🛑 BARGE-IN DETECTED! Aborting LLM...");
           ws.send(JSON.stringify({ type: 'interrupt' }));
+          this.abortController?.abort(); // Stop LLM
           this.isAgentSpeaking = false;
-          // Ideally we should stop the backend TTS queue here too
+          this.audioBuffer = []; // Clear pending audio
         }
       }
     } else {
@@ -365,24 +250,65 @@ export class VoiceAgent extends DurableObject {
       wavFile.set(wavHeader);
       wavFile.set(audioData, wavHeader.length);
 
-      // Using @cf/openai/whisper (reliable)
-      // Must pass as array of bytes (0-255) representing the WAV file
-      const response = await this.env.AI.run("@cf/openai/whisper", {
-        audio: [...wavFile],
-        language: 'bn',
-        // "prompt" maps to "initial_prompt" in some bindings, or "prompt" in others. 
-        // Sending a Bangla sentence forcefully primes it.
-        prompt: "আমি বাংলায় কথা বলছি। আমার নাম রিজিক। দয়া করে আমার কথা শুনুন।"
+      // 🚀 GROQ Whisper Large V3 (More Accurate for Bengali - NOT Turbo)
+      const formData = new FormData();
+      const wavBlob = new Blob([wavFile], { type: 'audio/wav' });
+      formData.append('file', wavBlob, 'audio.wav');
+      formData.append('model', 'whisper-large-v3'); // NOT turbo - better accuracy
+      formData.append('language', 'bn');
+      formData.append('response_format', 'verbose_json'); // Get confidence scores
+      formData.append('prompt', 'এটি একটি বাংলা কথোপকথন। হ্যালো রিজিক, আমি ভালো আছি, তুমি কেমন আছো, ধন্যবাদ');
+
+      // 🔍 AUDIO DIAGNOSTICS
+      const audioDurationSec = audioData.length / 2 / 16000;
+      const audioStats = {
+        totalBytes: wavFile.length,
+        audioDuration: audioDurationSec.toFixed(2) + 's',
+        firstBytes: Array.from(wavFile.slice(0, 20)).map(b => b.toString(16).padStart(2, '0')).join(' ')
+      };
+      console.log(`📊 Audio Diagnostics: ${JSON.stringify(audioStats)}`);
+
+      // Skip if audio is too short (< 0.5 seconds)
+      if (audioDurationSec < 0.5) {
+        console.log(`⚠️ Audio too short (${audioDurationSec}s), skipping STT`);
+        return;
+      }
+
+      const sttResponse = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.env.GROQ_API_KEY}`,
+        },
+        body: formData,
       });
+
+      if (!sttResponse.ok) {
+        const errorText = await sttResponse.text();
+        console.error(`❌ Groq STT Error (${sttResponse.status}): ${errorText}`);
+        return;
+      }
+
+      const response = await sttResponse.json() as { text?: string };
 
       // BENCHMARK END
       const tEnd = performance.now();
       const latency = (tEnd - tStart).toFixed(2);
 
+      const text = (response.text || "").trim();
+
       // RAW LOG
-      console.log(`🧠 Whisper RAW: ${JSON.stringify(response)}`);
-      const text = (response.text || (response as any).result?.text || "").trim();
-      console.log(`🗣️ Transcribed: "${text} " (Latency: ${latency}ms)`);
+      console.log(`🧠 Groq Whisper RAW: ${JSON.stringify(response)}`);
+      console.log(`🗣️ Transcribed: "${text}" (Latency: ${latency}ms)`);
+
+      // 🔍 ENTERPRISE-GRADE STT VALIDATION
+      const hasReplacementChars = text.includes('�') || text.includes('?');
+      const hasBrokenBengali = /[ি|ু|ে|ৃ|ো|ৌ](?![অ-হড়ঢ়য়ৰৱ])/.test(text); // Orphan vowel marks
+      const bengaliCharCount = (text.match(/[\u0980-\u09FF]/g) || []).length;
+      const totalCharCount = text.replace(/\s/g, '').length;
+      const bengaliRatio = totalCharCount > 0 ? bengaliCharCount / totalCharCount : 0;
+
+      // Garbage detection
+      const isGarbage = hasReplacementChars || hasBrokenBengali || bengaliRatio < 0.5;
 
       const hallucinations = [
         'you', 'thank you', 'thanks', 'subtitle', 'subtitles',
@@ -394,7 +320,23 @@ export class VoiceAgent extends DurableObject {
         text.length < 3 ||
         hallucinations.some(h => text.toLowerCase().includes(h) && text.length < 20);
 
-      if (text.length > 0 && !isHallucination) {
+      if (isGarbage) {
+        console.log(`🗑️ STT Garbage Detected (BengaliRatio: ${bengaliRatio.toFixed(2)}): "${text}"`);
+        // 🔍 DEBUG: Send raw STT to client for analysis
+        ws.send(JSON.stringify({
+          type: 'debug_log',
+          message: `RAW STT: "${text}" | BN Ratio: ${bengaliRatio.toFixed(2)} | Broken: ${hasBrokenBengali}`
+        }));
+        // Send fallback response in Bengali
+        ws.send(JSON.stringify({
+          type: 'stt_result',
+          text: '(শুনতে পাইনি)'
+        }));
+        ws.send(JSON.stringify({
+          type: 'ai_response',
+          text: 'দুঃখিত, আমি ঠিকমতো শুনতে পাইনি। আবার বলুন?'
+        }));
+      } else if (text.length > 0 && !isHallucination) {
         // 🔥 SEND TRANSCRIPT TO CLIENT (Visual Confirmation)
         ws.send(JSON.stringify({
           type: 'stt_result',
@@ -465,32 +407,64 @@ export class VoiceAgent extends DurableObject {
   /**
    * 🧠 Streaming Intelligence (Workers AI)
    */
+  // Abort Controller for Barge-In
+  abortController: AbortController | null = null;
+
+  /**
+   * 🧠 Streaming Intelligence (Groq Llama 4 Scout)
+   */
   async _streamBrainResponse(input: string, ws: WebSocket) {
     this.isAgentSpeaking = true; // 🔒 LOCK EARS
+    this.abortController = new AbortController();
 
-    // Send "Start" signal if needed, but 'text_stream' implies start
     try {
+      // 🏢 ENTERPRISE-GRADE Bengali System Prompt
+      const systemMessage = {
+        role: 'system',
+        content: `তুমি রিজিক (Rizik), একজন বাংলা ভয়েস অ্যাসিস্ট্যান্ট।
+
+কঠোর নিয়ম:
+১. সবসময় শুধু বাংলায় উত্তর দাও। ইংরেজি একদম না।
+২. উত্তর ছোট রাখো - সর্বোচ্চ ১-২ বাক্য।
+৩. স্বাভাবিক কথোপকথনের মতো বলো।
+৪. যদি না বোঝো, বাংলায় জিজ্ঞেস করো।
+
+উদাহরণ উত্তর:
+- "হ্যালো! আমি ভালো আছি, তুমি কেমন?"
+- "আমি তোমাকে সাহায্য করতে পারি।"
+- "দুঃখিত, আমি ঠিক বুঝতে পারিনি।"`
+      };
+
+      // Limit history to last 10 turns (20 messages)
+      const recentHistory = this.conversationHistory.slice(-20);
+
       const messages = [
-        {
-          role: 'system',
-          content: `
-You are Rizik, a helpful Bengali voice assistant.
-RULES:
-1. Speak ONLY in Bengali (minimal English for technical terms).
-2. Be extremely concise (Max 2-3 sentences).
-3. If the user stops speaking, answer naturally.
-4. Do NOT say 'How can I help' every time.`
-        },
+        systemMessage,
+        ...recentHistory,
         { role: 'user', content: input }
       ];
 
-      const stream = await this.env.AI.run('@cf/meta/llama-3-8b-instruct', {
-        messages,
-        stream: true // Enable Streaming
+      // Save user input to history
+      this.conversationHistory.push({ role: 'user', content: input });
+
+      // 🚀 GROQ LLM (Llama 3.3 70B - Production Stable)
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.env.GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: messages,
+          stream: true,
+          max_tokens: 150, // Keep short for voice
+        }),
+        signal: this.abortController.signal,
       });
 
-      // Consume the stream
-      const reader = stream.getReader();
+      // Consume the stream (FULL RESPONSE TTS - Bengali requires complete sentences)
+      const reader = response.body!.getReader();
       const decoder = new TextDecoder();
       let fullResponse = "";
 
@@ -506,10 +480,10 @@ RULES:
             if (jsonStr === '[DONE]') break;
             try {
               const jsonObj = JSON.parse(jsonStr);
-              if (jsonObj.response) {
-                const token = jsonObj.response;
+              const token = jsonObj.choices?.[0]?.delta?.content || "";
+              if (token) {
                 fullResponse += token;
-                // Optional: Send stream for UI typing effect
+                // Send text_stream for UI typing effect only
                 ws.send(JSON.stringify({
                   type: 'text_stream',
                   content: token
@@ -520,26 +494,30 @@ RULES:
         }
       }
 
-      // 🔥 FINAL BROADCAST (Trigger TTS)
+
+
+      // 🔥 FINAL BROADCAST (For UI completion)
       ws.send(JSON.stringify({
         type: 'ai_response',
         text: fullResponse
       }));
 
-    } catch (e) {
-      console.error("Brain Error:", e);
-      ws.send(JSON.stringify({ type: 'text_stream', content: " দুঃখিত, সার্ভারে সমস্যা হচ্ছে।" }));
+      // Save AI response to history
+      this.conversationHistory.push({ role: 'assistant', content: fullResponse });
+
+    } catch (e: any) {
+      if (e.name === 'AbortError') {
+        console.log("🛑 LLM Generation Aborted (Barge-In)");
+      } else {
+        console.error("Brain Error:", e);
+        ws.send(JSON.stringify({ type: 'text_stream', content: " দুঃখিত, সার্ভারে সমস্যা হচ্ছে।" }));
+      }
     } finally {
-      // 🔓 UNLOCK EARS (Allow user to interrupt/speak)
-      // Delay slightly to account for TTS buffering/latency if needed, 
-      // but for now immediate unlock is safer than permanent lock.
-      // Ideally client sends 'turn.end' signal, but for now we unlock when generation done.
-      // Better: Unlock after X seconds or wait for client event?
-      // Let's rely on Generation End for now.
+      this.abortController = null;
       setTimeout(() => {
         this.isAgentSpeaking = false;
         console.log("👂 Ears Unlocked (Turn End)");
-      }, 1000); // 1s buffer for TTS start
+      }, 500); // 0.5s buffer
     }
   }
 }
