@@ -58,3 +58,15 @@ repomix-output.xml
 
 # Media
 *.mp4
+
+# Python virtual environment
+backend/agent_python/venv/
+
+
+# Large files (>100MB) - GitHub limit
+backend/agent_python/venv/
+Aplans/steering/*.mp4
+link-call-web/.next/
+*.dylib
+*.sst
+node_modules/
