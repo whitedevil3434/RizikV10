@@ -11,7 +11,7 @@ import 'package:rizik_v4/core/config/env_config.dart';
 /// Connects to LiveKit Cloud and streams audio to Python Agent
 class LiveKitService {
   // LiveKit Configuration
-  static const String _livekitUrl = 'wss://rizik-zwpijcjw.livekit.cloud';
+  static const String _livekitUrl = 'wss://rizik-ai-femz194x.livekit.cloud';
   
   Room? _room;
   LocalAudioTrack? _localAudioTrack;

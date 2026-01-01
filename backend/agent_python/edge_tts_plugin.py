@@ -1,121 +1,230 @@
 """
-🗣️ Edge TTS Plugin for LiveKit Agents v1.3+
-Custom Bengali TTS using Microsoft Edge TTS service.
-Uses LiveKit's built-in AudioStreamDecoder for MP3 decoding.
+🔊 Edge TTS Plugin for Rizik Free Tier
+Microsoft Edge TTS - FREE, High Quality Bengali voices
+Cost: $0 (unlimited usage)
+
+Bengali Voices Available:
+- bn-BD-NabanitaNeural (Female) - Recommended
+- bn-BD-PradeepNeural (Male)
 """
 
 import asyncio
 import logging
-import uuid
+import tempfile
+import os
+from typing import Optional, AsyncGenerator
 import edge_tts
-from livekit import rtc
-from livekit.agents import tts, APIConnectOptions
-from livekit.agents.utils.codecs import AudioStreamDecoder
 
-logger = logging.getLogger("rizik-tts")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("rizik-edge-tts")
+
+# Default Bengali voice
+DEFAULT_VOICE = "bn-BD-NabanitaNeural"
+
+# Voice mapping for different personas
+VOICE_MAP = {
+    "female": "bn-BD-NabanitaNeural",
+    "male": "bn-BD-PradeepNeural",
+    "default": "bn-BD-NabanitaNeural",
+}
 
 
-class EdgeTTSPlugin(tts.TTS):
+class EdgeTTSPlugin:
     """
-    Text-to-Speech using Microsoft Edge TTS.
-    Compatible with LiveKit Agents v1.3+
+    Edge TTS Plugin for converting text to speech.
+    Perfect for Free tier users - no API costs!
     """
-
-    def __init__(
-        self,
-        voice: str = "bn-BD-PradeepNeural",
-        rate: str = "+0%",
-        pitch: str = "+0Hz",
-    ):
-        super().__init__(
-            capabilities=tts.TTSCapabilities(streaming=False),
-            sample_rate=24000,
-            num_channels=1,
-        )
-        self._voice = voice
-        self._rate = rate
-        self._pitch = pitch
-
-    def synthesize(self, text: str, *, conn_options: APIConnectOptions = None) -> "EdgeTTSChunkedStream":
-        return EdgeTTSChunkedStream(
-            tts=self,
-            text=text,
-            voice=self._voice,
-            rate=self._rate,
-            pitch=self._pitch,
-            conn_options=conn_options or APIConnectOptions(),
-        )
-
-
-class EdgeTTSChunkedStream(tts.ChunkedStream):
-    def __init__(self, tts: tts.TTS, text: str, voice: str, rate: str, pitch: str, conn_options: APIConnectOptions = None):
-        super().__init__(tts=tts, input_text=text, conn_options=conn_options or APIConnectOptions())
-        self._text = text
-        self._voice = voice
-        self._rate = rate
-        self._pitch = pitch
-        self._request_id = str(uuid.uuid4())
-
-    async def _run(self, output_emitter) -> None:
+    
+    def __init__(self, voice: str = DEFAULT_VOICE, rate: str = "+0%", pitch: str = "+0Hz"):
         """
-        Called by base class with AudioEmitter.
-        Uses LiveKit's built-in AudioStreamDecoder for MP3 decoding.
+        Initialize Edge TTS Plugin.
+        
+        Args:
+            voice: Voice name (default: Bengali female)
+            rate: Speaking rate (e.g., "+10%", "-5%")
+            pitch: Voice pitch (e.g., "+5Hz", "-2Hz")
         """
-        logger.info(f"🎤 TTS _run started for text: {self._text[:30]}...")
+        self.voice = voice
+        self.rate = rate
+        self.pitch = pitch
+        
+    async def synthesize(self, text: str) -> bytes:
+        """
+        Convert text to speech audio bytes.
+        
+        Args:
+            text: Text to convert to speech
+            
+        Returns:
+            Audio bytes (MP3 format)
+        """
         try:
-            # 1. Initialize the emitter (CRITICAL for v1.3+)
-            logger.info("🔧 Initializing output_emitter...")
-            output_emitter.initialize(
-                request_id=self._request_id,
-                sample_rate=24000,
-                num_channels=1,
-                mime_type="audio/pcm",
-            )
-            logger.info("✅ Emitter initialized")
-            
-            # 2. Create decoder for MP3 -> PCM conversion
-            logger.info("🔧 Creating AudioStreamDecoder...")
-            decoder = AudioStreamDecoder(
-                sample_rate=24000,
-                num_channels=1,
-                format="mp3",
-            )
-            logger.info("✅ Decoder created")
-            
-            # 3. Synthesize with Edge TTS and push to decoder
-            logger.info(f"🔧 Starting Edge TTS synthesis: voice={self._voice}")
             communicate = edge_tts.Communicate(
-                text=self._text,
-                voice=self._voice,
-                rate=self._rate,
-                pitch=self._pitch,
+                text=text,
+                voice=self.voice,
+                rate=self.rate,
+                pitch=self.pitch,
             )
-
-            chunk_count = 0
-            async def push_audio():
-                nonlocal chunk_count
-                async for chunk in communicate.stream():
-                    if chunk["type"] == "audio":
-                        decoder.push(chunk["data"])
-                        chunk_count += 1
-                decoder.end_input()
-                logger.info(f"✅ Pushed {chunk_count} audio chunks to decoder")
             
-            # Start pushing audio in background
-            push_task = asyncio.create_task(push_audio())
+            audio_data = b""
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    audio_data += chunk["data"]
             
-            # 4. Read decoded frames and push to emitter
-            frame_count = 0
-            async for frame in decoder:
-                output_emitter.push(frame.data.tobytes())
-                frame_count += 1
+            logger.info(f"🔊 TTS generated: {len(audio_data)} bytes for '{text[:30]}...'")
+            return audio_data
             
-            await push_task
-            await decoder.aclose()
-            logger.info(f"✅ TTS completed: {frame_count} frames pushed to output")
-                
         except Exception as e:
-            logger.error(f"❌ TTS Error: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"❌ TTS error: {e}")
+            raise
+    
+    async def synthesize_to_file(self, text: str, output_path: Optional[str] = None) -> str:
+        """
+        Convert text to speech and save to file.
+        
+        Args:
+            text: Text to convert to speech
+            output_path: Output file path (optional, will create temp file)
+            
+        Returns:
+            Path to the audio file
+        """
+        if output_path is None:
+            fd, output_path = tempfile.mkstemp(suffix=".mp3")
+            os.close(fd)
+        
+        try:
+            communicate = edge_tts.Communicate(
+                text=text,
+                voice=self.voice,
+                rate=self.rate,
+                pitch=self.pitch,
+            )
+            
+            await communicate.save(output_path)
+            logger.info(f"🔊 TTS saved to: {output_path}")
+            return output_path
+            
+        except Exception as e:
+            logger.error(f"❌ TTS file error: {e}")
+            raise
 
+    async def stream_audio(self, text: str) -> AsyncGenerator[bytes, None]:
+        """
+        Stream audio chunks for real-time playback.
+        
+        Args:
+            text: Text to convert to speech
+            
+        Yields:
+            Audio chunks (bytes)
+        """
+        try:
+            communicate = edge_tts.Communicate(
+                text=text,
+                voice=self.voice,
+                rate=self.rate,
+                pitch=self.pitch,
+            )
+            
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    yield chunk["data"]
+                    
+        except Exception as e:
+            logger.error(f"❌ TTS stream error: {e}")
+            raise
+
+
+async def list_bengali_voices():
+    """List all available Bengali voices."""
+    voices = await edge_tts.list_voices()
+    bengali_voices = [v for v in voices if v["Locale"].startswith("bn-")]
+    
+    print("\n🇧🇩 Available Bengali Voices:")
+    print("-" * 50)
+    for v in bengali_voices:
+        print(f"  {v['ShortName']}: {v['Gender']}")
+    print("-" * 50)
+    
+    return bengali_voices
+
+
+# ═══════════════════════════════════════════════════════════════════
+# LiveKit Integration Helper
+# ═══════════════════════════════════════════════════════════════════
+
+class LiveKitTTSHandler:
+    """
+    Handles TTS requests from LiveKit data channel.
+    Listens for 'tts_request' messages and plays audio back.
+    """
+    
+    def __init__(self, room, voice: str = DEFAULT_VOICE):
+        self.room = room
+        self.tts = EdgeTTSPlugin(voice=voice)
+        self._running = False
+        
+    async def start(self):
+        """Start listening for TTS requests."""
+        self._running = True
+        logger.info("🎧 TTS Handler started")
+        
+    async def handle_tts_request(self, text: str):
+        """
+        Handle a TTS request - generate and publish audio.
+        
+        Args:
+            text: Text to convert to speech
+        """
+        try:
+            # Generate audio
+            audio_data = await self.tts.synthesize(text)
+            
+            # Publish audio to room
+            # Note: In production, you'd publish this as an audio track
+            # For now, we send the audio data via data channel
+            await self.room.local_participant.publish_data(
+                audio_data,
+                topic="tts_audio",
+                reliable=True,
+            )
+            
+            logger.info(f"📤 TTS audio published: {len(audio_data)} bytes")
+            
+        except Exception as e:
+            logger.error(f"❌ TTS handler error: {e}")
+            
+    def stop(self):
+        """Stop the TTS handler."""
+        self._running = False
+        logger.info("🛑 TTS Handler stopped")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Test
+# ═══════════════════════════════════════════════════════════════════
+
+async def test_tts():
+    """Test Edge TTS with Bengali text."""
+    tts = EdgeTTSPlugin()
+    
+    test_texts = [
+        "স্বাগতম রিজিকে! আপনাকে কিভাবে সাহায্য করতে পারি?",
+        "আপনার অর্ডার নিশ্চিত হয়েছে। ধন্যবাদ!",
+        "একটু অপেক্ষা করুন, আমি চেক করছি।",
+    ]
+    
+    print("\n🧪 Testing Edge TTS...")
+    print("-" * 50)
+    
+    for text in test_texts:
+        audio = await tts.synthesize(text)
+        print(f"✅ '{text[:30]}...' → {len(audio)} bytes")
+    
+    # List available voices
+    await list_bengali_voices()
+
+
+if __name__ == "__main__":
+    asyncio.run(test_tts())

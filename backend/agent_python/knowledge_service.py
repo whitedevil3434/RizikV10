@@ -39,7 +39,7 @@ def get_collection():
     return _collection
 
 
-def chunk_text_bengali(text: str, max_chars: int = 500) -> List[str]:
+def chunk_text_bengali(text: str, max_chars: int = 400) -> List[str]:
     """
     Smart chunking for Bengali text.
     Respects Bengali Purnodari (।), question marks, and natural sentence breaks.
@@ -198,7 +198,7 @@ def index_knowledge_base(force_reindex: bool = False) -> int:
     return len(unique_chunks)
 
 
-def search_knowledge(query: str, n_results: int = 3) -> List[Dict]:
+def search_knowledge(query: str, n_results: int = 2) -> List[Dict]:
     """
     Search knowledge base for relevant chunks.
     Returns top N most relevant chunks.
@@ -236,7 +236,7 @@ def build_rag_context(query: str) -> str:
     Build RAG context for LLM from knowledge base search.
     Returns formatted context string for injection into prompt.
     """
-    chunks = search_knowledge(query, n_results=3)
+    chunks = search_knowledge(query, n_results=2)
     
     if not chunks:
         return ""
