@@ -16,7 +16,14 @@
 - **AI**: Trained `AIOrchestrator` for inventory management.
 - **Frontend**: Created `CapacityToggleWidget` and updated `Squad` model.
 - **Build Fix**: Fixed `VoiceInputService.dart` build errors (AudioEncoder & missing methods).
-- **Cloudflare Stack**: Finalized "All-in-Cloudflare" architecture with Azure TTS. from that entirely remove that
+- **Cloudflare Stack**: Finalized "All-in-Cloudflare" architecture with Azure TTS.
+
+### ✅ Recent Updates (2026-01-14)
+- **Video Feed Engine**: Integrated `generated_videos` table with Supabase Realtime.
+- **R2 Deep Recovery**: Scanned & Recovered 35+ missing videos from hidden subfolders (`qwen-v6`, `wan22`).
+- **Hybrid Player**: Implemented `CinematicVideoBackdrop` with **AVIF/WebP support** (using Image widget for reels) to fix ExoPlayer crashes.
+- **Smart Caching**: Added `flutter_cache_manager` for TikTok-grade smooth playback.
+- **Sync Scripts**: Created `inspect_r2_deep.py` and `sync_all_buckets.py` for automated cloud synchronization.
 
 
 ## 🏗️ Architecture (The "Super-Cloud" Stack)
