@@ -1,0 +1,159 @@
+{
+    "10": {
+        "inputs": {
+            "ckpt_name": "ltx-video-2b-v0.9.safetensors"
+        },
+        "class_type": "LowVRAMCheckpointLoader",
+        "_meta": {
+            "title": "Load LTX-Video Model"
+        }
+    },
+    "20": {
+        "inputs": {
+            "text": "Cinematic commercial shot. Extreme close-up of a bubbling pepperoni pizza slice being lifted, melted cheese stretching beautifully. Steam rising in golden hour lighting. 8k resolution, photorealistic, appetizing.",
+            "clip": [
+                "10",
+                1
+            ]
+        },
+        "class_type": "CLIPTextEncode",
+        "_meta": {
+            "title": "Positive Prompt"
+        }
+    },
+    "21": {
+        "inputs": {
+            "text": "blurry, distortion, low quality, worst quality, text, watermark, deformed, ugly",
+            "clip": [
+                "10",
+                1
+            ]
+        },
+        "class_type": "CLIPTextEncode",
+        "_meta": {
+            "title": "Negative Prompt"
+        }
+    },
+    "30": {
+        "inputs": {
+            "model": [
+                "10",
+                0
+            ],
+            "positive": [
+                "20",
+                0
+            ],
+            "negative": [
+                "21",
+                0
+            ],
+            "skip_steps_sigma_threshold": 0.998,
+            "cfg_star_rescale": true,
+            "sigmas": "1.0, 0.9933, 0.9850, 0.9767, 0.9008, 0.6180"
+        },
+        "class_type": "STGGuiderAdvanced",
+        "_meta": {
+            "title": "STG Guider"
+        }
+    },
+    "40": {
+        "inputs": {
+            "sampler_name": "euler"
+        },
+        "class_type": "KSamplerSelect",
+        "_meta": {
+            "title": "Sampler Select"
+        }
+    },
+    "41": {
+        "inputs": {
+            "model": [
+                "10",
+                0
+            ],
+            "scheduler": "simple",
+            "steps": 30,
+            "denoise": 1.0
+        },
+        "class_type": "BasicScheduler",
+        "_meta": {
+            "title": "Scheduler"
+        }
+    },
+    "42": {
+        "inputs": {
+            "noise_seed": 888888
+        },
+        "class_type": "RandomNoise",
+        "_meta": {
+            "title": "Random Noise"
+        }
+    },
+    "14": {
+        "inputs": {
+            "width": 768,
+            "height": 512,
+            "num_frames": 49,
+            "model": [
+                "10",
+                0
+            ],
+            "vae": [
+                "10",
+                2
+            ],
+            "guider": [
+                "30",
+                0
+            ],
+            "sampler": [
+                "40",
+                0
+            ],
+            "sigmas": [
+                "41",
+                0
+            ],
+            "noise": [
+                "42",
+                0
+            ]
+        },
+        "class_type": "LTXVBaseSampler",
+        "_meta": {
+            "title": "LTX Video Sampler"
+        }
+    },
+    "50": {
+        "inputs": {
+            "samples": [
+                "14",
+                0
+            ],
+            "vae": [
+                "10",
+                2
+            ]
+        },
+        "class_type": "VAEDecode",
+        "_meta": {
+            "title": "VAE Decode"
+        }
+    },
+    "60": {
+        "inputs": {
+            "frame_rate": 24,
+            "format": "video/h264-mp4",
+            "filename_prefix": "rizik_pizza_ad",
+            "images": [
+                "50",
+                0
+            ]
+        },
+        "class_type": "VHS_VideoCombine",
+        "_meta": {
+            "title": "Save Video"
+        }
+    }
+}

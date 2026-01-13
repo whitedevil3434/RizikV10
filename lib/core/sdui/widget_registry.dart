@@ -78,6 +78,8 @@ class WidgetRegistry {
     'icon': (context, data) => _buildIcon(context, data),
     'stack': (context, data) => _buildStack(context, data),
     'input_field': (context, data) => _buildInputField(context, data),
+    'scroll_view': (context, data) => _buildScrollView(context, data),
+    'single_child_scroll_view': (context, data) => _buildScrollView(context, data),
     // Composable SDUI widgets
     'rizik_trust_aura': (context, data) => WidgetTrustAura(data: data),
     'rizik_expense_summary': (context, data) => WidgetExpenseSummary(data: data),
@@ -188,6 +190,14 @@ class WidgetRegistry {
         ),
       );
     }
+  }
+
+  static Widget _buildScrollView(BuildContext context, Map<String, dynamic> data) {
+    return SingleChildScrollView(
+      scrollDirection: data['scrollDirection'] == 'horizontal' ? Axis.horizontal : Axis.vertical,
+      padding: _parseEdgeInsets(data['padding']),
+      child: data['child'] != null ? build(context, data['child']['type'], data['child']) : null,
+    );
   }
 
   static Widget _buildContainer(BuildContext context, Map<String, dynamic> data) {

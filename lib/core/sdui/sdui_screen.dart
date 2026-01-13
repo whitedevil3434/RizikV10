@@ -52,7 +52,8 @@ class _SDUIScreenState extends State<SDUIScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: RizikColors.background,
+      // Transparent to show RizikScaffold's cinematic background
+      backgroundColor: Colors.transparent,
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: FutureBuilder<Map<String, dynamic>>(

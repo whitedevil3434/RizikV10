@@ -13,3 +13,6 @@ export 'layers/anchor_orb.dart';
 
 // Components
 export 'components/video_backdrop.dart';
+export 'components/cinematic_video_backdrop.dart';
+export 'components/edge_animations.dart';
+

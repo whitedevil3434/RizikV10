@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rizik_v4/core/theme/rizik_brand_colors.dart';
@@ -14,25 +15,31 @@ class RizikBottomNav extends ConsumerWidget {
   });
 
   @override
+  @override
   Widget build(BuildContext context, WidgetRef ref) {
     final role = ref.watch(userRoleProvider);
 
-    return BottomAppBar(
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 8.0,
-      color: Colors.white,
-      elevation: 10,
-      child: SizedBox(
-        height: 60,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(Icons.home_rounded, 'Home', 0),
-            _buildNavItem(Icons.shopping_bag_outlined, _getTab2Label(role), 1),
-            const SizedBox(width: 48), // Space for Mojo
-            _buildNavItem(Icons.receipt_long_rounded, _getTab3Label(role), 3),
-            _buildNavItem(Icons.person_outline_rounded, 'Profile', 4),
-          ],
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: BottomAppBar(
+          shape: const CircularNotchedRectangle(),
+          notchMargin: 8.0,
+          color: Colors.purple.withOpacity(0.15), // Purple-tinted glass
+          elevation: 0,
+          child: SizedBox(
+            height: 60,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(Icons.home_rounded, 'Home', 0),
+                _buildNavItem(Icons.shopping_bag_outlined, _getTab2Label(role), 1),
+                const SizedBox(width: 48), // Space for Mojo
+                _buildNavItem(Icons.receipt_long_rounded, _getTab3Label(role), 3),
+                _buildNavItem(Icons.person_outline_rounded, 'Profile', 4),
+              ],
+            ),
+          ),
         ),
       ),
     );

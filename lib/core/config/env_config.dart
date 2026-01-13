@@ -10,7 +10,7 @@ class EnvConfig {
   // 🔧 LOCAL DEV MODE: Set to true to use local token server
   // Set to false for production or when testing with deployed backend
   // ═══════════════════════════════════════════════════════════════════
-  static const bool useLocalBackend = true; // 🔥 Toggle this!
+  static const bool useLocalBackend = false; // 🔥 Toggle this!
   
   // Supabase Configuration
   static String get supabaseUrl => 
@@ -43,8 +43,8 @@ class EnvConfig {
       return 'http://127.0.0.1:3000';
     }
 
-    // 3. ✅ PRODUCTION: Cloudflare Worker (Always Available!)
-    return 'https://rizik-backend.its-sabbir69.workers.dev';
+    // 3. ✅ PRODUCTION: Vercel (Old Link Call Deployment)
+    return 'https://link-call-web.vercel.app';
   }
 
   static String get agentWebSocketUrl {

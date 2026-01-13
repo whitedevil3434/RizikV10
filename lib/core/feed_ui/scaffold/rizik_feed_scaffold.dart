@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
+import 'package:rizik_v4/core/feed_ui/components/cinematic_video_backdrop.dart';
+import 'package:rizik_v4/core/feed_ui/components/edge_animations.dart';
 
 /// RizikFeedScaffold - Main 5-Layer Feed Container
 /// 
@@ -50,6 +52,10 @@ class RizikFeedScaffold extends StatefulWidget {
   final List<String> flowCategories;
   final int selectedCategoryIndex;
   final ValueChanged<int>? onCategorySelected;
+  
+  // Layout options
+  final bool showBottomOrb;
+  final bool showTopHUD;
 
   const RizikFeedScaffold({
     super.key,
@@ -78,6 +84,8 @@ class RizikFeedScaffold extends StatefulWidget {
     this.flowCategories = const ['Trending', 'Food', 'Tech', 'Music'],
     this.selectedCategoryIndex = 0,
     this.onCategorySelected,
+    this.showBottomOrb = true,
+    this.showTopHUD = true,
   });
 
   @override
@@ -126,11 +134,11 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Layer 1: Video Backdrop
+            // Layer 1: Cinematic Video Backdrop (Living UI)
             _buildVideoBackdrop(),
             
-            // Gradient overlays for readability
-            _buildGradientOverlays(),
+            // Layer 1.5: 4-Side Edge Animations
+            const EdgeAnimations(),
             
             // UI Layers with fade animation
             AnimatedOpacity(
@@ -175,13 +183,14 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
               ),
             ),
             
-            // Layer 0: Anchor Orb (Always visible)
-            Positioned(
-              bottom: 24,
-              left: 0,
-              right: 0,
-              child: Center(child: _buildAnchorOrb()),
-            ),
+            // Layer 0: Anchor Orb (optional - hide when using external nav)
+            if (widget.showBottomOrb)
+              Positioned(
+                bottom: 24,
+                left: 0,
+                right: 0,
+                child: Center(child: _buildAnchorOrb()),
+              ),
           ],
         ),
       ),
@@ -189,84 +198,21 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
   }
 
   Widget _buildVideoBackdrop() {
-    if (widget.videoUrl == null || widget.videoUrl!.isEmpty) {
-      return Container(
+    // Cinematic Video Backdrop - The Living UI Engine
+    // Uses real video player for looping backgrounds
+    return CinematicVideoBackdrop(
+      videoUrl: widget.videoUrl,
+      looping: true,
+      showGlassOverlay: false, // Glass overlay handled by individual layers
+      fallbackWidget: Container(
         color: const Color(0xFF0A0A0F),
         child: const Center(
           child: Icon(Icons.play_circle_outline, size: 64, color: Colors.white24),
         ),
-      );
-    }
-
-    return Image.network(
-      widget.videoUrl!,
-      fit: BoxFit.cover,
-      width: double.infinity,
-      height: double.infinity,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return Container(
-          color: const Color(0xFF0A0A0F),
-          child: const Center(
-            child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
-          ),
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          color: const Color(0xFF0A0A0F),
-          child: const Center(
-            child: Icon(Icons.error_outline, size: 48, color: Colors.red),
-          ),
-        );
-      },
+      ),
     );
   }
 
-  Widget _buildGradientOverlays() {
-    return Stack(
-      children: [
-        // Top gradient
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 200,
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.7),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        ),
-        // Bottom gradient
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 300,
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.8),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildTopHUD() {
     return Row(
@@ -446,16 +392,18 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
               ? const Icon(Icons.person, color: Colors.white, size: 24)
               : null,
         ),
-        // Follow button
-        Container(
-          margin: const EdgeInsets.only(top: -8),
-          width: 20,
-          height: 20,
-          decoration: const BoxDecoration(
-            color: Color(0xFF8B5CF6),
-            shape: BoxShape.circle,
+        // Follow button (positioned to overlap avatar)
+        Transform.translate(
+          offset: const Offset(0, -8),
+          child: Container(
+            width: 20,
+            height: 20,
+            decoration: const BoxDecoration(
+              color: Color(0xFF8B5CF6),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.add, color: Colors.white, size: 14),
           ),
-          child: const Icon(Icons.add, color: Colors.white, size: 14),
         ),
         const SizedBox(height: 20),
         // Like

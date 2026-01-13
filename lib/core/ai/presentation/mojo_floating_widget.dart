@@ -12,26 +12,21 @@ class MojoFloatingWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Always show RizikMojo (Mascot)
     return SizedBox(
-      width: 72,
-      height: 72,
+      width: 80, // Slightly larger touch target
+      height: 80,
       child: GestureDetector(
         onLongPress: () {
-          // Long Press -> Enter Voice Mode Palette (Google Assistant Style)
+          // Long Press -> Enter Voice Mode Palette
           HapticFeedbackWrapper().heavy();
           VoiceAssistantPalette.show(context);
         },
-        child: FloatingActionButton(
-          onPressed: () {
-            // Single Tap -> Show Role Switcher
-            debugPrint("Mojo: Single Tap - Role Switcher");
-            HapticFeedbackWrapper().light();
-            RoleSwitcherOrb.show(context);
-          },
-          backgroundColor: Colors.white,
-          elevation: 4,
-          shape: const CircleBorder(),
-          child: const RizikMojo(), 
-        ),
+        onTap: () {
+          // Single Tap -> Show Role Switcher
+          debugPrint("Mojo: Single Tap - Role Switcher");
+          HapticFeedbackWrapper().light();
+          RoleSwitcherOrb.show(context);
+        },
+        child: const RizikMojo(), 
       ),
     );
   }

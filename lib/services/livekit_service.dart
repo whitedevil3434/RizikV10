@@ -37,7 +37,7 @@ class LiveKitService {
 
   /// Get authentication token from backend
   Future<String> _getToken(String roomName, String participantName) async {
-    final url = Uri.parse('${EnvConfig.backendUrl}/api/livekit/token');
+    final url = Uri.parse('${EnvConfig.backendUrl}/api/token'); // Vercel path
     
     try {
       final response = await http.post(

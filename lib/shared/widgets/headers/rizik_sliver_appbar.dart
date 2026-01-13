@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,12 +11,31 @@ class RizikSliverAppBar extends ConsumerWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
+  @override
   Widget build(BuildContext context, WidgetRef ref) {
     final morph = ref.watch(morphEngineProvider);
 
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.transparent, // Transparent for Glass
       elevation: 0,
+      // Glass Effect Layer via flexibleSpace
+      flexibleSpace: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.purple.withOpacity(0.3),
+                  Colors.white.withOpacity(0.5),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+        ),
+      ),
       titleSpacing: 16,
       leadingWidth: 0,
       leading: const SizedBox.shrink(),
