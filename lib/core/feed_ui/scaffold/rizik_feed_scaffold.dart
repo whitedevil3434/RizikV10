@@ -56,6 +56,10 @@ class RizikFeedScaffold extends StatefulWidget {
   // Layout options
   final bool showBottomOrb;
   final bool showTopHUD;
+  
+  // Playback Control
+  final bool isActive;
+  final bool shouldBuffer; // Resource Control
 
   const RizikFeedScaffold({
     super.key,
@@ -86,6 +90,8 @@ class RizikFeedScaffold extends StatefulWidget {
     this.onCategorySelected,
     this.showBottomOrb = true,
     this.showTopHUD = true,
+    this.isActive = true,
+    this.shouldBuffer = true, // Default Keep Resource
   });
 
   @override
@@ -210,6 +216,9 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
           child: Icon(Icons.play_circle_outline, size: 64, color: Colors.white24),
         ),
       ),
+      shouldMute: false, // Enable Audio for Feed
+      isActive: widget.isActive, // Control Playback
+      shouldBuffer: widget.shouldBuffer, // Control Resource
     );
   }
 

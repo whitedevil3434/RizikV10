@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:ui';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 /// CinematicVideoBackdrop - Full-screen looping video background
@@ -20,6 +21,9 @@ class CinematicVideoBackdrop extends StatefulWidget {
   final double glassBlur;
   final double glassOpacity;
   final Widget? fallbackWidget;
+  final bool shouldMute;
+  final bool isActive;
+  final bool shouldBuffer; // Create/Destroy Resource
 
   const CinematicVideoBackdrop({
     super.key,
@@ -30,30 +34,77 @@ class CinematicVideoBackdrop extends StatefulWidget {
     this.glassBlur = 5.0,
     this.glassOpacity = 0.3,
     this.fallbackWidget,
+    this.shouldMute = true,
+    this.isActive = true,
+    this.shouldBuffer = true, // Default Keep Resource
   });
 
   @override
   State<CinematicVideoBackdrop> createState() => _CinematicVideoBackdropState();
 }
 
-class _CinematicVideoBackdropState extends State<CinematicVideoBackdrop> {
+class _CinematicVideoBackdropState extends State<CinematicVideoBackdrop> 
+    with AutomaticKeepAliveClientMixin {
   VideoPlayerController? _controller;
   bool _isInitialized = false;
   bool _hasError = false;
 
   @override
+  bool get wantKeepAlive => true; // Keep Widget Alive (for state), but dispose Controller manually
+
+  @override
   void initState() {
     super.initState();
-    _initializeVideo();
+    if (widget.shouldBuffer) {
+      _initializeVideo();
+    }
+  }
+
+  @override
+  void dispose() {
+    _disposeController();
+    super.dispose();
+  }
+
+  void _disposeController() {
+    _controller?.dispose();
+    _controller = null;
+    _isInitialized = false;
   }
 
   @override
   void didUpdateWidget(CinematicVideoBackdrop oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.videoUrl != widget.videoUrl || 
-        oldWidget.assetPath != widget.assetPath) {
+    
+    // 1. Handle Source Change
+    if (oldWidget.videoUrl != widget.videoUrl || oldWidget.assetPath != widget.assetPath) {
       _disposeController();
-      _initializeVideo();
+      if (widget.shouldBuffer) _initializeVideo();
+      return;
+    }
+
+    // 2. Handle Buffer State (Resource Managment)
+    if (oldWidget.shouldBuffer != widget.shouldBuffer) {
+      if (widget.shouldBuffer) {
+        _initializeVideo();
+      } else {
+        _disposeController(); // Free up Decoder
+        if (mounted) setState(() {}); // Trigger rebuild to show fallback
+      }
+    }
+    
+    // 3. Handle Play/Pause (Focus Management)
+    // Only access controller if it exists and is initialized
+    if (_isInitialized && _controller != null) {
+       if (widget.isActive) {
+         if (!_controller!.value.isPlaying) _controller?.play();
+       } else {
+         if (_controller!.value.isPlaying) _controller?.pause();
+       }
+       
+       if (oldWidget.shouldMute != widget.shouldMute) {
+         _controller?.setVolume(widget.shouldMute ? 0 : 1.0);
+       }
     }
   }
 
@@ -66,7 +117,7 @@ class _CinematicVideoBackdropState extends State<CinematicVideoBackdrop> {
        widget.videoUrl!.toLowerCase().endsWith('.png'));
 
   Future<void> _initializeVideo() async {
-    if (widget.videoUrl == null && widget.assetPath == null) {
+    if ((widget.videoUrl == null && widget.assetPath == null) || _isInitialized) {
       return;
     }
 
@@ -82,22 +133,40 @@ class _CinematicVideoBackdropState extends State<CinematicVideoBackdrop> {
     }
 
     try {
+      final videoOptions = VideoPlayerOptions(mixWithOthers: true);
+
       if (widget.assetPath != null) {
-        _controller = VideoPlayerController.asset(widget.assetPath!);
+        _controller = VideoPlayerController.asset(widget.assetPath!, videoPlayerOptions: videoOptions);
       } else if (widget.videoUrl != null) {
-        // Smart Caching: Check cache -> Download -> Play File
-        final file = await DefaultCacheManager().getSingleFile(widget.videoUrl!);
-        _controller = VideoPlayerController.file(file);
+        if (kIsWeb) {
+           _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl!), videoPlayerOptions: videoOptions);
+        } else {
+           final file = await DefaultCacheManager().getSingleFile(widget.videoUrl!);
+           _controller = VideoPlayerController.file(file, videoPlayerOptions: videoOptions);
+        }
       }
 
-      await _controller?.initialize();
+      // Guard before async init
+      if (!mounted || !widget.shouldBuffer) return;
+
+      // Add timeout to prevent hanging
+      await _controller?.initialize().timeout(const Duration(seconds: 15));
       
+      // Guard after async init
+      if (!mounted || !widget.shouldBuffer) {
+        _disposeController();
+        return;
+      }
+
       if (widget.looping) {
         _controller?.setLooping(true);
       }
       
-      _controller?.setVolume(0); // Mute background video
-      _controller?.play();
+      _controller?.setVolume(widget.shouldMute ? 0 : 1.0); 
+      
+      if (widget.isActive) {
+        _controller?.play();
+      }
 
       if (mounted) {
         setState(() {
@@ -115,20 +184,11 @@ class _CinematicVideoBackdropState extends State<CinematicVideoBackdrop> {
     }
   }
 
-  void _disposeController() {
-    _controller?.dispose();
-    _controller = null;
-    _isInitialized = false;
-  }
 
-  @override
-  void dispose() {
-    _disposeController();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Stack(
       fit: StackFit.expand,
       children: [

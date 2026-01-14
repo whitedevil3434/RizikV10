@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
+import 'dart:typed_data'; // dart:io Removed (Web compat)
 import 'package:rizik_v4/core/config/env_config.dart';
 import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/web_socket_channel.dart'; // Web Support
 
 /// 🗣️ Rizik Edge TTS Client (The Mouth)
 /// Handles the handshake with Microsoft's servers using Sec-MS-GEC token.
 /// Protocol verified against Python edge-tts library.
 class RizikEdgeTTSClient {
-  WebSocket? _ws;
+  WebSocketChannel? _ws;
   final StreamController<Uint8List> _audioController = StreamController.broadcast();
   final StreamController<void> _turnEndController = StreamController.broadcast();
   
@@ -45,36 +45,30 @@ class RizikEdgeTTSClient {
   Future<void> connect() async {
     if (_secMsGec == null) await init();
     
-    // Generate ConnectionId and muid (like Python edge-tts)
+    // Generate ConnectionId and muid
     final connectionId = _generateHexId();
     final muid = _generateHexId();
     
-    // Build URL with ALL params (matching Python edge-tts)
-    final wssUrl = "wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1"
+    final wssUrl = Uri.parse("wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1"
         "?TrustedClientToken=$_trustedToken"
         "&ConnectionId=$connectionId"
         "&Sec-MS-GEC=$_secMsGec"
-        "&Sec-MS-GEC-Version=1-130.0.2849.68";
+        "&Sec-MS-GEC-Version=1-130.0.2849.68");
     
-    print("🔗 Connecting to Edge TTS (ConnectionId: ${connectionId.substring(0, 8)}...)");
+    print("🔗 Connecting to Edge TTS...");
     
     try {
-      _ws = await WebSocket.connect(
+      final channel = WebSocketChannel.connect(
         wssUrl,
-        headers: {
-          'Pragma': 'no-cache',
-          'Cache-Control': 'no-cache',
-          'Origin': 'chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0',
-          'Cookie': 'muid=$muid',
-        },
+        protocols: null, 
       );
+      
+      _ws = channel; // Using channel as "ws"
       
       print("✅ Edge TTS WebSocket Connected!");
       
-      _ws!.listen(
+      // Listen to stream
+      channel.stream.listen(
         (message) {
           if (message is String) {
              if (message.contains("Path:turn.end")) {
@@ -87,8 +81,8 @@ class RizikEdgeTTSClient {
         },
         onError: (e) => print("🔴 TTS WS Error: $e"),
         onDone: () {
-            print("🔌 TTS WS Closed. Code: ${_ws?.closeCode}, Reason: ${_ws?.closeReason}");
-            _ws = null; // Allow reconnection
+            print("🔌 TTS WS Closed.");
+            _ws = null;
         },
       );
       
@@ -97,8 +91,9 @@ class RizikEdgeTTSClient {
       final configPayload = 'X-Timestamp:$timestamp\r\n'
           'Content-Type:application/json; charset=utf-8\r\n'
           'Path:speech.config\r\n\r\n'
-          '{"context":{"synthesis":{"audio":{"metadataoptions":{"sentenceBoundaryEnabled":"true","wordBoundaryEnabled":"false"},"outputFormat":"audio-24khz-96kbitrate-mono-mp3"}}}}\r\n';
-      _ws!.add(configPayload);
+          '{"context":{"synthesis":{"audio":{"metadataoptions":{"sentenceBoundaryEnabled":"true","wordBoundaryEnabled":"false"},"outputFormat":"raw-24khz-16bit-mono-pcm"}}}}\r\n';
+      
+      channel.sink.add(configPayload);
       print("📤 Sent speech.config");
       
     } catch (e) {
@@ -108,9 +103,9 @@ class RizikEdgeTTSClient {
 
   /// 3. Synthesize Text (SSML)
   Future<void> synthesize(String text) async {
-    // Auto-Reconnect if closed
-    if (_ws == null || _ws!.readyState == WebSocket.closed || _ws!.readyState == WebSocket.closing) {
-         print("🔄 TTS Disconnected. Reconnecting...");
+    // Auto-Reconnect if closed (Relies on onDone setting _ws = null)
+    if (_ws == null) {
+         print("🔄 TTS Reconnecting...");
          await connect();
     }
     
@@ -136,7 +131,7 @@ class RizikEdgeTTSClient {
         'Path:ssml\r\n\r\n'
         '$ssml';
     
-    _ws!.add(ssmlPayload);
+    _ws!.sink.add(ssmlPayload);
     print("📤 Sent SSML request for: ${text.substring(0, text.length > 30 ? 30 : text.length)}...");
   }
 
@@ -162,7 +157,7 @@ class RizikEdgeTTSClient {
   }
 
   void dispose() {
-    _ws?.close();
+    _ws?.sink.close();
     if (!_audioController.isClosed) _audioController.close();
     if (!_turnEndController.isClosed) _turnEndController.close();
   }
@@ -187,7 +182,7 @@ class RizikEdgeTTSClient {
   /// 🛑 Stop Speech
   Future<void> stop() async {
      print("🛑 [EdgeTTS] Cutting off connection...");
-     await _ws?.close(WebSocketStatus.normalClosure); // This stops the server from sending more audio
+     await _ws?.sink.close(); 
      _ws = null;
   }
 }

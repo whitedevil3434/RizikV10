@@ -1,11 +1,11 @@
+// import 'package:flutter_soloud/flutter_soloud.dart'; // Disabled for Web Build stability
 import 'dart:async';
 import 'dart:io'; // 🔥 Required for Platform check
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:rizik_v4/core/config/env_config.dart';
-
-
+import 'package:rizik_v4/services/tts/edge_tts_client.dart';
 
 /// LiveKit Voice Service - Replaces Cloudflare Calls
 /// Connects to LiveKit Cloud and streams audio to Python Agent
@@ -17,6 +17,12 @@ class LiveKitService {
   LocalAudioTrack? _localAudioTrack;
   EventsListener<RoomEvent>? _listener;
   
+  // TTS & Audio Player (The Mouth 👄)
+  final RizikEdgeTTSClient _edgeTts = RizikEdgeTTSClient();
+  // final SoLoud _soloud = SoLoud.instance; // TODO: Restore
+  // AudioSource? _ttsSource;
+  StreamSubscription? _audioSub;
+
   // Stream Controllers for UI updates
   final StreamController<String> _aiResponseController = StreamController.broadcast();
   final StreamController<String> _sttResultController = StreamController.broadcast();
@@ -33,6 +39,34 @@ class LiveKitService {
   /// Initialize the service
   Future<void> init() async {
     print("✅ LiveKit Service Initialized");
+    
+    /* TODO: Restore Audio Playback
+    // Initialize SoLoud (WASM Ready)
+    if (!_soloud.isInitialized) {
+       await _soloud.init();
+    }
+    
+    // Create PCM Buffer Stream (24kHz Mono 16-bit)
+    _ttsSource = await _soloud.setBufferStream(
+      maxBufferSizeBytes: 1024 * 1024 * 10, // 10MB Buffer
+      sampleRate: 24000,
+      channels: 1,
+    );
+    
+    // Initialize Playback
+    if (_ttsSource != null) {
+       await _soloud.play(_ttsSource!, paused: false);
+    }
+    */
+    
+    // Wire up TTS -> SoLoud
+    _audioSub = _edgeTts.audioStream.listen((data) {
+       /*
+       if (_ttsSource != null) {
+          _soloud.addAudioDataStream(_ttsSource!, data);
+       }
+       */
+    });
   }
 
   /// Get authentication token from backend
@@ -168,10 +202,22 @@ class LiveKitService {
             _sttResultController.add(json['text'] as String);
             break;
           case 'ai_response':
-            _aiResponseController.add(json['text'] as String);
+            final text = json['text'] as String;
+            _aiResponseController.add(text);
+            // 🔥 Speak it!
+            _edgeTts.synthesize(text);
             break;
           case 'interrupt':
             _interruptController.add(null);
+            /*
+            // Stop all active handles for this source
+            for (final handle in _soloud.activeSoundHandles) {
+                // Ideally check if valid?
+                _soloud.stop(handle);
+            }
+            // Re-play the stream source to be ready for next
+            if (_ttsSource != null) _soloud.play(_ttsSource!);
+            */
             break;
           default:
             print("📝 Message: ${json['type']}");
@@ -237,6 +283,14 @@ class LiveKitService {
     _aiResponseController.close();
     _sttResultController.close();
     _interruptController.close();
+    _audioSub?.cancel();
+    _edgeTts.dispose();
+    /*
+    if (_ttsSource != null) {
+      _soloud.disposeSource(_ttsSource!);
+    }
+    _soloud.deinit();
+    */
     disconnect();
   }
 }

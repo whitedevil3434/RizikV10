@@ -136,11 +136,13 @@ class _RizikVideoFeedState extends State<RizikVideoFeed> {
     _horizontalController = PageController(initialPage: 1);
     _verticalController = PageController();
     
-    // Initial placeholder state
-    _likeStates = List.filled(generatedVideos.length, false);
-    _likeCounts = generatedVideos.map((v) => v.likes).toList();
+    // Initialize with Hardcoded Videos (Audio+Video)
+    _allVideos = List.from(generatedVideos);
+    _likeStates = List.filled(_allVideos.length, false);
+    _likeCounts = _allVideos.map((v) => v.likes).toList();
+    _isLoading = false; // Show immediately
     
-    // Start fetching
+    // Start fetching Server Videos (Silent/Others)
     _subscribeToVideos();
   }
 
@@ -170,25 +172,32 @@ class _RizikVideoFeedState extends State<RizikVideoFeed> {
       
       if (mounted) {
         setState(() {
-          _allVideos = supabaseVideos;
-          // Reset interaction states when new data arrives (or sync them if identifying by ID)
-          if (_likeStates.length != _allVideos.length) {
-             _likeStates = List.filled(_allVideos.length, false);
-             _likeCounts = _allVideos.map((v) => v.likes).toList();
-          }
+          // MERGE: Generated (Top) + Supabase (Bottom)
+          // Avoid duplicates if needed, but for now just concat
+          // Filter out Supabase videos that might match generated URLs if necessary?
+          // Assuming Generated ones are not in Supabase or we prefer local version.
+          
+          _allVideos = [...generatedVideos, ...supabaseVideos];
+          
+          // Re-sync interaction states
+          // We need to preserve states for the first N (generated)
+          final topStates = _likeStates.take(generatedVideos.length).toList();
+          final topCounts = _likeCounts.take(generatedVideos.length).toList();
+          
+          // New states for server videos
+          final bottomStates = List.filled(supabaseVideos.length, false);
+          final bottomCounts = supabaseVideos.map((v) => v.likes).toList();
+          
+          _likeStates = [...topStates, ...bottomStates];
+          _likeCounts = [...topCounts, ...bottomCounts];
+          
           _isLoading = false;
         });
-        debugPrint('✅ Loaded ${_allVideos.length} videos from Supabase');
+        debugPrint('✅ Loaded & Merged: ${generatedVideos.length} Local + ${supabaseVideos.length} Server');
       }
     }, onError: (error) {
       debugPrint('❌ Supabase Error: $error');
-      if (mounted && _allVideos.isEmpty) {
-        // Fallback to hardcoded
-        setState(() {
-          _allVideos = generatedVideos;
-          _isLoading = false;
-        });
-      }
+      // On error, we still have generatedVideos, so do nothing.
     });
   }
 
@@ -259,6 +268,13 @@ class _RizikVideoFeedState extends State<RizikVideoFeed> {
       },
       itemBuilder: (context, index) {
         final video = _allVideos[index];
+        final bool isPlaying = index == _currentVideo; // Only play visible video
+        
+        // 🔥 STRICT BUFFERING: "Focus on 1, then future"
+        // Only keep Current (0) and Next (+1) alive.
+        // Dispose Previous (-1) immediately to free decoders.
+        final bool shouldBuffer = (index >= _currentVideo) && (index <= _currentVideo + 1); 
+
         return RizikFeedScaffold(
           videoUrl: video.videoUrl,
           creatorUsername: video.creator,
@@ -278,6 +294,8 @@ class _RizikVideoFeedState extends State<RizikVideoFeed> {
           onCategorySelected: (i) {},
           // Hide internal orb - we use external nav
           showBottomOrb: false,
+          isActive: isPlaying, // Pass Playback State
+          shouldBuffer: shouldBuffer, // Pass Resource Control
           onLikeTap: () {
             setState(() {
               _likeStates[index] = !_likeStates[index];
