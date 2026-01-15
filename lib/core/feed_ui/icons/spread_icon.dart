@@ -114,13 +114,12 @@ class _SpreadIconState extends State<SpreadIcon> with TickerProviderStateMixin {
                   scale: _scaleAnimation.value,
                   child: Transform.rotate(
                     angle: _rotationAnimation.value * (math.pi / 180),
-                    child: CustomPaint(
-                      painter: _SpreadPlanePainter(
-                        color: _isLaunching ? widget.activeColor : widget.inactiveColor,
-                        trailProgress: _trailController.value,
-                        isLaunching: _isLaunching,
-                      ),
-                      size: Size(widget.size, widget.size),
+                    child: Image.asset(
+                      'assets/icons/spread_icon.png',
+                      width: widget.size,
+                      height: widget.size,
+                      fit: BoxFit.contain,
+                      color: _isLaunching ? widget.activeColor : widget.inactiveColor,
                     ),
                   ),
                 ),

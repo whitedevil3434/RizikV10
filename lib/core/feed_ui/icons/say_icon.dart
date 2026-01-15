@@ -72,11 +72,12 @@ class _SayIconState extends State<SayIcon> with SingleTickerProviderStateMixin {
             children: [
               Transform.scale(
                 scale: _scaleAnimation.value,
-                child: CustomPaint(
-                  painter: _LoudspeakerPainter(
-                    color: widget.inactiveColor,
-                  ),
-                  size: Size(widget.size + 8, widget.size + 4),
+                child: Image.asset(
+                  'assets/icons/say_icon.png',
+                  width: widget.size + 8,
+                  height: widget.size + 4,
+                  fit: BoxFit.contain,
+                  color: widget.inactiveColor,
                 ),
               ),
               const SizedBox(height: 4),

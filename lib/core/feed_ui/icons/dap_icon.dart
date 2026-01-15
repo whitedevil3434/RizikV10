@@ -122,10 +122,11 @@ class _DapIconState extends State<DapIcon> with TickerProviderStateMixin {
                       : null,
                   // Using Image Asset Directly
                   child: Image.asset(
-                    'assets/icons/dap_green_circle.png',
+                    'assets/icons/dap_icon_v3.png',
                     fit: BoxFit.contain,
                     width: widget.size + 14,
                     height: widget.size + 14,
+                    color: color, // Tintable
                   ),
                 ),
               ),
