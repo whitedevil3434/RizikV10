@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:ui';
 import 'package:rizik_v4/core/feed_ui/components/cinematic_video_backdrop.dart';
 import 'package:rizik_v4/core/feed_ui/components/edge_animations.dart';
+import 'package:rizik_v4/core/feed_ui/layers/rizik_action_rail.dart';
 
 /// RizikFeedScaffold - Main 5-Layer Feed Container
 /// 
@@ -380,70 +381,35 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
   }
 
   Widget _buildActionRail() {
-    return Column(
-      children: [
-        // Creator Avatar
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
-            image: widget.creatorAvatarUrl != null
-                ? DecorationImage(
-                    image: NetworkImage(widget.creatorAvatarUrl!),
-                    fit: BoxFit.cover,
-                  )
-                : null,
-            color: widget.creatorAvatarUrl == null ? Colors.grey : null,
-          ),
-          child: widget.creatorAvatarUrl == null
-              ? const Icon(Icons.person, color: Colors.white, size: 24)
-              : null,
-        ),
-        // Follow button (positioned to overlap avatar)
-        Transform.translate(
-          offset: const Offset(0, -8),
-          child: Container(
-            width: 20,
-            height: 20,
-            decoration: const BoxDecoration(
-              color: Color(0xFF8B5CF6),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.add, color: Colors.white, size: 14),
-          ),
-        ),
-        const SizedBox(height: 20),
-        // Like
-        _buildActionButton(
-          icon: widget.isLiked ? Icons.favorite : Icons.favorite_border,
-          count: widget.likeCount,
-          color: widget.isLiked ? Colors.red : Colors.white,
-          onTap: widget.onLikeTap,
-        ),
-        const SizedBox(height: 16),
-        // Comment
-        _buildActionButton(
-          icon: Icons.chat_bubble_outline,
-          count: widget.commentCount,
-          onTap: widget.onCommentTap,
-        ),
-        const SizedBox(height: 16),
-        // Share
-        _buildActionButton(
-          icon: Icons.reply,
-          count: widget.shareCount,
-          onTap: widget.onShareTap,
-          flipIcon: true,
-        ),
-        const SizedBox(height: 16),
-        // More
-        _buildActionButton(
-          icon: Icons.more_horiz,
-          onTap: widget.onMoreTap,
-        ),
-      ],
+    // 🔥 UNIQUE CREATIVE ACTION RAIL - Fist Bump, Loudspeaker, etc.
+    return RizikActionRail(
+      // Creator avatar
+      creatorAvatarUrl: widget.creatorAvatarUrl,
+      onCreatorTap: () {
+        HapticFeedback.selectionClick();
+      },
+      // 🤜🏻💥🤛🏻 DAP (Fist Bump) - UNIQUE Like
+      isDapped: widget.isLiked,
+      dapCount: widget.likeCount,
+      onDap: widget.onLikeTap,
+      onDapLongPress: () {},
+      // 📢 SAY (Loudspeaker) - Comment
+      sayCount: widget.commentCount,
+      onSay: widget.onCommentTap,
+      onSayLongPress: () {},
+      // ↗️ SPREAD (Paper Airplane) - Share
+      spreadCount: widget.shareCount,
+      onSpread: widget.onShareTap,
+      onSpreadLongPress: () {},
+      // 🔖 SAVE (Ribbon) - Bookmark
+      isSaved: widget.isBookmarked,
+      onSave: () {
+        HapticFeedback.mediumImpact();
+      },
+      onSaveLongPress: () {},
+      // ⋯ OPTIONS
+      onOptions: widget.onMoreTap,
+      onOptionsLongPress: () {},
     );
   }
 

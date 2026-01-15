@@ -10,7 +10,7 @@ class EnvConfig {
   // 🔧 LOCAL DEV MODE: Set to true to use local token server
   // Set to false for production or when testing with deployed backend
   // ═══════════════════════════════════════════════════════════════════
-  static const bool useLocalBackend = false; // 🔥 Toggle this!
+  static const bool useLocalBackend = true; // 🔥 Set to TRUE to test Voice Agent
   
   // Supabase Configuration
   static String get supabaseUrl => 
@@ -23,6 +23,7 @@ class EnvConfig {
     const String.fromEnvironment(
       'SUPABASE_ANON_KEY',
       defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4ZWtvbHZ2ZW9hZGJhZnRmc215Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyNzczMTEsImV4cCI6MjA2ODg1MzMxMX0.TRM9nL85CLLjvR5XfZ7YBncwqn0EybTVtt8a46NlZRg',
+      // Note: This matches the leaked/provided key in the Context file.
     );
 
   // ═══════════════════════════════════════════════════════════════════
@@ -34,13 +35,13 @@ class EnvConfig {
     if (envUrl.isNotEmpty) return envUrl;
 
     // 2. Local development mode (only if explicitly enabled)
-    if (useLocalBackend && kDebugMode) {
+    if (useLocalBackend || kDebugMode) {
       // Android emulator uses 10.0.2.2 to reach host machine
       if (defaultTargetPlatform == TargetPlatform.android) {
-        return 'http://10.0.2.2:3000';
+        return 'http://10.0.2.2:8787'; // 🔥 Workers Default Port
       }
       // iOS simulator and macOS/Linux/Windows use localhost
-      return 'http://127.0.0.1:3000';
+      return 'http://127.0.0.1:8787'; // 🔥 Workers Default Port
     }
 
     // 3. ✅ PRODUCTION: Vercel (Old Link Call Deployment)

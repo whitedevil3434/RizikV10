@@ -18,6 +18,9 @@ new_sqlite_classes = ["ChatRoom", "VoiceAgent"]
 [vars]
 ENVIRONMENT = "production"
 CALLS_APP_ID = "1e976218463f682ebf0f56c0667a5482"
+LIVEKIT_URL = "wss://rizik-ai-femz194x.livekit.cloud"
+LIVEKIT_API_KEY = "APImSG78KpGRGdm"
+LIVEKIT_API_SECRET = "MdKvfAwLfivlzlQmgRfJ268XvW79vSyqidour2e1kQnC"
 
 # R2 Buckets for Storage (Images, Proofs)
 [[r2_buckets]]

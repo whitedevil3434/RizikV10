@@ -71,15 +71,15 @@ class LiveKitService {
 
   /// Get authentication token from backend
   Future<String> _getToken(String roomName, String participantName) async {
-    final url = Uri.parse('${EnvConfig.backendUrl}/api/token'); // Vercel path
+    final url = Uri.parse('${EnvConfig.backendUrl}/api/livekit/token'); // 🔥 UPDATED PATH
     
     try {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'room': roomName,
-          'participant': participantName,
+          'room': roomName,        // Backend expects 'room'
+          'participant': participantName, // Backend expects 'participant'
         }),
       );
 
@@ -87,7 +87,7 @@ class LiveKitService {
         final data = jsonDecode(response.body);
         return data['token'] as String;
       } else {
-        throw Exception('Failed to get token: ${response.statusCode}');
+        throw Exception('Failed to get token: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       print("❌ Token fetch error: $e");
@@ -112,9 +112,10 @@ class LiveKitService {
         roomOptions: RoomOptions(
           adaptiveStream: true,
           dynacast: true,
+
           defaultAudioPublishOptions: const AudioPublishOptions(
             dtx: true,
-            audioBitrate: 24000, // 🔥 Apex Fix: Ensure proper Opus encoding
+            audioBitrate: 24000,
           ),
         ),
       );
@@ -137,8 +138,18 @@ class LiveKitService {
       } catch (e) {
         print("⚠️ Failed to set speakerphone: $e");
       }
-      
-      // 6. Debug: Check audio track status
+      // 🔥 FIX: Check for existing participants/tracks (The Agent might be waiting)
+      for (var p in _room!.remoteParticipants.values) {
+        print("👥 Found remote participant: ${p.identity}");
+        for (var t in p.audioTrackPublications) {
+           print("   Found track: ${t.sid}");
+           if (t.track != null) {
+              _handleAgentAudio(t.track as AudioTrack); // Force start
+           } else {
+              t.subscribe(); // Try manual subscribe
+           }
+        }
+      }
       final localParticipant = _room!.localParticipant;
       if (localParticipant != null) {
         print("👤 Local Participant: ${localParticipant.identity}");
@@ -173,6 +184,15 @@ class LiveKitService {
       ..on<TrackPublishedEvent>((event) {
         print("📡 Track published by ${event.participant.identity}: ${event.publication.name}");
       })
+      ..on<ParticipantConnectedEvent>((event) {
+        print("👤 Remote Participant Connected: ${event.participant.identity}");
+      })
+      ..on<TrackSubscribedEvent>((event) {
+        print("🎧 Track subscribed from ${event.participant.identity}");
+        if (event.track is AudioTrack) {
+          _handleAgentAudio(event.track as AudioTrack);
+        }
+      })
       ..on<TrackSubscribedEvent>((event) {
         print("🎧 Track subscribed from ${event.participant.identity}");
         if (event.track is AudioTrack) {
@@ -185,6 +205,32 @@ class LiveKitService {
       ..on<RoomDisconnectedEvent>((event) {
         print("🛑 Disconnected from room: ${event.reason}");
       });
+
+      
+    // 🔥 MONITOR AUDIO LEVELS
+    Timer.periodic(const Duration(seconds: 1), (timer) {
+       if (_room == null || !isConnected) {
+         timer.cancel();
+         return;
+       }
+       
+       // Check Local Mic
+       if (_room?.localParticipant != null) {
+          final lp = _room!.localParticipant!;
+          if (lp.isMicrophoneEnabled()) {
+             // We can check audio level if available in metadata or track?
+             // Actually LiveKit client provides 'audioLevel' on Participant
+             print("🎤 Local Mic (Enabled): ${lp.audioLevel}");
+          } else {
+             print("🎤 Local Mic: DISABLED");
+          }
+       }
+       
+       // Check Remote Participants
+       for (var p in _room!.remoteParticipants.values) {
+          print("👤 Remote ${p.identity}: Level ${p.audioLevel} | Speaking: ${p.isSpeaking}");
+       }
+    });
   }
 
   /// Handle data channel messages from agent (STT results, AI responses)
