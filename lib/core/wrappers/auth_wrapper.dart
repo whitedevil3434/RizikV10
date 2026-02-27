@@ -1,5 +1,4 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 /// AuthWrapper - Centralized Authentication
 /// Handles Supabase Auth and Social Login
@@ -42,9 +41,8 @@ class AuthWrapper {
   }
 
   /// Sign in with Google (Native)
-  Future<AuthResponse> signInWithGoogle() async {
-    // Native Google Sign In logic would go here
-    // For now, using web-based OAuth flow as fallback
+  Future<bool> signInWithGoogle() async {
+    // Uses Supabase OAuth flow as cross-platform fallback.
     return await _supabase.auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo: 'io.supabase.flutterquickstart://login-callback/',

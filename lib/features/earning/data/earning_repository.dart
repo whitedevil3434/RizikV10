@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rizik_v4/core/api/rizik_api_client.dart';
 import 'package:rizik_v4/core/wrappers/auth_wrapper.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Earning Repository Provider
 final earningRepositoryProvider = Provider((ref) {
@@ -13,7 +12,6 @@ final earningRepositoryProvider = Provider((ref) {
 /// Handles API calls for Earnings and Transactions
 class EarningRepository {
   final RizikApiClient _apiClient;
-  final SupabaseClient _supabase = Supabase.instance.client;
 
   EarningRepository(this._apiClient);
 

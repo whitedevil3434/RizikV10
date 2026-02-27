@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:rizik_v4/data/models/virtual_storefront.dart';
 import 'package:rizik_v4/data/models/user_profile.dart';
 import 'package:rizik_v4/data/models/user_role.dart';
-import 'package:rizik_v4/data/models/food_item.dart';
 import 'package:rizik_v4/features/seeker/household/logic/khata_provider.dart';
 
 /// Service for managing virtual storefronts
@@ -25,7 +24,8 @@ class VirtualStorefrontService {
     String? address,
   }) {
     final trustScore = partner.getTrustScore().overall;
-    final auraLevel = 5; // Default aura level, should be fetched from AuraProvider
+    final auraLevel =
+        5; // Default aura level, should be fetched from AuraProvider
 
     final storefront = VirtualStorefront.createFromPartner(
       partnerId: partner.id,
@@ -65,14 +65,14 @@ class VirtualStorefrontService {
     try {
       // In production, this would query Khata OS for inventory levels
       // For now, we'll simulate with mock data
-      
+
       final inventoryMap = <String, int>{};
       bool hasLowStock = false;
 
       // Mock inventory sync - in production, query from Khata OS
       // Example: Get inventory entries from partner's Khata
       // final khataEntries = await khataProvider.getInventoryEntries(storefront.partnerId);
-      
+
       debugPrint('📦 Syncing inventory for ${storefront.storeName}');
       debugPrint('   Partner: ${storefront.partnerId}');
 
@@ -80,7 +80,8 @@ class VirtualStorefrontService {
       for (final entry in inventoryMap.entries) {
         if (entry.value <= lowStockThreshold && entry.value > 0) {
           hasLowStock = true;
-          debugPrint('   ⚠️ Low stock: ${entry.key} (${entry.value} remaining)');
+          debugPrint(
+              '   ⚠️ Low stock: ${entry.key} (${entry.value} remaining)');
         }
       }
 
@@ -123,7 +124,7 @@ class VirtualStorefrontService {
     DateTime? currentTime,
   }) {
     final now = currentTime ?? DateTime.now();
-    
+
     // If no business hours set, keep current status
     if (storefront.businessHours == null) {
       return storefront;
@@ -136,9 +137,8 @@ class VirtualStorefrontService {
       now,
     );
 
-    final newStatus = isWithinBusinessHours 
-        ? StoreStatus.open 
-        : StoreStatus.closed;
+    final newStatus =
+        isWithinBusinessHours ? StoreStatus.open : StoreStatus.closed;
 
     if (newStatus != storefront.status) {
       return updateStoreStatus(
@@ -157,7 +157,7 @@ class VirtualStorefrontService {
     required int quantity,
   }) {
     final updatedInventory = Map<String, int>.from(storefront.inventoryMap);
-    
+
     if (quantity <= 0) {
       updatedInventory.remove(foodId);
       debugPrint('🗑️ Item removed from inventory: $foodId');
@@ -185,7 +185,7 @@ class VirtualStorefrontService {
     required int quantityToDeduct,
   }) {
     final currentQuantity = storefront.getItemQuantity(foodId);
-    
+
     if (currentQuantity < quantityToDeduct) {
       throw StateError(
         'Insufficient stock: $foodId (available: $currentQuantity, requested: $quantityToDeduct)',
@@ -193,7 +193,7 @@ class VirtualStorefrontService {
     }
 
     final newQuantity = currentQuantity - quantityToDeduct;
-    
+
     return updateItemQuantity(
       storefront: storefront,
       foodId: foodId,
@@ -232,7 +232,8 @@ class VirtualStorefrontService {
       reviewCount: reviewCount ?? storefront.reviewCount,
       totalOrders: totalOrders ?? storefront.totalOrders,
       conversionRate: conversionRate ?? storefront.conversionRate,
-      averagePreparationTime: averagePreparationTime ?? storefront.averagePreparationTime,
+      averagePreparationTime:
+          averagePreparationTime ?? storefront.averagePreparationTime,
       onTimeDeliveryRate: onTimeDeliveryRate ?? storefront.onTimeDeliveryRate,
       lastUpdated: DateTime.now(),
     );
@@ -241,11 +242,9 @@ class VirtualStorefrontService {
   /// Increment active orders count
   VirtualStorefront incrementActiveOrders(VirtualStorefront storefront) {
     final newCount = storefront.activeOrders + 1;
-    
+
     // Auto-set to busy if too many active orders
-    final newStatus = newCount >= 10 
-        ? StoreStatus.busy 
-        : storefront.status;
+    final newStatus = newCount >= 10 ? StoreStatus.busy : storefront.status;
 
     return storefront.copyWith(
       activeOrders: newCount,
@@ -257,10 +256,10 @@ class VirtualStorefrontService {
   /// Decrement active orders count
   VirtualStorefront decrementActiveOrders(VirtualStorefront storefront) {
     final newCount = (storefront.activeOrders - 1).clamp(0, 999);
-    
+
     // Auto-set to open if no longer busy
     final newStatus = newCount < 10 && storefront.status == StoreStatus.busy
-        ? StoreStatus.open 
+        ? StoreStatus.open
         : storefront.status;
 
     return storefront.copyWith(
@@ -373,9 +372,9 @@ class VirtualStorefrontService {
     }
 
     // Distance penalty (if location available)
-    if (userLatitude != null && 
-        userLongitude != null && 
-        storefront.latitude != null && 
+    if (userLatitude != null &&
+        userLongitude != null &&
+        storefront.latitude != null &&
         storefront.longitude != null) {
       final distance = _calculateDistance(
         userLatitude,
@@ -383,7 +382,7 @@ class VirtualStorefrontService {
         storefront.latitude!,
         storefront.longitude!,
       );
-      
+
       // Penalty increases with distance
       if (distance > 2.0) {
         score *= 0.7; // 30% penalty for > 2km
@@ -414,18 +413,18 @@ class VirtualStorefrontService {
   ) {
     // Haversine formula for distance calculation
     const double earthRadius = 6371; // km
-    
+
     final dLat = _toRadians(lat2 - lat1);
     final dLon = _toRadians(lon2 - lon1);
-    
+
     final a = _sin(dLat / 2) * _sin(dLat / 2) +
         _cos(_toRadians(lat1)) *
             _cos(_toRadians(lat2)) *
             _sin(dLon / 2) *
             _sin(dLon / 2);
-    
+
     final c = 2 * _atan2(_sqrt(a), _sqrt(1 - a));
-    
+
     return earthRadius * c;
   }
 

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:rizik_v4/services/income_splitting_service.dart';
-import 'package:rizik_v4/models/squad.dart';
+import 'package:rizik_v4/data/remote/income_splitting_service.dart';
+import 'package:rizik_v4/data/models/squad.dart';
 
 void main() {
   group('IncomeSplittingService', () {

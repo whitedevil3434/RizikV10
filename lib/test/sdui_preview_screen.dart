@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import 'package:rizik_v4/core/sdui/renderer.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -30,7 +29,7 @@ class _SDUIPreviewScreenState extends State<SDUIPreviewScreen> {
           .select('screen_data')
           .eq('role', _currentRole)
           .single();
-      
+
       if (mounted) {
         setState(() {
           _uiData = response['screen_data'] as Map<String, dynamic>;
@@ -128,7 +127,8 @@ class _SDUIPreviewScreenState extends State<SDUIPreviewScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _toggleRole,
         icon: const Icon(Icons.swap_horiz),
-        label: Text('Switch to ${_currentRole == 'mover' ? 'Seeker' : 'Mover'}'),
+        label:
+            Text('Switch to ${_currentRole == 'mover' ? 'Seeker' : 'Mover'}'),
         backgroundColor: Colors.black,
       ),
     );

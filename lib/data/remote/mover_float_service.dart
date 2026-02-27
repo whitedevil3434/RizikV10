@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:rizik_v4/data/models/mover_float.dart';
 import 'package:rizik_v4/data/models/trust_score.dart';
 
@@ -58,7 +57,6 @@ class MoverFloatService {
   }) {
     final now = DateTime.now();
 
-    
     // Create deposit transaction
     final transaction = FloatTransaction(
       id: 'txn_${now.millisecondsSinceEpoch}',
@@ -225,7 +223,8 @@ class MoverFloatService {
     return RepaymentPreview(
       deductionAmount: deductionAmount.toDouble(),
       remainingEarnings: missionEarnings - deductionAmount.toDouble(),
-      remainingBalance: currentFloat.remainingBalance - deductionAmount.toDouble(),
+      remainingBalance:
+          currentFloat.remainingBalance - deductionAmount.toDouble(),
     );
   }
 
@@ -239,15 +238,17 @@ class MoverFloatService {
         .where((t) => t.type == FloatTransactionType.deduction)
         .fold(0.0, (sum, t) => sum + t.amount);
 
-    final averageRepaymentPerMission = currentFloat.autoRepayment.totalDeductions > 0
-        ? totalRepaid / currentFloat.autoRepayment.totalDeductions
-        : 0.0;
+    final averageRepaymentPerMission =
+        currentFloat.autoRepayment.totalDeductions > 0
+            ? totalRepaid / currentFloat.autoRepayment.totalDeductions
+            : 0.0;
 
     return FloatStatistics(
       totalDeposited: totalDeposited,
       totalRepaid: totalRepaid,
       currentBalance: currentFloat.remainingBalance,
-      repaymentRate: totalDeposited > 0 ? (totalRepaid / totalDeposited * 100) : 0,
+      repaymentRate:
+          totalDeposited > 0 ? (totalRepaid / totalDeposited * 100) : 0,
       totalMissions: currentFloat.autoRepayment.totalDeductions,
       averageRepaymentPerMission: averageRepaymentPerMission,
     );

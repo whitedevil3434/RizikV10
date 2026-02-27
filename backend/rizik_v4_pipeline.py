@@ -11,6 +11,7 @@
 """
 
 import requests
+import os
 import base64
 import json
 import time
@@ -21,10 +22,10 @@ from PIL import Image
 # API CONFIGURATION
 # ============================================================================
 
-SILICONFLOW_API_KEY = "sk-avpyqvixenjmljtfibazyinfprceikgdjiwvnyucqchuwqdp"
+SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "")
 SILICONFLOW_BASE_URL = "https://api.siliconflow.com/v1"
 
-FAL_API_KEY = "7abe11c6-cb33-4379-b15f-051c26dfe66b:d5a74954580c7e91d1253045065aa622"
+FAL_API_KEY = os.getenv("FAL_API_KEY", "")
 FAL_BASE_URL = "https://fal.run"
 
 # ============================================================================

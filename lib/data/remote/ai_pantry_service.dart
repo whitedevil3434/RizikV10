@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:rizik_v4/data/models/inventory.dart';
 import 'package:rizik_v4/data/models/khata_entry.dart';
 import 'package:rizik_v4/data/models/khata.dart';
@@ -129,18 +128,21 @@ class AIPantryService {
 
       // Suggest reorder quantity (enough for 7 days)
       final suggestedQuantity = avgDailyUsage * 7;
-      final daysUntilEmpty = avgDailyUsage > 0 ? item.quantity / avgDailyUsage : 999;
+      final daysUntilEmpty =
+          avgDailyUsage > 0 ? item.quantity / avgDailyUsage : 999;
 
       suggestions.add(ReorderSuggestion(
         item: item,
         suggestedQuantity: suggestedQuantity,
         estimatedCost: suggestedQuantity * item.costPerUnit,
-        urgency: daysUntilEmpty < 2 ? ReorderUrgency.urgent : ReorderUrgency.normal,
+        urgency:
+            daysUntilEmpty < 2 ? ReorderUrgency.urgent : ReorderUrgency.normal,
         daysUntilEmpty: daysUntilEmpty.round(),
       ));
     }
 
-    return suggestions..sort((a, b) => a.daysUntilEmpty.compareTo(b.daysUntilEmpty));
+    return suggestions
+      ..sort((a, b) => a.daysUntilEmpty.compareTo(b.daysUntilEmpty));
   }
 
   /// Calculate total inventory value

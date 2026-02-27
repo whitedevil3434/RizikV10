@@ -15,7 +15,6 @@ class WidgetProfileDisplay extends StatelessWidget {
     return Consumer<ProfileProvider>(
       builder: (context, provider, child) {
         final profile = provider.profile;
-        final avatar = provider.getAvatarForRole(role);
         final title = provider.getTitleForRole(role);
 
         return Container(
@@ -30,7 +29,8 @@ class WidgetProfileDisplay extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 32,
-                child: Text(profile.name[0], style: const TextStyle(fontSize: 24)),
+                child:
+                    Text(profile.name[0], style: const TextStyle(fontSize: 24)),
                 backgroundColor: Colors.white,
               ),
               const SizedBox(width: 16),
@@ -65,9 +65,12 @@ class WidgetProfileDisplay extends StatelessWidget {
 
   UserRole _parseRole(String roleStr) {
     switch (roleStr.toLowerCase()) {
-      case 'partner': return UserRole.partner;
-      case 'rider': return UserRole.rider;
-      default: return UserRole.consumer;
+      case 'partner':
+        return UserRole.partner;
+      case 'rider':
+        return UserRole.rider;
+      default:
+        return UserRole.consumer;
     }
   }
 }

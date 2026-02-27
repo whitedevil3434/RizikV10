@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-import 'package:rizik_v4/core/theme/rizik_colors.dart'; // Imported DutyShift
 import 'package:rizik_v4/data/models/duty_roster.dart';
 
 /// SDUI Widget: Duty Card (Shift Schedule)
@@ -15,7 +13,6 @@ class WidgetDutyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userId = data['userId'] as String? ?? 'default_user';
     final showUpcoming = data['showUpcoming'] as int? ?? 3;
     final enableSwap = data['enableSwap'] as bool? ?? true;
 
@@ -104,7 +101,8 @@ class WidgetDutyCard extends StatelessWidget {
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFF66BB6A),
                           borderRadius: BorderRadius.circular(12),
@@ -220,7 +218,8 @@ class WidgetDutyCard extends StatelessWidget {
             ),
             if (enableSwap)
               IconButton(
-                icon: Icon(Icons.swap_horiz, color: Colors.grey.shade600, size: 20),
+                icon: Icon(Icons.swap_horiz,
+                    color: Colors.grey.shade600, size: 20),
                 onPressed: () {
                   print('Request shift swap: ${shift.id}');
                 },
@@ -253,7 +252,7 @@ class WidgetDutyCard extends StatelessWidget {
   String _getTimeRemaining(DateTime endTime) {
     final now = DateTime.now();
     if (endTime.isBefore(now)) return 'শেষ';
-    
+
     final diff = endTime.difference(now);
     if (diff.inHours > 0) {
       return '${diff.inHours}ঘ ${diff.inMinutes.remainder(60)}মি বাকি';
@@ -288,8 +287,10 @@ class WidgetDutyCard extends StatelessWidget {
         memberId: 'worker_123',
         memberName: 'করিম',
         role: DutyRole.delivery,
-        startTime: DateTime(startDate.year, startDate.month, startDate.day, 10, 0),
-        endTime: DateTime(startDate.year, startDate.month, startDate.day, 18, 0),
+        startTime:
+            DateTime(startDate.year, startDate.month, startDate.day, 10, 0),
+        endTime:
+            DateTime(startDate.year, startDate.month, startDate.day, 18, 0),
         status: ShiftStatus.scheduled,
       );
     });

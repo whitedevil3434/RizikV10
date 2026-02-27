@@ -13,12 +13,12 @@ Deno.serve(async (req) => {
     try {
         const { roomName, participantName } = await req.json();
 
-        const apiKey = Deno.env.get('LIVEKIT_API_KEY') ?? 'API7pg3g3ip6Yi6';
-        const apiSecret = Deno.env.get('LIVEKIT_API_SECRET') ?? 'w35FE8AVwpf6J5P1nyaqMzds7shsaNEoBq7Zskbevgi';
-        const wsUrl = Deno.env.get('LIVEKIT_URL') ?? 'https://rizik-ai-g0t2gbf5.livekit.cloud';
+        const apiKey = Deno.env.get('LIVEKIT_API_KEY');
+        const apiSecret = Deno.env.get('LIVEKIT_API_SECRET');
+        const wsUrl = Deno.env.get('LIVEKIT_URL');
 
-        if (!apiKey || !apiSecret) {
-            throw new Error("Missing API Key or Secret");
+        if (!apiKey || !apiSecret || !wsUrl) {
+            throw new Error("Missing LIVEKIT_API_KEY, LIVEKIT_API_SECRET, or LIVEKIT_URL");
         }
 
         // 1. Generate Token for User

@@ -1,5 +1,4 @@
 import 'package:hive_flutter/hive_flutter.dart';
-import 'dart:convert';
 
 /// OfflineQueueManager - Handles offline API requests
 /// Stores failed API calls and retries them when connection is restored
@@ -9,7 +8,7 @@ class OfflineQueueManager {
   OfflineQueueManager._internal();
 
   Box? _queueBox;
-  
+
   static const String _boxName = 'offline_queue';
 
   /// Initialize
@@ -32,14 +31,14 @@ class OfflineQueueManager {
   Future<List<OfflineRequest>> getPendingRequests() async {
     final box = _queueBox ?? await Hive.openBox(_boxName);
     final requests = <OfflineRequest>[];
-    
+
     for (var i = 0; i < box.length; i++) {
       final data = box.getAt(i);
       if (data != null) {
         requests.add(OfflineRequest.fromJson(Map<String, dynamic>.from(data)));
       }
     }
-    
+
     return requests;
   }
 
@@ -59,7 +58,7 @@ class OfflineQueueManager {
   Future<void> syncQueue() async {
     final requests = await getPendingRequests();
     print('📤 Syncing ${requests.length} offline requests...');
-    
+
     for (var i = 0; i < requests.length; i++) {
       final request = requests[i];
       try {
@@ -90,20 +89,24 @@ class OfflineRequest {
   }) : createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toJson() => {
-    'endpoint': endpoint,
-    'method': method,
-    'body': body,
-    'headers': headers,
-    'created_at': createdAt.toIso8601String(),
-  };
+        'endpoint': endpoint,
+        'method': method,
+        'body': body,
+        'headers': headers,
+        'created_at': createdAt.toIso8601String(),
+      };
 
   factory OfflineRequest.fromJson(Map<String, dynamic> json) => OfflineRequest(
-    endpoint: json['endpoint'],
-    method: json['method'],
-    body: json['body'] != null ? Map<String, dynamic>.from(json['body']) : null,
-    headers: json['headers'] != null ? Map<String, String>.from(json['headers']) : null,
-    createdAt: DateTime.parse(json['created_at']),
-  );
+        endpoint: json['endpoint'],
+        method: json['method'],
+        body: json['body'] != null
+            ? Map<String, dynamic>.from(json['body'])
+            : null,
+        headers: json['headers'] != null
+            ? Map<String, String>.from(json['headers'])
+            : null,
+        createdAt: DateTime.parse(json['created_at']),
+      );
 }
 
 /// Global instance

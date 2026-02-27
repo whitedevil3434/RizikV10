@@ -1,0 +1,27 @@
+{
+  "lastChecks": {
+    "email": null,
+    "calendar": null,
+    "weather": null,
+    "storage": 1770228000,
+    "memory": 1770231600,
+    "moltbook": 1770284220,
+    "wallets": 1770284220,
+    "bottlenecks": 1770284220,
+    "docker": 1770245340,
+    "link-call": 1770246300,
+    "whatsapp": 1770264660,
+    "hydra": 1770264660,
+    "video": 1770261300,
+    "season": 1770264660,
+    "avatars": 1770265400
+  },
+  "systemStatus": {
+    "storageUsage": "47%",
+    "memoryFiles": 7,
+    "infrastructureReady": true,
+    "groqEnhanced": true,
+    "dockerStatus": "CRITICAL_LOCKED",
+    "uplinkStatus": "Pending (401)"
+  }
+}

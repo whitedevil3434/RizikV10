@@ -1,9 +1,15 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart';
+import 'package:rizik_v4/core/config/env_config.dart';
 
 class SduiService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  Future<Map<String, dynamic>> fetchScreen(String role, {String screenId = 'home'}) async {
+  Future<Map<String, dynamic>> fetchScreen(String role,
+      {String screenId = 'home'}) async {
+    if (EnvConfig.offlineMode) {
+      return const {};
+    }
     try {
       final response = await _supabase
           .from('app_screens')
@@ -18,8 +24,8 @@ class SduiService {
         throw Exception('No screen data found for role: $role');
       }
     } catch (e) {
-      print('Error fetching screen data: $e');
-      rethrow; // Let the UI handle the error
+      debugPrint('SDUI fetch fallback for role=$role screen=$screenId: $e');
+      return const {};
     }
   }
 }

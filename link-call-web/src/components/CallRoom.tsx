@@ -24,7 +24,8 @@ export default function CallRoom({ roomName, participantName, onDisconnect }: Ca
     const [error, setError] = useState<string | null>(null);
     const [isConnecting, setIsConnecting] = useState(true);
 
-    const LIVEKIT_URL = 'wss://rizik-ai-femz194x.livekit.cloud';
+    const LIVEKIT_URL =
+        process.env.NEXT_PUBLIC_LIVEKIT_URL || 'wss://rizik-ai-femz194x.livekit.cloud';
 
     useEffect(() => {
         const getToken = async () => {

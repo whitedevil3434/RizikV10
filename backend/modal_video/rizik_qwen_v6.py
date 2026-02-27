@@ -23,19 +23,22 @@ import modal
 # ============================================================================
 # SILICONFLOW CONFIG
 # ============================================================================
-SILICONFLOW_API_KEY = "sk-avpyqvixenjmljtfibazyinfprceikgdjiwvnyucqchuwqdp"
+SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "")
 SILICONFLOW_BASE_URL = "https://api.siliconflow.com/v1"
 
 # R2 Config
 R2_PUBLIC_URL = "https://pub-b00b750231d04ca29f9683a360790349.r2.dev"
 
 # Supabase Config (for Flutter app sync)
-SUPABASE_URL = "https://dxekolvveoadbaftfsmy.supabase.co"
-SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4ZWtvbHZ2ZW9hZGJhZnRmc215Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyNzczMTEsImV4cCI6MjA2ODg1MzMxMX0.TRM9nL85CLLjvR5XfZ7YBncwqn0EybTVtt8a46NlZRg"
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
 
 
 def save_to_supabase(video_url: str, analysis: dict):
     """Save video metadata to Supabase for Flutter app sync."""
+    if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+        print("⚠️ Supabase env not configured; skipping sync.")
+        return
     print("📱 Saving to Supabase for Flutter app...")
     
     headers = {

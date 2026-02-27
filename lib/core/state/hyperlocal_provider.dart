@@ -2,7 +2,7 @@
 // State management for hyperlocal services marketplace
 
 import 'package:flutter/material.dart';
-import 'package:rizik_v4/data/remote/hyperlocal_service.dart';
+import 'package:rizik_v4/data/models/hyperlocal_service.dart';
 import 'package:rizik_v4/data/remote/hyperlocal_service.dart' as service;
 
 class HyperlocalProvider extends ChangeNotifier {

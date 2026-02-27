@@ -1,7 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:rizik_v4/data/models/order.dart';
-import 'package:rizik_v4/data/models/unified_wallet.dart';
-import 'package:rizik_v4/data/models/user_role.dart';
 import 'package:rizik_v4/features/fintech/wallet/logic/unified_wallet_provider.dart';
 import 'package:rizik_v4/core/state/aura_provider.dart';
 import 'package:rizik_v4/data/remote/payment_orchestration_service.dart'; // For PaymentBreakdown, CelebrationEvent, etc.
@@ -39,7 +37,8 @@ class UnifiedPaymentOrchestrationService {
     String? creatorName,
     Map<String, dynamic>? metadata,
   }) async {
-    debugPrint('🎬 Starting unified payment orchestration for order: ${order.id}');
+    debugPrint(
+        '🎬 Starting unified payment orchestration for order: ${order.id}');
     debugPrint('   Total: ৳${order.total}');
 
     try {
@@ -50,12 +49,15 @@ class UnifiedPaymentOrchestrationService {
       );
 
       debugPrint('💵 Payment Breakdown:');
-      debugPrint('   Platform Fee: ৳${breakdown.platformFee.toStringAsFixed(2)}');
+      debugPrint(
+          '   Platform Fee: ৳${breakdown.platformFee.toStringAsFixed(2)}');
       debugPrint('   Rider Fee: ৳${breakdown.riderFee.toStringAsFixed(2)}');
       if (breakdown.creatorCommission != null) {
-        debugPrint('   Creator Commission: ৳${breakdown.creatorCommission!.toStringAsFixed(2)}');
+        debugPrint(
+            '   Creator Commission: ৳${breakdown.creatorCommission!.toStringAsFixed(2)}');
       }
-      debugPrint('   Partner Amount: ৳${breakdown.partnerAmount.toStringAsFixed(2)}');
+      debugPrint(
+          '   Partner Amount: ৳${breakdown.partnerAmount.toStringAsFixed(2)}');
 
       // Step 2: Execute distribution (Add earnings to respective roles)
       // Note: In Unified Wallet, we assume "Consumer" already paid (deducted).
@@ -72,7 +74,9 @@ class UnifiedPaymentOrchestrationService {
         source: TransactionSource.order,
         description: 'Order ${order.id} - Partner Payout',
       );
-      transactions.add(TransactionResult(success: true, transactionId: 'partner_earning_${order.id}')); // Mock ID
+      transactions.add(TransactionResult(
+          success: true,
+          transactionId: 'partner_earning_${order.id}')); // Mock ID
 
       // Rider Earning
       await walletProvider.receiveEarnings(
@@ -81,7 +85,8 @@ class UnifiedPaymentOrchestrationService {
         source: TransactionSource.delivery,
         description: 'Order ${order.id} - Delivery Fee',
       );
-      transactions.add(TransactionResult(success: true, transactionId: 'rider_earning_${order.id}'));
+      transactions.add(TransactionResult(
+          success: true, transactionId: 'rider_earning_${order.id}'));
 
       // Creator Commission (if applicable)
       if (breakdown.creatorCommission != null) {
@@ -91,7 +96,8 @@ class UnifiedPaymentOrchestrationService {
           source: TransactionSource.commission,
           description: 'Order ${order.id} - Video Commission',
         );
-        transactions.add(TransactionResult(success: true, transactionId: 'creator_earning_${order.id}'));
+        transactions.add(TransactionResult(
+            success: true, transactionId: 'creator_earning_${order.id}'));
       }
 
       // Step 3: Award XP bonuses
@@ -139,13 +145,14 @@ class UnifiedPaymentOrchestrationService {
   }) {
     final platformFee = orderTotal * defaultPlatformFeeRate;
     final riderFee = orderTotal * defaultRiderFeeRate;
-    
+
     double? creatorCommission;
     if (hasVideo) {
       creatorCommission = orderTotal * videoCommissionRate;
     }
 
-    final partnerAmount = orderTotal - platformFee - riderFee - (creatorCommission ?? 0);
+    final partnerAmount =
+        orderTotal - platformFee - riderFee - (creatorCommission ?? 0);
 
     return PaymentBreakdown(
       orderTotal: orderTotal,
@@ -169,7 +176,7 @@ class UnifiedPaymentOrchestrationService {
       // Partner XP
       final partnerXP = 50 + (breakdown.partnerAmount / 10).round();
       debugPrint('✨ Awarding $partnerXP XP to Partner');
-      
+
       // Rider XP
       final riderXP = 30 + (breakdown.riderFee / 5).round();
       debugPrint('✨ Awarding $riderXP XP to Rider');
@@ -216,7 +223,8 @@ class UnifiedPaymentOrchestrationService {
         type: CelebrationType.commission,
         recipient: creatorName ?? 'Creator',
         amount: breakdown.creatorCommission!,
-        message: '🎥 Video commission: ৳${breakdown.creatorCommission!.toStringAsFixed(0)}!',
+        message:
+            '🎥 Video commission: ৳${breakdown.creatorCommission!.toStringAsFixed(0)}!',
         intensity: _getCelebrationIntensity(breakdown.creatorCommission!),
         emoji: '⭐',
       ));
@@ -233,9 +241,9 @@ class UnifiedPaymentOrchestrationService {
   }
 }
 
-// Helper class for transaction results (mocking the one in moneybag_transaction_orchestrator.dart if needed, 
-// but we reused the one from payment_orchestration_service.dart which imports it. 
-// Wait, PaymentDistributionResult uses TransactionResult. 
+// Helper class for transaction results (mocking the one in moneybag_transaction_orchestrator.dart if needed,
+// but we reused the one from payment_orchestration_service.dart which imports it.
+// Wait, PaymentDistributionResult uses TransactionResult.
 // I need to make sure TransactionResult is available.
 // It's likely in moneybag_transaction_orchestrator.dart.
 // I'll assume it's available via payment_orchestration_service.dart imports or I might need to import it directly.)

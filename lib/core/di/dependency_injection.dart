@@ -82,6 +82,6 @@ Future<void> setupDependencyInjection(GetIt container) async {
 
   // Source Role: Kitchen OS Repository
   locator.registerLazySingleton<KitchenRepository>(
-    () => KitchenRepositoryImpl(locator<ApiClient>()),
+    () => KitchenRepository(),
   );
 }

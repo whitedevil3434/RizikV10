@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:rizik_v4/data/models/trust_score.dart';
 import 'package:rizik_v4/data/models/order.dart';
 
@@ -16,16 +15,21 @@ class TrustScoreService {
   }) {
     // Calculate new metrics
     final newTotalTransactions = currentScore.totalTransactions + 1;
-    final onTimeDeliveries = (currentScore.onTimeRate * currentScore.totalTransactions) + (wasOnTime ? 1 : 0);
+    final onTimeDeliveries =
+        (currentScore.onTimeRate * currentScore.totalTransactions) +
+            (wasOnTime ? 1 : 0);
     final newOnTimeRate = onTimeDeliveries / newTotalTransactions;
-    
+
     // Update average rating with weighted average
-    final totalRatingPoints = (currentScore.averageRating * currentScore.totalTransactions) + qualityRating;
+    final totalRatingPoints =
+        (currentScore.averageRating * currentScore.totalTransactions) +
+            qualityRating;
     final newAverageRating = totalRatingPoints / newTotalTransactions;
 
     // Update category scores
-    final updatedCategories = Map<TrustCategory, double>.from(currentScore.categories);
-    
+    final updatedCategories =
+        Map<TrustCategory, double>.from(currentScore.categories);
+
     // Update delivery category based on on-time performance
     updatedCategories[TrustCategory.delivery] = _updateCategoryScore(
       currentScore: updatedCategories[TrustCategory.delivery] ?? 3.0,
@@ -71,7 +75,7 @@ class TrustScoreService {
     } else {
       recentEvents.add(TrustEvent.paymentLate);
     }
-    
+
     // Keep only last 10 events
     if (recentEvents.length > 10) {
       recentEvents.removeRange(0, recentEvents.length - 10);
@@ -112,7 +116,8 @@ class TrustScoreService {
 
     // Add badge with earned timestamp
     final earnedBadge = badge.copyWith(earnedAt: DateTime.now());
-    final updatedBadges = List<Badge>.from(currentScore.badges)..add(earnedBadge);
+    final updatedBadges = List<Badge>.from(currentScore.badges)
+      ..add(earnedBadge);
 
     // Recalculate overall score with new badge count
     final newOverall = TrustScore.calculateOverallScore(
@@ -220,7 +225,8 @@ class TrustScoreService {
     String? reason,
   }) {
     // Decrease category score significantly
-    final updatedCategories = Map<TrustCategory, double>.from(currentScore.categories);
+    final updatedCategories =
+        Map<TrustCategory, double>.from(currentScore.categories);
     updatedCategories[category] = _updateCategoryScore(
       currentScore: updatedCategories[category] ?? 3.0,
       wasPositive: false,
@@ -267,7 +273,8 @@ class TrustScoreService {
     final suggestions = <String>[];
 
     if (score.categories[TrustCategory.delivery]! < 3.5) {
-      suggestions.add('Focus on on-time deliveries to improve your delivery score');
+      suggestions
+          .add('Focus on on-time deliveries to improve your delivery score');
       suggestions.add('দ্রুত ডেলিভারিতে মনোযোগ দিন');
     }
 
@@ -300,7 +307,6 @@ class TrustScoreService {
   }
 
   /// Simulate trust score update (for testing)
-  @visibleForTesting
   static TrustScore simulatePositiveOrder(TrustScore score) {
     return updateTrustScoreOnOrderCompletion(
       currentScore: score,

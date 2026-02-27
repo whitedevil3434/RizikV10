@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:rizik_v4/data/remote/supabase/sdui_service.dart';
 import 'package:rizik_v4/core/sdui/renderer.dart';
 import 'package:rizik_v4/core/theme/rizik_brand_colors.dart';
-import 'package:rizik_v4/core/shell/rizik_scaffold.dart';
 import 'package:rizik_v4/shared/widgets/loaders/rizik_shell_shimmer.dart';
 
 class SDUIScreen extends StatefulWidget {
@@ -33,13 +32,15 @@ class _SDUIScreenState extends State<SDUIScreen> {
   @override
   void didUpdateWidget(SDUIScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.role != widget.role || oldWidget.screenId != widget.screenId) {
+    if (oldWidget.role != widget.role ||
+        oldWidget.screenId != widget.screenId) {
       _loadData();
     }
   }
 
   void _loadData() {
-    _screenDataFuture = _sduiService.fetchScreen(widget.role, screenId: widget.screenId);
+    _screenDataFuture =
+        _sduiService.fetchScreen(widget.role, screenId: widget.screenId);
   }
 
   Future<void> _refresh() async {
@@ -68,22 +69,23 @@ class _SDUIScreenState extends State<SDUIScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                      const Icon(Icons.error_outline,
+                          color: Colors.red, size: 48),
                       const SizedBox(height: 16),
                       Text(
                         'Something went wrong',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.black87,
-                          fontWeight: FontWeight.bold,
-                        ),
+                              color: Colors.black87,
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         snapshot.error.toString(),
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.black54,
-                        ),
+                              color: Colors.black54,
+                            ),
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
@@ -105,8 +107,8 @@ class _SDUIScreenState extends State<SDUIScreen> {
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: RepaintBoundary(
-                  child: RizikRenderer(uiData: snapshot.data!),
-                ),
+                    child: RizikRenderer(uiData: snapshot.data!),
+                  ),
                 ),
               );
             } else {

@@ -20,7 +20,7 @@ enum SocialTransactionType {
   received('received', 'ফেরত পেয়েছি');
 
   const SocialTransactionType(this.key, this.nameBn);
-  
+
   final String key;
   final String nameBn;
 }
@@ -39,7 +39,7 @@ class KhataEntry {
   final bool isLocked; // For committed expenses (rent, utilities)
   final String? notes;
   final Map<String, dynamic>? metadata;
-  
+
   // NEW: Squad System fields
   final KhataEntryScope? scope; // mess vs business
   final String? squadId;
@@ -75,33 +75,9 @@ class KhataEntry {
     this.linkedPersonName,
     this.socialType,
     this.linkedEntryId,
-  })  : id = id ?? 'entry_${DateTime.now().millisecondsSinceEpoch}_${date.hashCode}',
+  })  : id = id ??
+            'entry_${DateTime.now().millisecondsSinceEpoch}_${date.hashCode}',
         timestamp = timestamp ?? DateTime.now();
-
-  // Legacy constructor for backward compatibility
-  const KhataEntry._internal({
-    required this.id,
-    required this.date,
-    required this.description,
-    required this.amount,
-    required this.isCredit,
-    required this.isChecked,
-    required this.timestamp,
-    this.category,
-    this.receipt,
-    required this.isLocked,
-    this.notes,
-    this.metadata,
-    this.scope,
-    this.squadId,
-    this.userId,
-    this.transactionId,
-    this.isSocialTransaction = false,
-    this.linkedPersonId,
-    this.linkedPersonName,
-    this.socialType,
-    this.linkedEntryId,
-  });
 
   /// Get numeric value of amount
   double get amountValue {

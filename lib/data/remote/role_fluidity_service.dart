@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:rizik_v4/data/models/role_fluidity_tracker.dart';
 import 'package:rizik_v4/data/models/user_role.dart';
-import 'package:rizik_v4/data/models/user_profile.dart';
 
 /// Service for managing role fluidity and three-role loop
 /// Tracks daily activity across Consumer, Partner, and Rider roles
@@ -40,7 +39,8 @@ class RoleFluidityService {
     debugPrint('📱 Consumer activity recorded');
     debugPrint('   Amount spent: ৳${amountSpent.toStringAsFixed(2)}');
     debugPrint('   Orders: $ordersPlaced');
-    debugPrint('   Total spent today: ৳${updated.consumerSpent.toStringAsFixed(2)}');
+    debugPrint(
+        '   Total spent today: ৳${updated.consumerSpent.toStringAsFixed(2)}');
 
     return _checkTripleRoleAchievement(updated);
   }
@@ -59,7 +59,8 @@ class RoleFluidityService {
     debugPrint('👨‍🍳 Partner activity recorded');
     debugPrint('   Amount earned: ৳${amountEarned.toStringAsFixed(2)}');
     debugPrint('   Orders fulfilled: $ordersFulfilled');
-    debugPrint('   Total earned today: ৳${updated.partnerEarned.toStringAsFixed(2)}');
+    debugPrint(
+        '   Total earned today: ৳${updated.partnerEarned.toStringAsFixed(2)}');
 
     return _checkTripleRoleAchievement(updated);
   }
@@ -78,7 +79,8 @@ class RoleFluidityService {
     debugPrint('🚴 Rider activity recorded');
     debugPrint('   Amount earned: ৳${amountEarned.toStringAsFixed(2)}');
     debugPrint('   Deliveries: $deliveriesCompleted');
-    debugPrint('   Total earned today: ৳${updated.riderEarned.toStringAsFixed(2)}');
+    debugPrint(
+        '   Total earned today: ৳${updated.riderEarned.toStringAsFixed(2)}');
 
     return _checkTripleRoleAchievement(updated);
   }
@@ -87,7 +89,8 @@ class RoleFluidityService {
   static RoleFluidityTracker _checkTripleRoleAchievement(
     RoleFluidityTracker tracker,
   ) {
-    if (tracker.isEligibleForTripleRoleAchievement && !tracker.isTripleRoleDay) {
+    if (tracker.isEligibleForTripleRoleAchievement &&
+        !tracker.isTripleRoleDay) {
       debugPrint('🎉 TRIPLE ROLE ACHIEVEMENT UNLOCKED!');
       debugPrint('   Bonus XP: +$tripleRoleXpBonus');
       return tracker.awardTripleRoleAchievement(bonusXp: tripleRoleXpBonus);
@@ -155,9 +158,8 @@ class RoleFluidityService {
       'partnerDays': partnerDays,
       'riderDays': riderDays,
       'daysTracked': weekTrackers.length,
-      'averageDailyEarnings': weekTrackers.isNotEmpty 
-          ? totalEarnings / weekTrackers.length 
-          : 0.0,
+      'averageDailyEarnings':
+          weekTrackers.isNotEmpty ? totalEarnings / weekTrackers.length : 0.0,
     };
   }
 

@@ -38,27 +38,33 @@ class MoverDashboardScreen extends ConsumerWidget {
             itemBuilder: (context, index) {
               final order = orders[index];
               final isUrgent = order['is_urgent'] ?? false;
-              
+
               return Card(
                 margin: const EdgeInsets.only(bottom: 8),
                 color: isUrgent ? Colors.red[50] : null,
                 child: ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.local_shipping)),
-                  title: Text('Delivery #${order['id'].toString().substring(0, 8)}'),
+                  leading:
+                      const CircleAvatar(child: Icon(Icons.local_shipping)),
+                  title: Text(
+                      'Delivery #${order['id'].toString().substring(0, 8)}'),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('From: ${order['pickup_address']}'),
                       Text('To: ${order['dropoff_address']}'),
-                      Text('Distance: ${order['distance_km']} km • Weight: ${order['weight_kg']} kg'),
+                      Text(
+                          'Distance: ${order['distance_km']} km • Weight: ${order['weight_kg']} kg'),
                     ],
                   ),
                   trailing: ElevatedButton(
                     onPressed: () async {
                       try {
-                        await ref.read(deliveryRepositoryProvider).acceptOrder(order['id']);
-                        toastWrapper.showSuccess('Order accepted! Navigate to pickup.');
-                        ref.refresh(availableOrdersProvider);
+                        await ref
+                            .read(deliveryRepositoryProvider)
+                            .acceptOrder(order['id']);
+                        toastWrapper
+                            .showSuccess('Order accepted! Navigate to pickup.');
+                        ref.invalidate(availableOrdersProvider);
                       } catch (e) {
                         toastWrapper.showError(e.toString());
                       }

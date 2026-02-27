@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rizik_v4/core/theme/ui_tokens.dart';
 import '../../../../core/theme/rizik_colors.dart';
 import '../../../../data/models/squad.dart';
 
@@ -23,7 +24,7 @@ class CapacityToggleWidget extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: RizikColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: UiTokens.cardBorderRadius,
         border: Border.all(color: RizikColors.divider),
       ),
       child: Column(
@@ -41,7 +42,7 @@ class CapacityToggleWidget extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _getStatusColor(currentStatus).withOpacity(0.1),
+                  color: _getStatusColor(currentStatus).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: _getStatusColor(currentStatus)),
                 ),
@@ -77,13 +78,13 @@ class CapacityToggleWidget extends ConsumerWidget {
     return Expanded(
       child: InkWell(
         onTap: () => onStatusChanged(status),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(UiTokens.cardRadius - 2),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: isSelected ? color : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(UiTokens.cardRadius - 2),
             border: Border.all(
               color: isSelected ? color : RizikColors.divider,
               width: isSelected ? 0 : 1,

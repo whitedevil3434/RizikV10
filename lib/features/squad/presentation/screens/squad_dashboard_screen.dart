@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rizik_v4/core/sdui/renderer.dart';
+import 'package:rizik_v4/core/theme/ui_tokens.dart';
 import 'package:rizik_v4/features/squad/presentation/providers/squad_dashboard_provider.dart';
 import '../../../../data/models/squad.dart';
 import '../../data/repositories/squad_repository.dart';
@@ -12,7 +13,8 @@ class SquadDashboardScreen extends ConsumerStatefulWidget {
   const SquadDashboardScreen({super.key});
 
   @override
-  ConsumerState<SquadDashboardScreen> createState() => _SquadDashboardScreenState();
+  ConsumerState<SquadDashboardScreen> createState() =>
+      _SquadDashboardScreenState();
 }
 
 class _SquadDashboardScreenState extends ConsumerState<SquadDashboardScreen> {
@@ -31,7 +33,8 @@ class _SquadDashboardScreenState extends ConsumerState<SquadDashboardScreen> {
 
   Future<void> _fetchCapacityStatus() async {
     try {
-      final status = await ref.read(squadRepositoryProvider).getCapacityStatus(_squadId);
+      final status =
+          await ref.read(squadRepositoryProvider).getCapacityStatus(_squadId);
       if (mounted) {
         setState(() {
           _currentStatus = status;
@@ -50,7 +53,9 @@ class _SquadDashboardScreenState extends ConsumerState<SquadDashboardScreen> {
     // Optimistic update
     setState(() => _currentStatus = status);
     try {
-      await ref.read(squadRepositoryProvider).updateCapacityStatus(_squadId, status);
+      await ref
+          .read(squadRepositoryProvider)
+          .updateCapacityStatus(_squadId, status);
     } catch (e) {
       debugPrint('Error updating capacity: $e');
       // Revert on error
@@ -61,17 +66,65 @@ class _SquadDashboardScreenState extends ConsumerState<SquadDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final uiData = ref.watch(squadDashboardUiProvider);
+    final hasErrorState =
+        (uiData?['appBar']?['title']?.toString() ?? '').toLowerCase() ==
+            'error';
 
     if (uiData == null) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text("Connecting to Squad Core..."),
-            ],
+          child: Container(
+            padding: const EdgeInsets.all(UiTokens.pagePadding),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: UiTokens.cardBorderRadius,
+              border: Border.all(color: UiTokens.borderColor(context)),
+            ),
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 12),
+                Text("Connecting to Squad Core..."),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (hasErrorState) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Squad Error')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(UiTokens.pagePadding),
+            child: Container(
+              padding: const EdgeInsets.all(UiTokens.pagePadding),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: UiTokens.cardBorderRadius,
+                border: Border.all(color: UiTokens.borderColor(context)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 38),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${uiData['child']?['child']?['text'] ?? 'Failed to load squad dashboard.'}',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () => ref
+                        .read(squadDashboardUiProvider.notifier)
+                        .fetchDashboard(_squadId),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       );
@@ -90,7 +143,7 @@ class _SquadDashboardScreenState extends ConsumerState<SquadDashboardScreen> {
           // Capacity Toggle Widget Integration
           if (!_isLoadingCapacity)
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(UiTokens.pagePadding),
               child: CapacityToggleWidget(
                 currentStatus: _currentStatus,
                 onStatusChanged: _updateCapacityStatus,
@@ -98,7 +151,7 @@ class _SquadDashboardScreenState extends ConsumerState<SquadDashboardScreen> {
                 maxCapacity: 20,
               ),
             ),
-          
+
           // Server-Driven UI
           Expanded(child: RizikRenderer(uiData: uiData['child'])),
         ],

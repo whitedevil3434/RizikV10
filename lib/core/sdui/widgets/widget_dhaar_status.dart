@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:rizik_v4/data/models/rizik_dhaar_loan.dart';
-import 'package:rizik_v4/data/models/trust_score.dart' as trust;
 import 'package:rizik_v4/data/remote/rizik_dhaar_service.dart';
 import 'package:rizik_v4/core/theme/rizik_colors.dart';
 
@@ -68,15 +67,20 @@ class WidgetDhaarStatus extends StatelessWidget {
                 ),
               ),
               if (loan == null)
-                Row( // Changed from Container to Row to accommodate multiple widgets
+                Row(
+                  // Changed from Container to Row to accommodate multiple widgets
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: eligibility.eligible
-                            ? Colors.green.withOpacity(0.2) // Adjusted to match original opacity style
-                            : Colors.red.withOpacity(0.2), // Adjusted to match original opacity style
-                        borderRadius: BorderRadius.circular(12), // Kept original border radius
+                            ? Colors.green.withOpacity(
+                                0.2) // Adjusted to match original opacity style
+                            : Colors.red.withOpacity(
+                                0.2), // Adjusted to match original opacity style
+                        borderRadius: BorderRadius.circular(
+                            12), // Kept original border radius
                       ),
                       child: Text(
                         eligibility.eligible ? '✓ Eligible' : '✗ Ineligible',
@@ -84,8 +88,10 @@ class WidgetDhaarStatus extends StatelessWidget {
                           fontSize: 11, // Kept original font size
                           fontWeight: FontWeight.bold,
                           color: eligibility.eligible
-                              ? Colors.green.shade800 // Adjusted color for better contrast
-                              : Colors.red.shade800, // Adjusted color for better contrast
+                              ? Colors.green
+                                  .shade800 // Adjusted color for better contrast
+                              : Colors.red
+                                  .shade800, // Adjusted color for better contrast
                         ),
                       ),
                     ),
@@ -154,7 +160,8 @@ class WidgetDhaarStatus extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF7C4DFF),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -164,7 +171,8 @@ class WidgetDhaarStatus extends StatelessWidget {
                   ] else ...[
                     Text(
                       eligibility.reason ?? 'আপনি এখনও যোগ্য নন',
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                      style:
+                          TextStyle(fontSize: 11, color: Colors.grey.shade700),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -203,9 +211,11 @@ class WidgetDhaarStatus extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _buildLoanStat('পরিমাণ (Amount)', '৳${loan.amount}', RizikColors.primaryText),
+          _buildLoanStat(
+              'পরিমাণ (Amount)', '৳${loan.amount}', RizikColors.primaryText),
           const SizedBox(height: 8),
-          _buildLoanStat('পরিশোধিত (Paid)', '৳${loan.paidAmount}', RizikColors.rizikGreen),
+          _buildLoanStat(
+              'পরিশোধিত (Paid)', '৳${loan.paidAmount}', RizikColors.rizikGreen),
           const SizedBox(height: 16),
           LinearProgressIndicator(
             value: loan.amount > 0 ? loan.paidAmount / loan.amount : 0,
@@ -270,11 +280,13 @@ class WidgetDhaarStatus extends StatelessWidget {
   Widget _buildLoanStat(String label, String value, Color color) {
     return Column(
       children: [
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+        Text(label,
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
         const SizedBox(height: 4),
         Text(
           value,
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color),
+          style: TextStyle(
+              fontSize: 13, fontWeight: FontWeight.bold, color: color),
         ),
       ],
     );
@@ -294,7 +306,10 @@ class WidgetDhaarStatus extends StatelessWidget {
             ),
             Text(
               '৳${totalBalance.toStringAsFixed(0)}',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF7C4DFF)),
+              style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF7C4DFF)),
             ),
           ],
         ),
@@ -310,7 +325,7 @@ class WidgetDhaarStatus extends StatelessWidget {
   RizikDhaarLoan? _getMockActiveLoan(String userId) {
     // 50% chance of having active loan
     if (userId.hashCode % 2 == 0) return null;
-    
+
     return RizikDhaarLoan(
       id: 'loan_${userId}',
       userId: userId,
@@ -336,7 +351,9 @@ class WidgetDhaarStatus extends StatelessWidget {
           amount: 1293.75,
           dueDate: DateTime.now().add(Duration(days: 7 * (i + 1))),
           isPaid: i < 2,
-          paidDate: i < 2 ? DateTime.now().subtract(Duration(days: 7 * (2 - i))) : null,
+          paidDate: i < 2
+              ? DateTime.now().subtract(Duration(days: 7 * (2 - i)))
+              : null,
         ),
       ),
       applicationDate: DateTime.now().subtract(const Duration(days: 16)),

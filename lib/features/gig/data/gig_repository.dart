@@ -1,21 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:rizik_v4/core/api/rizik_api_client.dart';
 import 'package:rizik_v4/core/wrappers/auth_wrapper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Gig Repository Provider
 final gigRepositoryProvider = Provider((ref) {
-  final apiClient = ref.watch(rizikApiClientProvider);
-  return GigRepository(apiClient);
+  return GigRepository();
 });
 
 /// Gig Repository
 /// Handles API calls for Gig Workflow
 class GigRepository {
-  final RizikApiClient _apiClient;
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  GigRepository(this._apiClient);
+  GigRepository();
 
   /// Create a new Gig (God Mode)
   Future<String> createGig({
@@ -30,17 +27,21 @@ class GigRepository {
     if (user == null) throw 'User not logged in';
 
     try {
-      final response = await _supabase.from('gigs').insert({
-        'title': title,
-        'description': description,
-        'budget': budget,
-        'category': category,
-        'required_skills': requiredSkills,
-        'deadline': deadline.toIso8601String(),
-        'status': 'OPEN',
-        'client_id': user.id,
-        'created_at': DateTime.now().toIso8601String(),
-      }).select().single(); // select() returns the inserted row
+      final response = await _supabase
+          .from('gigs')
+          .insert({
+            'title': title,
+            'description': description,
+            'budget': budget,
+            'category': category,
+            'required_skills': requiredSkills,
+            'deadline': deadline.toIso8601String(),
+            'status': 'OPEN',
+            'client_id': user.id,
+            'created_at': DateTime.now().toIso8601String(),
+          })
+          .select()
+          .single(); // select() returns the inserted row
 
       print('✅ Gig Created: ${response['id']}');
       return response['id'];
@@ -67,11 +68,8 @@ class GigRepository {
   /// Get gig details
   Future<Map<String, dynamic>> getGig(String gigId) async {
     try {
-      final response = await _supabase
-          .from('gigs')
-          .select('*')
-          .eq('id', gigId)
-          .single();
+      final response =
+          await _supabase.from('gigs').select('*').eq('id', gigId).single();
       return response;
     } catch (e) {
       throw 'Failed to fetch gig: $e';
@@ -108,6 +106,93 @@ class GigRepository {
       return {'success': true};
     } catch (e) {
       throw 'Failed to submit bid: $e';
+    }
+  }
+
+  /// Get current user's bid for a gig (if any)
+  Future<Map<String, dynamic>?> getMyBidForGig(String gigId) async {
+    final user = authWrapper.currentUser;
+    if (user == null) return null;
+
+    try {
+      final response = await _supabase
+          .from('gig_bids')
+          .select('*')
+          .eq('gig_id', gigId)
+          .eq('freelancer_id', user.id)
+          .order('created_at', ascending: false)
+          .limit(1);
+
+      if (response.isNotEmpty) {
+        return Map<String, dynamic>.from(response.first as Map);
+      }
+      return null;
+    } catch (e) {
+      throw 'Failed to fetch your bid: $e';
+    }
+  }
+
+  /// Create or update current user's bid for a gig
+  Future<Map<String, dynamic>> upsertMyBid({
+    required String gigId,
+    required double amount,
+    required String coverLetter,
+    List<String>? portfolioLinks,
+  }) async {
+    final user = authWrapper.currentUser;
+    if (user == null) throw 'User not logged in';
+
+    try {
+      final existing = await getMyBidForGig(gigId);
+
+      if (existing != null) {
+        final updated = await _supabase
+            .from('gig_bids')
+            .update({
+              'amount': amount,
+              'cover_letter': coverLetter,
+              'portfolio_links': portfolioLinks ?? [],
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('id', existing['id'])
+            .select()
+            .single();
+
+        return {'success': true, 'action': 'updated', 'bid': updated};
+      }
+
+      final created = await _supabase
+          .from('gig_bids')
+          .insert({
+            'gig_id': gigId,
+            'freelancer_id': user.id,
+            'amount': amount,
+            'cover_letter': coverLetter,
+            'portfolio_links': portfolioLinks ?? [],
+            'status': 'PENDING',
+            'created_at': DateTime.now().toIso8601String(),
+          })
+          .select()
+          .single();
+
+      return {'success': true, 'action': 'created', 'bid': created};
+    } catch (e) {
+      throw 'Failed to submit bid: $e';
+    }
+  }
+
+  /// Withdraw current user's latest bid for a gig
+  Future<void> withdrawMyBid(String gigId) async {
+    final existing = await getMyBidForGig(gigId);
+    if (existing == null) return;
+
+    try {
+      await _supabase.from('gig_bids').update({
+        'status': 'WITHDRAWN',
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', existing['id']);
+    } catch (e) {
+      throw 'Failed to withdraw bid: $e';
     }
   }
 

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:rizik_v4/core/sdui/design_system.dart';
-import 'package:rizik_v4/core/sdui/widgets/base/index.dart';
 
 /// 🎯 ServiceGrid - Interactive Service Tiles
-/// 
+///
 /// A grid of beautiful service cards with icons and labels.
 class ServiceGrid extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -70,9 +69,8 @@ class _ServiceTileState extends State<_ServiceTile> {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = widget.color != null
-        ? _parseColor(widget.color!)
-        : RizikDesign.primary;
+    final iconColor =
+        widget.color != null ? _parseColor(widget.color!) : RizikDesign.primary;
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),

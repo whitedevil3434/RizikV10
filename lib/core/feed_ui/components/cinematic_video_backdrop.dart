@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:ui';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 /// CinematicVideoBackdrop - Full-screen looping video background
-/// 
+///
 /// The "Living UI" engine - makes every screen feel alive.
 /// Supports:
 /// - Network video URLs (R2, Cloudflare CDN)
@@ -43,14 +41,15 @@ class CinematicVideoBackdrop extends StatefulWidget {
   State<CinematicVideoBackdrop> createState() => _CinematicVideoBackdropState();
 }
 
-class _CinematicVideoBackdropState extends State<CinematicVideoBackdrop> 
+class _CinematicVideoBackdropState extends State<CinematicVideoBackdrop>
     with AutomaticKeepAliveClientMixin {
   VideoPlayerController? _controller;
   bool _isInitialized = false;
   bool _hasError = false;
 
   @override
-  bool get wantKeepAlive => true; // Keep Widget Alive (for state), but dispose Controller manually
+  bool get wantKeepAlive =>
+      true; // Keep Widget Alive (for state), but dispose Controller manually
 
   @override
   void initState() {
@@ -75,9 +74,10 @@ class _CinematicVideoBackdropState extends State<CinematicVideoBackdrop>
   @override
   void didUpdateWidget(CinematicVideoBackdrop oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // 1. Handle Source Change
-    if (oldWidget.videoUrl != widget.videoUrl || oldWidget.assetPath != widget.assetPath) {
+    if (oldWidget.videoUrl != widget.videoUrl ||
+        oldWidget.assetPath != widget.assetPath) {
       _disposeController();
       if (widget.shouldBuffer) _initializeVideo();
       return;
@@ -92,32 +92,33 @@ class _CinematicVideoBackdropState extends State<CinematicVideoBackdrop>
         if (mounted) setState(() {}); // Trigger rebuild to show fallback
       }
     }
-    
+
     // 3. Handle Play/Pause (Focus Management)
     // Only access controller if it exists and is initialized
     if (_isInitialized && _controller != null) {
-       if (widget.isActive) {
-         if (!_controller!.value.isPlaying) _controller?.play();
-       } else {
-         if (_controller!.value.isPlaying) _controller?.pause();
-       }
-       
-       if (oldWidget.shouldMute != widget.shouldMute) {
-         _controller?.setVolume(widget.shouldMute ? 0 : 1.0);
-       }
+      if (widget.isActive) {
+        if (!_controller!.value.isPlaying) _controller?.play();
+      } else {
+        if (_controller!.value.isPlaying) _controller?.pause();
+      }
+
+      if (oldWidget.shouldMute != widget.shouldMute) {
+        _controller?.setVolume(widget.shouldMute ? 0 : 1.0);
+      }
     }
   }
 
-
-  bool get _isImage => widget.videoUrl != null && 
+  bool get _isImage =>
+      widget.videoUrl != null &&
       (widget.videoUrl!.toLowerCase().endsWith('.avif') ||
-       widget.videoUrl!.toLowerCase().endsWith('.webp') ||
-       widget.videoUrl!.toLowerCase().endsWith('.gif') ||
-       widget.videoUrl!.toLowerCase().endsWith('.jpg') ||
-       widget.videoUrl!.toLowerCase().endsWith('.png'));
+          widget.videoUrl!.toLowerCase().endsWith('.webp') ||
+          widget.videoUrl!.toLowerCase().endsWith('.gif') ||
+          widget.videoUrl!.toLowerCase().endsWith('.jpg') ||
+          widget.videoUrl!.toLowerCase().endsWith('.png'));
 
   Future<void> _initializeVideo() async {
-    if ((widget.videoUrl == null && widget.assetPath == null) || _isInitialized) {
+    if ((widget.videoUrl == null && widget.assetPath == null) ||
+        _isInitialized) {
       return;
     }
 
@@ -136,14 +137,14 @@ class _CinematicVideoBackdropState extends State<CinematicVideoBackdrop>
       final videoOptions = VideoPlayerOptions(mixWithOthers: true);
 
       if (widget.assetPath != null) {
-        _controller = VideoPlayerController.asset(widget.assetPath!, videoPlayerOptions: videoOptions);
+        _controller = VideoPlayerController.asset(widget.assetPath!,
+            videoPlayerOptions: videoOptions);
       } else if (widget.videoUrl != null) {
-        if (kIsWeb) {
-           _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl!), videoPlayerOptions: videoOptions);
-        } else {
-           final file = await DefaultCacheManager().getSingleFile(widget.videoUrl!);
-           _controller = VideoPlayerController.file(file, videoPlayerOptions: videoOptions);
-        }
+        // 🔥 OPTIMIZATION: Always use networkUrl for streaming (Fast Start)
+        // Bypassing DefaultCacheManager to fix "video not loading" delay
+        _controller = VideoPlayerController.networkUrl(
+            Uri.parse(widget.videoUrl!),
+            videoPlayerOptions: videoOptions);
       }
 
       // Guard before async init
@@ -151,7 +152,7 @@ class _CinematicVideoBackdropState extends State<CinematicVideoBackdrop>
 
       // Add timeout to prevent hanging
       await _controller?.initialize().timeout(const Duration(seconds: 15));
-      
+
       // Guard after async init
       if (!mounted || !widget.shouldBuffer) {
         _disposeController();
@@ -161,9 +162,9 @@ class _CinematicVideoBackdropState extends State<CinematicVideoBackdrop>
       if (widget.looping) {
         _controller?.setLooping(true);
       }
-      
-      _controller?.setVolume(widget.shouldMute ? 0 : 1.0); 
-      
+
+      _controller?.setVolume(widget.shouldMute ? 0 : 1.0);
+
       if (widget.isActive) {
         _controller?.play();
       }
@@ -184,8 +185,6 @@ class _CinematicVideoBackdropState extends State<CinematicVideoBackdrop>
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
@@ -194,10 +193,10 @@ class _CinematicVideoBackdropState extends State<CinematicVideoBackdrop>
       children: [
         // Layer 1: Video or Fallback
         _buildVideoLayer(),
-        
+
         // Layer 2: Glass Overlay (optional)
         if (widget.showGlassOverlay) _buildGlassOverlay(),
-        
+
         // Layer 3: Gradient Masks
         _buildGradientMasks(),
       ],
@@ -211,14 +210,14 @@ class _CinematicVideoBackdropState extends State<CinematicVideoBackdrop>
 
     // Hybrid Render: Image
     if (_isImage && widget.videoUrl != null) {
-       return Image.network(
-         widget.videoUrl!,
-         fit: BoxFit.cover,
-         errorBuilder: (context, error, stackTrace) {
-           debugPrint('Image render error: $error');
-           return _buildDefaultPlaceholder();
-         },
-       );
+      return Image.network(
+        widget.videoUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('Image render error: $error');
+          return _buildDefaultPlaceholder();
+        },
+      );
     }
 
     if (!_isInitialized || _controller == null) {

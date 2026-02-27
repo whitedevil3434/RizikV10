@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:rizik_v4/data/models/squad_tribunal.dart';
 
 /// Service for handling squad tribunal operations
@@ -47,7 +46,8 @@ class SquadTribunalService {
 
     final contribution = memberContributions[memberId] ?? 0.0;
     final avgContribution = memberContributions.values.isNotEmpty
-        ? memberContributions.values.reduce((a, b) => a + b) / memberContributions.length
+        ? memberContributions.values.reduce((a, b) => a + b) /
+            memberContributions.length
         : 0.0;
 
     if (avgContribution > 0) {
@@ -58,7 +58,8 @@ class SquadTribunalService {
     final joinDate = memberJoinDates[memberId];
     if (joinDate != null) {
       final daysInSquad = DateTime.now().difference(joinDate).inDays;
-      final seniorityMultiplier = (1.0 + (daysInSquad / 365) * 0.1).clamp(1.0, 1.5);
+      final seniorityMultiplier =
+          (1.0 + (daysInSquad / 365) * 0.1).clamp(1.0, 1.5);
       weight *= seniorityMultiplier;
     }
 
@@ -81,7 +82,8 @@ class SquadTribunalService {
       );
     }
 
-    final existingVote = dispute.votes.where((v) => v.voterId == voterId).firstOrNull;
+    final existingVote =
+        dispute.votes.where((v) => v.voterId == voterId).firstOrNull;
     if (existingVote != null) {
       return VoteProcessingResult(
         success: false,
@@ -121,19 +123,22 @@ class SquadTribunalService {
     int minimumVotingPeriodHours = 24,
     double minimumParticipationRate = 0.6,
   }) {
-    if (dispute.status != DisputeStatus.voting || dispute.votingStartedAt == null) {
+    if (dispute.status != DisputeStatus.voting ||
+        dispute.votingStartedAt == null) {
       return VotingConclusionResult(shouldConclude: false);
     }
 
     final votingDuration = DateTime.now().difference(dispute.votingStartedAt!);
     final hasMinimumTime = votingDuration.inHours >= minimumVotingPeriodHours;
     final participationRate = dispute.totalVotes / totalEligibleVoters;
-    final hasMinimumParticipation = participationRate >= minimumParticipationRate;
+    final hasMinimumParticipation =
+        participationRate >= minimumParticipationRate;
 
     final maxVotingHours = 72;
     final hasMaxTime = votingDuration.inHours >= maxVotingHours;
 
-    final shouldConclude = hasMaxTime || (hasMinimumTime && hasMinimumParticipation);
+    final shouldConclude =
+        hasMaxTime || (hasMinimumTime && hasMinimumParticipation);
 
     return VotingConclusionResult(
       shouldConclude: shouldConclude,
@@ -194,8 +199,14 @@ class SquadTribunalService {
           'type': 'income_adjustment',
           'description': 'Adjust income split as per tribunal decision',
           'actions': [
-            {'action': 'recalculate_splits', 'effective_date': DateTime.now().toIso8601String()},
-            {'action': 'notify_members', 'message': 'Income split has been adjusted'},
+            {
+              'action': 'recalculate_splits',
+              'effective_date': DateTime.now().toIso8601String()
+            },
+            {
+              'action': 'notify_members',
+              'message': 'Income split has been adjusted'
+            },
           ],
         };
       case DisputeType.workDistribution:
@@ -203,7 +214,10 @@ class SquadTribunalService {
           'type': 'work_reallocation',
           'description': 'Redistribute work assignments',
           'actions': [
-            {'action': 'reassign_tasks', 'effective_date': DateTime.now().toIso8601String()},
+            {
+              'action': 'reassign_tasks',
+              'effective_date': DateTime.now().toIso8601String()
+            },
             {'action': 'update_responsibilities', 'notify': true},
           ],
         };
@@ -231,7 +245,10 @@ class SquadTribunalService {
           'type': 'decision_override',
           'description': 'Override previous decision',
           'actions': [
-            {'action': 'reverse_decision', 'decision_id': dispute.metadata?['decision_id']},
+            {
+              'action': 'reverse_decision',
+              'decision_id': dispute.metadata?['decision_id']
+            },
             {'action': 'implement_new_process', 'notify': true},
           ],
         };
@@ -298,17 +315,19 @@ class SquadTribunalService {
     final total = disputes.length;
     final resolved = disputes.where((d) => d.isResolved).length;
     final active = disputes.where((d) => d.isActive).length;
-    final appealed = disputes.where((d) => d.status == DisputeStatus.appealed).length;
+    final appealed =
+        disputes.where((d) => d.status == DisputeStatus.appealed).length;
 
     final avgResolutionTime = disputes
-        .where((d) => d.isResolved && d.resolvedAt != null)
-        .map((d) => d.resolvedAt!.difference(d.filedAt).inDays)
-        .fold(0, (sum, days) => sum + days) / 
+            .where((d) => d.isResolved && d.resolvedAt != null)
+            .map((d) => d.resolvedAt!.difference(d.filedAt).inDays)
+            .fold(0, (sum, days) => sum + days) /
         (resolved > 0 ? resolved : 1);
 
     final typeDistribution = <DisputeType, int>{};
     for (final dispute in disputes) {
-      typeDistribution[dispute.type] = (typeDistribution[dispute.type] ?? 0) + 1;
+      typeDistribution[dispute.type] =
+          (typeDistribution[dispute.type] ?? 0) + 1;
     }
 
     return DisputeStatistics(

@@ -16,12 +16,9 @@ class AudioManager {
 
   /// Initialize audio system
   Future<void> initialize() async {
-    // Set audio context if needed
-    await AudioPlayer.global.setAudioContext(AudioContextConfig(
-      forceSpeaker: false,
-      focus: AudioContextConfigFocus.mixed,
-      aspect: AudioContextConfigAspect.game,
-    ).build());
+    // Keep initialization lightweight and version-safe across platforms.
+    await _sfxPlayer.setVolume(_sfxVolume);
+    await _bgmPlayer.setVolume(_bgmVolume);
   }
 
   /// Play sound effect

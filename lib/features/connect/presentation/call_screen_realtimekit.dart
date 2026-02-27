@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:realtimekit_core/realtimekit_core.dart';
-import 'package:realtimekit_core_platform_interface/realtimekit_core_platform_interface.dart';
-import 'package:realtimekit_core_platform_interface/src/view/video_view.dart';
 import 'package:rizik_v4/core/config/env_config.dart';
 
 class CallScreenRealtimeKit extends StatefulWidget {
@@ -13,7 +11,7 @@ class CallScreenRealtimeKit extends StatefulWidget {
   State<CallScreenRealtimeKit> createState() => _CallScreenRealtimeKitState();
 }
 
-class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit> 
+class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
     implements RtkMeetingRoomEventListener, RtkParticipantsEventListener {
   late RealtimekitClient _meeting;
   bool _inCall = false;
@@ -23,7 +21,7 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
   String? _meetingId;
   String? _authToken;
   String? _errorMessage;
-  
+
   // Track participants
   final List<RtkMeetingParticipant> _participants = [];
 
@@ -64,14 +62,16 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
       );
 
       if (createMeetingResponse.statusCode != 200) {
-        throw Exception('Failed to create meeting: ${createMeetingResponse.body}');
+        throw Exception(
+            'Failed to create meeting: ${createMeetingResponse.body}');
       }
 
       final meetingData = jsonDecode(createMeetingResponse.body);
       _meetingId = meetingData['meetingId'];
 
       final addParticipantResponse = await http.post(
-        Uri.parse('${EnvConfig.backendUrl}/api/realtime/meeting/$_meetingId/participants'),
+        Uri.parse(
+            '${EnvConfig.backendUrl}/api/realtime/meeting/$_meetingId/participants'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'participantName': 'User ${DateTime.now().millisecondsSinceEpoch}',
@@ -80,12 +80,13 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
       );
 
       if (addParticipantResponse.statusCode != 200) {
-        throw Exception('Failed to add participant: ${addParticipantResponse.body}');
+        throw Exception(
+            'Failed to add participant: ${addParticipantResponse.body}');
       }
 
       final participantData = jsonDecode(addParticipantResponse.body);
-      _authToken = participantData['authToken'] ?? participantData['token']; 
-      
+      _authToken = participantData['authToken'] ?? participantData['token'];
+
       if (_authToken == null) {
         throw Exception('Auth token is null.');
       }
@@ -109,7 +110,6 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
           });
         }
       });
-
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
@@ -130,7 +130,7 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
     });
     // TODO: Fix undefined method 'toggleMic' for version 0.1.4
     // _meeting.toggleMic(onSuccess: (status) {}, onError: (error) {});
-    print("⚠️ toggleMic not implemented for this version");
+    debugPrint('toggleMic is not implemented for this RealtimeKit version.');
   }
 
   void _toggleCamera() {
@@ -139,13 +139,17 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
     });
     // TODO: Fix undefined method 'toggleWebcam' for version 0.1.4
     // _meeting.toggleWebcam(onSuccess: (status) {}, onError: (error) {});
-    print("⚠️ toggleWebcam not implemented for this version");
+    debugPrint(
+      'toggleWebcam is not implemented for this RealtimeKit version.',
+    );
   }
 
   void _leaveCall() {
     _meeting.leaveRoom(
       onSuccess: () {
-        if (mounted) setState(() => _inCall = false);
+        if (mounted) {
+          setState(() => _inCall = false);
+        }
       },
       onError: (error) {},
     );
@@ -159,37 +163,53 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
   void onMeetingInitCompleted() {
     _meeting.joinRoom(
       onSuccess: () {
-        if (mounted) setState(() { _inCall = true; _isInitializing = false; });
+        if (mounted) {
+          setState(() {
+            _inCall = true;
+            _isInitializing = false;
+          });
+        }
       },
       onError: (error) {
-        if (mounted) setState(() { _errorMessage = 'Join failed: $error'; _isInitializing = false; });
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'Join failed: $error';
+            _isInitializing = false;
+          });
+        }
       },
     );
   }
 
   @override
   void onMeetingInitFailed(MeetingError error) {
-    if (mounted) setState(() { _errorMessage = 'Init failed: $error'; _isInitializing = false; });
+    if (mounted) {
+      setState(() {
+        _errorMessage = 'Init failed: $error';
+        _isInitializing = false;
+      });
+    }
   }
 
   @override
   void onMeetingRoomJoinStarted() {}
 
-  @override
   void onMeetingRoomJoined() {
-    if (mounted) setState(() { _inCall = true; _isInitializing = false; });
+    if (mounted) {
+      setState(() {
+        _inCall = true;
+        _isInitializing = false;
+      });
+    }
   }
 
   @override
   void onMeetingRoomJoinFailed(MeetingError error) {
     if (mounted) {
-      // TODO: Remove this bypass when real RealtimeKit keys are available.
-      // For now, allow UI testing even if auth fails due to mock token.
-      print("Join failed ($error), but bypassing for UI testing...");
       setState(() {
-        _inCall = true;
+        _inCall = false;
         _isInitializing = false;
-        _errorMessage = null;
+        _errorMessage = 'Join failed: $error';
       });
     }
   }
@@ -201,17 +221,23 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
   void onMeetingRoomLeaveCompleted() {
     _meeting.removeMeetingRoomEventListener(this);
     _meeting.cleanAllNativeListeners();
-    if (mounted) setState(() => _inCall = false);
+    if (mounted) {
+      setState(() => _inCall = false);
+    }
   }
 
   @override
   void onParticipantJoin(RtkRemoteParticipant participant) {
-    if (mounted) setState(() => _participants.add(participant));
+    if (mounted) {
+      setState(() => _participants.add(participant));
+    }
   }
 
   @override
   void onParticipantLeave(RtkRemoteParticipant participant) {
-    if (mounted) setState(() => _participants.removeWhere((p) => p.id == participant.id));
+    if (mounted) {
+      setState(() => _participants.removeWhere((p) => p.id == participant.id));
+    }
   }
 
   @override
@@ -222,11 +248,14 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
   void onAudioUpdate(RtkRemoteParticipant participant, bool isEnabled) {}
   @override
   void onVideoUpdate(RtkRemoteParticipant participant, bool isEnabled) {
-      if (mounted) setState(() {
+    if (mounted) {
+      setState(() {
         final index = _participants.indexWhere((p) => p.id == participant.id);
         if (index != -1) _participants[index] = participant;
       });
+    }
   }
+
   @override
   void onScreenShareUpdate(RtkRemoteParticipant participant, bool isEnabled) {}
   @override
@@ -238,9 +267,22 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
   @override
   void onNewBroadcastMessage(String type, Map<String, dynamic> payload) {}
   @override
-  void onMeetingEnded() { if (mounted) setState(() => _inCall = false); }
+  void onMeetingEnded() {
+    if (mounted) {
+      setState(() => _inCall = false);
+    }
+  }
+
   @override
-  void onMeetingRoomJoinCompleted() { if (mounted) setState(() { _inCall = true; _isInitializing = false; }); }
+  void onMeetingRoomJoinCompleted() {
+    if (mounted) {
+      setState(() {
+        _inCall = true;
+        _isInitializing = false;
+      });
+    }
+  }
+
   @override
   void onActiveTabUpdate(dynamic activeTab) {}
   @override
@@ -261,10 +303,10 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
   }
 
   Widget _buildLoadingState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           CircularProgressIndicator(color: Color(0xFF00A884)), // WhatsApp Green
           SizedBox(height: 16),
           Text('Connecting...', style: TextStyle(color: Colors.white70)),
@@ -280,11 +322,32 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
         children: [
           if (_errorMessage != null)
             Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                _errorMessage!,
-                style: const TextStyle(color: Colors.red),
-                textAlign: TextAlign.center,
+              padding: const EdgeInsets.all(16),
+              child: Container(
+                width: 360,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.35)),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Could not start the call',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.white70),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             ),
           const Icon(Icons.videocam_outlined, size: 80, color: Colors.white54),
@@ -293,11 +356,23 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
             onPressed: _createAndJoinMeeting,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF00A884), // WhatsApp Green
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24)),
               padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
             ),
-            child: const Text('Start Video Call', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            child: const Text('Start Video Call',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.of(context).maybePop(),
+              child: const Text(
+                'Back',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -318,7 +393,9 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
                     ),
                   ),
                 )
-              : VideoView(meetingParticipant: _participants.last), // Show last joiner fullscreen
+              : VideoView(
+                  meetingParticipant:
+                      _participants.last), // Show last joiner fullscreen
         ),
 
         // Draggable PiP (Self View)
@@ -332,7 +409,9 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
               border: Border.all(color: Colors.white24),
               borderRadius: BorderRadius.circular(12),
               color: Colors.black,
-              boxShadow: [BoxShadow(color: Colors.black54, blurRadius: 10)],
+              boxShadow: const [
+                BoxShadow(color: Colors.black54, blurRadius: 10)
+              ],
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
@@ -355,9 +434,9 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
                 colors: [Colors.black54, Colors.transparent],
               ),
             ),
-            child: Row(
+            child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
+              children: [
                 Icon(Icons.lock, size: 12, color: Colors.white54),
                 SizedBox(width: 4),
                 Text(
@@ -402,7 +481,8 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
                       color: Colors.red,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.call_end, color: Colors.white, size: 28),
+                    child: const Icon(Icons.call_end,
+                        color: Colors.white, size: 28),
                   ),
                 ),
               ],
@@ -413,7 +493,10 @@ class _CallScreenRealtimeKitState extends State<CallScreenRealtimeKit>
     );
   }
 
-  Widget _buildControlBtn({required IconData icon, required bool isActive, required VoidCallback onTap}) {
+  Widget _buildControlBtn(
+      {required IconData icon,
+      required bool isActive,
+      required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(

@@ -5,8 +5,10 @@ import 'package:rizik_v4/core/config/env_config.dart';
 
 // Features Screens (Import your actual screens here)
 import 'features/auth/presentation/login_screen.dart';
+import 'features/auth/presentation/otp_screen.dart';
 import 'features/auth/presentation/splash_screen.dart';
 import 'features/seeker/presentation/seeker_home_screen.dart';
+import 'features/seeker/marketplace/presentation/order_details_screen.dart';
 import 'features/source/home/source_dashboard_screen.dart';
 import 'features/force/dashboard/force_dashboard_screen.dart';
 // import 'features/connect/presentation/call_screen.dart'; // RealtimeKit REST API + WebRTC
@@ -16,6 +18,8 @@ import 'package:rizik_v4/features/voice/presentation/live_agent_screen.dart';
 // import 'features/voice/presentation/voice_mode_screen.dart'; // Removed legacy
 import 'features/squad/presentation/screens/squad_dashboard_screen.dart';
 import 'features/source/inventory/presentation/screens/inventory_screen.dart';
+import 'features/gig/presentation/screens/gig_details_screen.dart';
+import 'features/alerts/presentation/unified_alerts_screen.dart';
 
 // State Management (Auth State দেখার জন্য)
 import 'features/auth/logic/auth_controller.dart';
@@ -25,22 +29,21 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 /// 🚦 Rizik V10 Central Nervous System
 final routerProvider = Provider<GoRouter>((ref) {
-  
   // Auth State-এর দিকে নজর রাখা (Watcher)
   final authState = ref.watch(authProvider);
 
   return GoRouter(
     navigatorKey: navigatorKey,
     // GOD MODE: Hard-switch to Seeker Home (Bypassing Splash/Login)
-    initialLocation: '/seeker',
-    debugLogDiagnostics: true,   // ডেভেলপমেন্টের সময় লগ দেখার জন্য
+    initialLocation:
+        const String.fromEnvironment('START_ROUTE', defaultValue: '/seeker'),
+    debugLogDiagnostics: true, // ডেভেলপমেন্টের সময় লগ দেখার জন্য
 
     // 🔄 Refresh Logic: যখনই লগইন/লগআউট হবে, রাউটার অটোমেটিক রিফ্রেশ হবে
-    refreshListenable: authState, 
+    refreshListenable: authState,
 
     // 🛣️ Route Definitions
     routes: [
-      
       // 1. Splash & Onboarding
       GoRoute(
         path: '/splash',
@@ -58,7 +61,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'otp',
             name: 'otp_verify',
-            builder: (context, state) => const SizedBox(), // TODO: OTP Screen
+            builder: (context, state) => const OtpScreen(),
           ),
         ],
       ),
@@ -73,8 +76,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'order/:id', // Dynamic Route (Deep Link Ready)
             name: 'order_details',
             builder: (context, state) {
-              final orderId = state.pathParameters['id'];
-              return SizedBox(child: Text("Order $orderId")); // TODO: Order Screen
+              final orderId = state.pathParameters['id'] ?? '';
+              return OrderDetailsScreen(orderId: orderId);
             },
           ),
         ],
@@ -89,7 +92,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'gig/:id',
             name: 'gig_details',
-            builder: (context, state) => const SizedBox(), // TODO: Gig Screen
+            builder: (context, state) {
+              final gigId = state.pathParameters['id'] ?? '';
+              return GigDetailsScreen(gigId: gigId);
+            },
           ),
         ],
       ),
@@ -129,32 +135,35 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'inventory',
         builder: (context, state) => const InventoryScreen(),
       ),
+      GoRoute(
+        path: '/alerts',
+        name: 'alerts',
+        builder: (context, state) => const UnifiedAlertsScreen(),
+      ),
     ],
 
     // 🔒 SECURITY GUARD (Redirect Logic)
     redirect: (context, state) {
-      // 0. GOD MODE BYPASS (Auth Disabled for Preview)
-      // Force allow all routes, bypassing checks
-      return null;
-
-      /*
-      // Original Logic Preserved for Reference
+      // 0. Dev bypass (explicit)
       if (EnvConfig.isDev) {
         return null;
       }
-      final isLoggedIn = authState.isAuthenticated;
-      final isLoggingIn = state.uri.toString() == '/auth';
-      final isSplash = state.uri.toString() == '/splash';
 
-      if (!isLoggedIn && !isLoggingIn && !isSplash) {
+      // 1. Route gates
+      final isLoggedIn = authState.isAuthenticated;
+      final location = state.uri.toString();
+      final isAuthFlow = location == '/auth' || location == '/auth/otp';
+      final isSplash = location == '/splash';
+
+      if (!isLoggedIn && !isAuthFlow && !isSplash) {
         return '/auth';
       }
 
-      if (isLoggedIn && isLoggingIn) {
-        return '/seeker'; 
+      if (isLoggedIn && isAuthFlow) {
+        return '/seeker';
       }
+
       return null;
-      */
     },
   );
 });

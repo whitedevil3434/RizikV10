@@ -25,8 +25,6 @@ class _RecorderIO implements UniversalRecorder {
         sampleRate: 16000, 
         numChannels: 1,
         autoGain: true,
-        echoCancellation: true,
-        noiseSuppression: true,
       ),
     );
 

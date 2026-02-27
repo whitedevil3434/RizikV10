@@ -1,0 +1,73 @@
+# Grok API Integration - OpenClaw Config Patch
+# Add this to your openclaw.json after Grok server is running
+
+{
+  "models": {
+    "providers": {
+      "grok-free": {
+        "baseUrl": "http://localhost:6969",
+        "apiKey": "dummy-no-key-required",
+        "api": "custom",
+        "models": [
+          {
+            "id": "grok-3-fast",
+            "name": "Grok 3 Fast (Free Unofficial)",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "contextWindow": 128000,
+            "maxTokens": 4096
+          },
+          {
+            "id": "grok-4",
+            "name": "Grok 4 Expert (Free Unofficial)",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "contextWindow": 128000,
+            "maxTokens": 4096
+          },
+          {
+            "id": "grok-4-mini-thinking",
+            "name": "Grok 4 Mini Thinking (Free Unofficial)",
+            "reasoning": true,
+            "input": ["text"],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "contextWindow": 128000,
+            "maxTokens": 4096
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "models": {
+        "grok-free/grok-3-fast": {
+          "alias": "grok-fast"
+        },
+        "grok-free/grok-4": {
+          "alias": "grok-4"
+        },
+        "grok-free/grok-4-mini-thinking": {
+          "alias": "grok-thinking"
+        }
+      }
+    }
+  }
+}

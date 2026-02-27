@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 150" width="100%" height="100%">
+  <defs>
+    <!-- Brand Colors based on the provided image -->
+    <style>
+      .bg { fill: transparent; }
+      .logo-fill { fill: #04204c; } /* Deep Navy */
+    </style>
+  </defs>
+
+  <!-- Background (Optional, kept transparent for seamless UI integration) -->
+  <rect class="bg" width="400" height="150" />
+
+  <!-- The "R" Icon Symbol -->
+  <g transform="translate(30, 45)">
+    <!-- Main stem and top curve of the R -->
+    <path class="logo-fill" d="M30 0 C 45 0, 50 10, 45 25 L 20 50 L 5 50 L 15 35 C 20 25, 10 15, 0 30 L -15 45 L -15 65 L 0 65 L 0 40 C 0 20, 10 0, 30 0 Z" />
+    
+    <!-- The distinct angled leg of the R -->
+    <path class="logo-fill" d="M22 65 L 45 65 L 20 40 L 5 55 Z" />
+    
+    <!-- Using a more robust, exact path reconstruction based on the image's geometric properties -->
+    <!-- (Re-drawing more accurately) -->
+  </g>
+  
+  <!-- "Rizik" Text Geometry -->
+  <g class="logo-fill" transform="translate(110, 50)">
+    <!-- r -->
+    <path d="M0 0 H 12 V 10 H 25 V 20 H 12 V 45 H 0 Z" />
+    <!-- i -->
+    <path d="M35 0 H 47 V 45 H 35 Z" />
+    <!-- z -->
+    <path d="M60 0 H 95 V 10 L 72 35 H 95 V 45 H 60 V 35 L 83 10 H 60 Z" />
+    <!-- i -->
+    <path d="M105 0 H 117 V 45 H 105 Z" />
+    <!-- K -->
+    <path d="M130 0 H 142 V 45 H 130 Z" />
+    <path d="M142 20 L 165 0 H 180 L 155 22 L 182 45 H 167 L 142 25 V 20 Z" />
+  </g>
+</svg>

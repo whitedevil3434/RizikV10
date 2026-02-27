@@ -8,10 +8,16 @@ import 'core/feed_ui/feed_ui.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+    throw StateError('SUPABASE_URL and SUPABASE_ANON_KEY are required');
+  }
+
   // Initialize Supabase for video fetching
   await Supabase.initialize(
-    url: 'https://dxekolvveoadbaftfsmy.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4ZWtvbHZ2ZW9hZGJhZnRmc215Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyNzczMTEsImV4cCI6MjA2ODg1MzMxMX0.TRM9nL85CLLjvR5XfZ7YBncwqn0EybTVtt8a46NlZRg',
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
   );
   
   runApp(const RizikVideoFeedApp());
@@ -228,8 +234,14 @@ class _RizikVideoFeedState extends State<RizikVideoFeed> {
   }
 
   Widget _buildVideoPage(VideoContent video, int index) {
+    // 🔥 OPTIMIZATION: Lifecycle Management
+    final bool isPlaying = index == _currentIndex;
+    final bool shouldBuffer = (index >= _currentIndex - 1) && (index <= _currentIndex + 1);
+
     return RizikFeedScaffold(
       // Video backdrop (AI-generated from Wan 2.2)
+      isActive: isPlaying,
+      shouldBuffer: shouldBuffer,
       videoUrl: video.videoUrl,
       
       // Creator info

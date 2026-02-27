@@ -1,0 +1,349 @@
+[?25l│
+◒  Gateway browser.request[1G[J◇  
+[?25h- generic [ref=e5]:
+  - banner:
+    - generic [ref=e6]:
+      - generic:
+        - button [disabled]:
+          - img
+      - link "Facebook" [ref=e7] [cursor=pointer]:
+        - /url: /
+        - img [ref=e8]
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - generic:
+          - generic:
+            - generic:
+              - button:
+                - img
+      - generic [ref=e19]:
+        - generic:
+          - img
+        - combobox "Search Facebook" [ref=e20] [cursor=pointer]
+    - navigation "Facebook" [ref=e24]:
+      - list [ref=e25]:
+        - listitem [ref=e26]:
+          - link "Home" [ref=e29] [cursor=pointer]:
+            - /url: /
+            - img [ref=e31]
+        - listitem [ref=e33]:
+          - link "Friends" [ref=e36] [cursor=pointer]:
+            - /url: /friends/
+            - img [ref=e38]
+        - listitem [ref=e40]:
+          - link "Groups" [ref=e43] [cursor=pointer]:
+            - /url: /groups/
+            - img [ref=e45]
+    - navigation "Account controls and settings" [ref=e48]:
+      - button "Menu" [ref=e52] [cursor=pointer]:
+        - img [ref=e53]
+      - button "Messenger" [ref=e67] [cursor=pointer]:
+        - img [ref=e68]
+      - button "Notifications" [ref=e74] [cursor=pointer]:
+        - img [ref=e75]
+      - button "Your profile" [ref=e79] [cursor=pointer]:
+        - generic [ref=e80]:
+          - img "Your profile" [ref=e81]
+          - img [ref=e88]
+  - main [ref=e97]:
+    - generic [ref=e98]:
+      - generic [ref=e104]:
+        - button "Edit cover photo" [ref=e105] [cursor=pointer]
+        - button "Add Cover Photo" [ref=e112] [cursor=pointer]:
+          - generic [ref=e113]:
+            - img [ref=e114]
+            - generic [ref=e118]: Add Cover Photo
+      - generic [ref=e121]:
+        - generic [ref=e122]:
+          - button "Profile picture actions" [ref=e126] [cursor=pointer]:
+            - generic [ref=e127]:
+              - img "Profile picture actions" [ref=e128]
+              - button [ref=e135]:
+                - img [ref=e136]
+          - generic [ref=e143]:
+            - heading "Omega Zeus" [level=1] [ref=e151]:
+              - button "Omega Zeus" [ref=e152] [cursor=pointer]: Omega Zeus
+            - generic [ref=e155]:
+              - link "Add to story" [ref=e158] [cursor=pointer]:
+                - /url: https://www.facebook.com/stories/create/
+                - generic [ref=e159]:
+                  - img [ref=e160]
+                  - generic [ref=e162]: Add to story
+              - link "Edit profile" [ref=e165] [cursor=pointer]:
+                - /url: /profile.php?fb_profile_edit_entry_point=%7B%22click_point%22%3A%22edit_profile_button%22%2C%22feature%22%3A%22profile_header%22%7D&id=61587182983198&sk=about
+                - generic [ref=e166]:
+                  - img [ref=e167]
+                  - generic [ref=e169]: Edit profile
+              - button "See Recommendations" [expanded] [ref=e171] [cursor=pointer]:
+                - img [ref=e173]
+        - generic [ref=e178]:
+          - img [ref=e180]
+          - generic [ref=e190]:
+            - heading "Add more friends to get recommendations" [level=2] [ref=e192]:
+              - generic [ref=e193]: Add more friends to get recommendations
+            - generic [ref=e195]: When you add some more friends, you'll see a list of people that you may know here.
+    - generic [ref=e202]:
+      - tablist [ref=e210]:
+        - generic:
+          - generic:
+            - generic [ref=e212]:
+              - generic [ref=e213]: More
+              - img [ref=e215]
+            - tab "All" [selected] [ref=e218] [cursor=pointer]:
+              - generic [ref=e220]: All
+            - tab "About" [ref=e222] [cursor=pointer]:
+              - generic [ref=e224]: About
+            - tab "Friends" [ref=e226] [cursor=pointer]:
+              - generic [ref=e228]: Friends
+            - tab "Photos" [ref=e230] [cursor=pointer]:
+              - generic [ref=e232]: Photos
+            - tab "Reels" [ref=e234] [cursor=pointer]:
+              - generic [ref=e236]: Reels
+            - tab "More" [ref=e238] [cursor=pointer]:
+              - generic [ref=e239]:
+                - generic [ref=e240]: More
+                - img [ref=e242]
+      - button "Profile settings see more options" [ref=e247] [cursor=pointer]:
+        - img [ref=e249]
+    - generic [ref=e255]:
+      - generic [ref=e259]:
+        - generic [ref=e265]:
+          - generic [ref=e266]:
+            - heading "Personal details" [level=2] [ref=e270]:
+              - generic [ref=e271]: Personal details
+            - link "Edit profile directory information" [ref=e272] [cursor=pointer]:
+              - /url: https://www.facebook.com/profile.php?id=61587182983198&sk=directory_personal_details&fb_profile_edit_entry_point=%7B%22feature%22%3A%22profile_directory%22%2C%22click_point%22%3A%22pencil_edit_directory_section%22%2C%22additional_metadata%22%3A%7B%22section_type%22%3A%22personal_details%22%7D%7D
+              - img [ref=e274]
+          - list "Personal details" [ref=e276]:
+            - button "2 June 2000" [ref=e277] [cursor=pointer]:
+              - listitem [ref=e281]:
+                - generic [ref=e283]: 2 June 2000
+        - generic [ref=e287]:
+          - heading "Highlights" [level=2] [ref=e296]:
+            - generic [ref=e298]: Highlights
+          - button "Add highlights" [ref=e302] [cursor=pointer]:
+            - generic [ref=e305]: Add highlights
+        - generic [ref=e316]:
+          - heading "Friends" [level=2] [ref=e318]:
+            - link "Friends" [ref=e321] [cursor=pointer]:
+              - /url: https://www.facebook.com/profile.php?id=61587182983198&sk=friends
+          - link "See all friends" [ref=e326] [cursor=pointer]:
+            - /url: https://www.facebook.com/profile.php?id=61587182983198&sk=friends
+            - generic [ref=e327]: See all friends
+        - generic [ref=e338]:
+          - heading "Photos" [level=2] [ref=e340]:
+            - link "Photos" [ref=e343] [cursor=pointer]:
+              - /url: https://www.facebook.com/profile.php?id=61587182983198&sk=photos
+          - link "See All Photos" [ref=e348] [cursor=pointer]:
+            - /url: https://www.facebook.com/profile.php?id=61587182983198&sk=photos
+            - generic [ref=e349]: See All Photos
+        - contentinfo "Facebook" [ref=e350]:
+          - list [ref=e352]:
+            - listitem [ref=e353]:
+              - link "Privacy" [ref=e354] [cursor=pointer]:
+                - /url: /privacy/policy/?entry_point=comet_dropdown
+              - generic [ref=e355]: ·
+            - listitem [ref=e357]:
+              - link "Terms" [ref=e358] [cursor=pointer]:
+                - /url: /policies?ref=pf
+              - generic [ref=e359]: ·
+            - listitem [ref=e361]:
+              - link "Advertising" [ref=e362] [cursor=pointer]:
+                - /url: /business/
+              - generic [ref=e363]: ·
+            - listitem [ref=e365]:
+              - link "Ad choices" [ref=e366] [cursor=pointer]:
+                - /url: /help/568137493302217
+                - text: Ad choices
+                - img [ref=e368]
+              - generic [ref=e371]: ·
+            - listitem [ref=e373]:
+              - link "Cookies" [ref=e374] [cursor=pointer]:
+                - /url: /policies/cookies/
+              - generic [ref=e375]: ·
+            - listitem [ref=e377]:
+              - button "More" [ref=e378] [cursor=pointer]
+      - generic [ref=e379]:
+        - generic [ref=e384]:
+          - generic [ref=e385]:
+            - link "Omega Zeus's timeline" [ref=e386] [cursor=pointer]:
+              - /url: https://www.facebook.com/profile.php?id=61587182983198
+              - img [ref=e389]
+            - button "What's on your mind?" [ref=e393] [cursor=pointer]:
+              - generic [ref=e395]: What's on your mind?
+          - generic [ref=e396]:
+            - button "Live video" [ref=e397] [cursor=pointer]:
+              - generic [ref=e401]: Live video
+            - button "Photo/video" [ref=e402] [cursor=pointer]:
+              - generic [ref=e406]: Photo/video
+            - button "Life update" [ref=e407] [cursor=pointer]:
+              - generic [ref=e411]: Life update
+        - generic [ref=e414]:
+          - generic [ref=e415]:
+            - heading "Posts" [level=2] [ref=e419]:
+              - generic [ref=e420]: Posts
+            - generic [ref=e422]:
+              - button "Filters" [ref=e424] [cursor=pointer]:
+                - generic [ref=e425]:
+                  - img [ref=e426]
+                  - generic [ref=e429]: Filters
+              - button "Manage posts" [ref=e432] [cursor=pointer]:
+                - generic [ref=e433]:
+                  - img [ref=e434]
+                  - generic [ref=e438]: Manage posts
+          - tablist [ref=e440]:
+            - tab "List view" [selected] [ref=e442] [cursor=pointer]:
+              - generic [ref=e443]:
+                - img [ref=e445]
+                - generic [ref=e447]: List view
+            - tab "Grid view" [ref=e450] [cursor=pointer]:
+              - generic [ref=e451]:
+                - img [ref=e453]
+                - generic [ref=e455]: Grid view
+        - generic [ref=e469]:
+          - blockquote [ref=e471]:
+            - generic [ref=e472]: Facebook
+          - blockquote [ref=e474]:
+            - generic [ref=e475]: Facebook
+          - blockquote [ref=e477]:
+            - generic [ref=e478]: Facebook
+          - blockquote [ref=e480]:
+            - generic [ref=e481]: Facebook
+          - blockquote [ref=e483]:
+            - generic [ref=e484]: Facebook
+          - blockquote [ref=e486]:
+            - generic [ref=e487]: Facebook
+          - blockquote [ref=e489]:
+            - generic [ref=e490]: Facebook
+          - blockquote [ref=e492]:
+            - generic [ref=e493]: Facebook
+          - blockquote [ref=e495]:
+            - generic [ref=e496]: Facebook
+          - blockquote [ref=e498]:
+            - generic [ref=e499]: Facebook
+          - blockquote [ref=e501]:
+            - generic [ref=e502]: Facebook
+          - generic [ref=e505]:
+            - generic:
+              - blockquote [ref=e507]:
+                - generic [ref=e508]: Facebook
+              - blockquote [ref=e510]:
+                - generic [ref=e511]: Facebook
+              - blockquote [ref=e513]:
+                - generic [ref=e514]: Facebook
+              - blockquote [ref=e516]:
+                - generic [ref=e517]: Facebook
+              - blockquote [ref=e519]:
+                - generic [ref=e520]: Facebook
+              - blockquote [ref=e522]:
+                - generic [ref=e523]: Facebook
+              - blockquote [ref=e525]:
+                - generic [ref=e526]: Facebook
+              - blockquote [ref=e528]:
+                - generic [ref=e529]: Facebook
+              - blockquote [ref=e531]:
+                - generic [ref=e532]: Facebook
+              - blockquote [ref=e534]:
+                - generic [ref=e535]: Facebook
+              - blockquote [ref=e537]:
+                - generic [ref=e538]: Facebook
+              - blockquote [ref=e540]:
+                - generic [ref=e541]: Facebook
+              - blockquote [ref=e543]:
+                - generic [ref=e544]: Facebook
+              - blockquote [ref=e546]:
+                - generic [ref=e547]: Facebook
+              - blockquote [ref=e549]:
+                - generic [ref=e550]: Facebook
+              - blockquote [ref=e552]:
+                - generic [ref=e553]: Facebook
+              - blockquote [ref=e555]:
+                - generic [ref=e556]: Facebook
+              - blockquote [ref=e558]:
+                - generic [ref=e559]: Facebook
+              - blockquote [ref=e561]:
+                - generic [ref=e562]: Facebook
+              - blockquote [ref=e564]:
+                - generic [ref=e565]: Facebook
+              - blockquote [ref=e567]:
+                - generic [ref=e568]: Facebook
+              - blockquote [ref=e570]:
+                - generic [ref=e571]: Facebook
+            - generic [ref=e573]:
+              - link "Omega Zeus" [ref=e577] [cursor=pointer]:
+                - /url: https://www.facebook.com/profile.php?id=61587182983198&__cft__[0]=AZbfW-2PDVLSVIMDwl-g5DLW7WXwckZoBySSq7WsZrYZQsCLm1a8c0CNUSDNvJgcLt3QNZHwRpl8HmVqmnZoB6iB9xyWTQepVdsx_R_D3g4txPIMG6KfpSiqzYdMCzUAj6fUj51F1OxFK0uZ_kZrFP7H70zSoDHeTYDsqoSjOHN7Fg&__tn__=%3C%3C%2CP-R
+                - img "Omega Zeus" [ref=e579]
+              - generic [ref=e584]:
+                - heading "Omega Zeus" [level=2] [ref=e588]:
+                  - link "Omega Zeus" [ref=e593] [cursor=pointer]:
+                    - /url: https://www.facebook.com/profile.php?id=61587182983198&__cft__[0]=AZbfW-2PDVLSVIMDwl-g5DLW7WXwckZoBySSq7WsZrYZQsCLm1a8c0CNUSDNvJgcLt3QNZHwRpl8HmVqmnZoB6iB9xyWTQepVdsx_R_D3g4txPIMG6KfpSiqzYdMCzUAj6fUj51F1OxFK0uZ_kZrFP7H70zSoDHeTYDsqoSjOHN7Fg&__tn__=-UC%2CP-R
+                    - generic [ref=e594]: Omega Zeus
+                - generic [ref=e597]:
+                  - link "2 June 2000" [ref=e598] [cursor=pointer]:
+                    - /url: https://www.facebook.com/permalink.php?story_fbid=pfbid0PqSuRTzJhr3AcTvJBUi2ywHf1fFhMtDdKzYELkFyYAGzJmMpAgX8L55quokyMd4Dl&id=61587182983198&__cft__[0]=AZbfW-2PDVLSVIMDwl-g5DLW7WXwckZoBySSq7WsZrYZQsCLm1a8c0CNUSDNvJgcLt3QNZHwRpl8HmVqmnZoB6iB9xyWTQepVdsx_R_D3g4txPIMG6KfpSiqzYdMCzUAj6fUj51F1OxFK0uZ_kZrFP7H70zSoDHeTYDsqoSjOHN7Fg&__tn__=%2CP-R
+                  - generic [ref=e600]: ·
+                  - img [ref=e604]
+                  - generic [ref=e607]: ·
+                  - img "Shared with Your friends of friends" [ref=e612]
+              - button "Actions for this post" [ref=e617] [cursor=pointer]:
+                - img [ref=e618]
+            - heading "Born on 2 June 2000" [level=3] [ref=e629]:
+              - link "Born on 2 June 2000" [ref=e631] [cursor=pointer]:
+                - /url: https://www.facebook.com/permalink.php?story_fbid=pfbid0PqSuRTzJhr3AcTvJBUi2ywHf1fFhMtDdKzYELkFyYAGzJmMpAgX8L55quokyMd4Dl&id=61587182983198&__cft__[0]=AZbfW-2PDVLSVIMDwl-g5DLW7WXwckZoBySSq7WsZrYZQsCLm1a8c0CNUSDNvJgcLt3QNZHwRpl8HmVqmnZoB6iB9xyWTQepVdsx_R_D3g4txPIMG6KfpSiqzYdMCzUAj6fUj51F1OxFK0uZ_kZrFP7H70zSoDHeTYDsqoSjOHN7Fg&__tn__=H-R
+            - generic [ref=e635]:
+              - generic [ref=e639]:
+                - generic [ref=e640]:
+                  - button "Like" [ref=e641] [cursor=pointer]:
+                    - generic [ref=e647]: Like
+                  - button "React" [ref=e648] [cursor=pointer]:
+                    - img [ref=e649]
+                - button "Leave a comment" [ref=e652] [cursor=pointer]:
+                  - generic [ref=e657]: Comment
+                - button "Send this to friends or post it on your profile." [ref=e659] [cursor=pointer]:
+                  - generic [ref=e664]: Share
+              - generic [ref=e670]:
+                - button "Available voices" [ref=e672] [cursor=pointer]:
+                  - generic [ref=e674]:
+                    - img [ref=e675]
+                    - img [ref=e682]
+                - generic [ref=e687]:
+                  - generic [ref=e691]:
+                    - textbox "Write a comment…" [ref=e692]:
+                      - paragraph [ref=e693]
+                    - generic: Write a comment…
+                  - list [ref=e695]:
+                    - listitem [ref=e696]:
+                      - button "Comment with an avatar sticker" [ref=e698] [cursor=pointer]
+                    - listitem [ref=e700]:
+                      - button "Insert an emoji" [ref=e702] [cursor=pointer]:
+                        - img [ref=e703]
+                    - listitem [ref=e706]:
+                      - button "Attach a photo or video" [ref=e708] [cursor=pointer]
+                    - listitem [ref=e710]:
+                      - button "Comment with a GIF" [ref=e712] [cursor=pointer]
+                    - listitem [ref=e714]:
+                      - button "Comment with a sticker" [ref=e716] [cursor=pointer]
+          - blockquote [ref=e719]:
+            - generic [ref=e720]: Facebook
+          - blockquote [ref=e722]:
+            - generic [ref=e723]: Facebook
+          - blockquote [ref=e725]:
+            - generic [ref=e726]: Facebook
+          - blockquote [ref=e728]:
+            - generic [ref=e729]: Facebook
+          - blockquote [ref=e731]:
+            - generic [ref=e732]: Facebook
+          - blockquote [ref=e734]:
+            - generic [ref=e735]: Facebook
+          - blockquote [ref=e737]:
+            - generic [ref=e738]: Facebook
+          - blockquote [ref=e740]:
+            - generic [ref=e741]: Facebook
+          - blockquote [ref=e743]:
+            - generic [ref=e744]: Facebook
+          - blockquote [ref=e746]:
+            - generic [ref=e747]: Facebook
+          - blockquote [ref=e749]:
+            - generic [ref=e750]: Facebook
+  - button "New message" [ref=e753] [cursor=pointer]:
+    - img [ref=e754]

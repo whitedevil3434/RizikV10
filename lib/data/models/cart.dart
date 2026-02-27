@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 /// Cart Item Model
 class CartItem {
   final String id;
@@ -104,15 +102,15 @@ class Cart {
   }
 
   double get subtotal => items.fold(0, (sum, item) => sum + item.subtotal);
-  
+
   double get tax => subtotal * taxRate;
-  
+
   double get total => subtotal + deliveryFee + tax;
-  
+
   int get itemCount => items.fold(0, (sum, item) => sum + item.quantity);
-  
+
   bool get isEmpty => items.isEmpty;
-  
+
   bool get isNotEmpty => items.isNotEmpty;
 
   Cart copyWith({

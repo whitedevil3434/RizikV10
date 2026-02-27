@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:rizik_v4/core/config/env_config.dart';
 import 'package:rizik_v4/data/models/squad.dart';
 import 'package:rizik_v4/data/remote/income_splitting_service.dart';
 import 'package:rizik_v4/data/remote/supabase/squad_service.dart';
@@ -9,7 +10,7 @@ import 'package:rizik_v4/data/remote/supabase/wallet_service.dart';
 class SquadProvider with ChangeNotifier {
   final SquadService _squadService = SquadService();
   final WalletService _walletService = WalletService();
-  
+
   List<Squad> _squads = [];
   bool _isLoading = false;
   String? _error;
@@ -36,13 +37,20 @@ class SquadProvider with ChangeNotifier {
 
   /// Load squads from Supabase
   Future<void> loadSquads() async {
+    if (EnvConfig.offlineMode) {
+      _squads = [];
+      _error = null;
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
     try {
       if (_currentUserId == null) {
         _error = 'Supabase not initialized';
         debugPrint(_error);
         return;
       }
-      
+
       _isLoading = true;
       notifyListeners();
 
@@ -117,7 +125,7 @@ class SquadProvider with ChangeNotifier {
         userId: member.userId,
         role: member.role,
       );
-      
+
       // Refresh squads to get updated list
       await loadSquads();
       return true;
@@ -138,7 +146,7 @@ class SquadProvider with ChangeNotifier {
         squadId: squadId,
         userId: userId,
       );
-      
+
       await loadSquads();
       return true;
     } catch (e) {
@@ -160,7 +168,7 @@ class SquadProvider with ChangeNotifier {
         userId: userId,
         newRole: newRole,
       );
-      
+
       await loadSquads();
       return true;
     } catch (e) {
@@ -179,9 +187,9 @@ class SquadProvider with ChangeNotifier {
     try {
       final squad = getSquadById(squadId);
       if (squad == null) return false;
-      
+
       final wallet = squad.safeWallet;
-      
+
       await _walletService.addTransaction(
         walletId: wallet.id,
         amount: amount,
@@ -209,7 +217,7 @@ class SquadProvider with ChangeNotifier {
     try {
       final squad = getSquadById(squadId);
       if (squad == null) return false;
-      
+
       final wallet = squad.safeWallet;
 
       await _walletService.addTransaction(
@@ -241,7 +249,7 @@ class SquadProvider with ChangeNotifier {
   }) async {
     // TODO: Implement approval logic in WalletService or via DB function
     // For now, this is a placeholder as approval logic is complex and might need a separate table or metadata update
-    return false; 
+    return false;
   }
 
   /// Lock funds for rent/utilities
@@ -263,7 +271,7 @@ class SquadProvider with ChangeNotifier {
     try {
       final squad = getSquadById(squadId);
       if (squad == null) return false;
-      
+
       final wallet = squad.safeWallet;
 
       // 1. Add earning to wallet
@@ -277,7 +285,7 @@ class SquadProvider with ChangeNotifier {
 
       // 2. Distribute to members (create individual transactions or update member stats)
       // This part needs more complex logic or a batch operation
-      
+
       await loadSquads();
       return true;
     } catch (e) {

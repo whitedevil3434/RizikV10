@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rizik_v4/features/red_flag/data/red_flag_repository.dart';
 import 'package:rizik_v4/core/wrappers/toast_wrapper.dart';
-import 'package:fl_chart/fl_chart.dart'; // Assuming fl_chart is used for visualization, or we build a custom gauge
 
 /// Red Flag Screen
 /// Input form and result visualization
@@ -83,7 +82,8 @@ class _RedFlagScreenState extends ConsumerState<RedFlagScreen> {
   Widget _buildResult(Map<String, dynamic> data) {
     final riskScore = data['risk_score'] ?? 0; // 0-100
     final analysis = data['analysis'] ?? 'No analysis';
-    final flags = (data['flags'] as List?)?.map((e) => e.toString()).toList() ?? [];
+    final flags =
+        (data['flags'] as List?)?.map((e) => e.toString()).toList() ?? [];
 
     Color color = Colors.green;
     String level = 'Safe';
@@ -122,9 +122,14 @@ class _RedFlagScreenState extends ConsumerState<RedFlagScreen> {
                   children: [
                     Text(
                       '$riskScore%',
-                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: color),
+                      style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: color),
                     ),
-                    Text(level, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+                    Text(level,
+                        style: TextStyle(
+                            color: color, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ],
@@ -141,19 +146,21 @@ class _RedFlagScreenState extends ConsumerState<RedFlagScreen> {
               const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Detected Flags:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red[800])),
+                child: Text('Detected Flags:',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.red[800])),
               ),
               const SizedBox(height: 8),
               ...flags.map((flag) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    const Icon(Icons.flag, color: Colors.red, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(flag)),
-                  ],
-                ),
-              )),
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.flag, color: Colors.red, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(flag)),
+                      ],
+                    ),
+                  )),
             ],
           ],
         ),

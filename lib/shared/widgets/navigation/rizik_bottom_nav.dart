@@ -33,9 +33,11 @@ class RizikBottomNav extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildNavItem(Icons.home_rounded, 'Home', 0),
-                _buildNavItem(Icons.shopping_bag_outlined, _getTab2Label(role), 1),
+                _buildNavItem(
+                    Icons.shopping_bag_outlined, _getTab2Label(role), 1),
                 const SizedBox(width: 48), // Space for Mojo
-                _buildNavItem(Icons.receipt_long_rounded, _getTab3Label(role), 3),
+                _buildNavItem(
+                    Icons.receipt_long_rounded, _getTab3Label(role), 3),
                 _buildNavItem(Icons.person_outline_rounded, 'Profile', 4),
               ],
             ),
@@ -52,7 +54,6 @@ class RizikBottomNav extends ConsumerWidget {
       case UserRole.source:
         return 'Inventory';
       case UserRole.seeker:
-      default:
         return 'Bazar';
     }
   }
@@ -64,7 +65,6 @@ class RizikBottomNav extends ConsumerWidget {
       case UserRole.source:
         return 'Sales';
       case UserRole.seeker:
-      default:
         return 'Orders';
     }
   }

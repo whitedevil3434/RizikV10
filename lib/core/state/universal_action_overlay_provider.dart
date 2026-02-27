@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:rizik_v4/data/models/action_item.dart';
-import 'package:rizik_v4/core/state/omni_present_backpack_provider.dart';
 
 /// Provider for managing Universal Action Overlay state
 class UniversalActionOverlayProvider with ChangeNotifier {
@@ -68,7 +67,8 @@ class UniversalActionOverlayProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _handleCartAction(BuildContext context, ActionItem action) async {
+  Future<void> _handleCartAction(
+      BuildContext context, ActionItem action) async {
     // TODO: Integrate with OmniPresentBackpackProvider
     // For now, show a snackbar
     if (context.mounted) {
@@ -81,7 +81,8 @@ class UniversalActionOverlayProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _handleSquadAction(BuildContext context, ActionItem action) async {
+  Future<void> _handleSquadAction(
+      BuildContext context, ActionItem action) async {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -92,7 +93,8 @@ class UniversalActionOverlayProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _handleSaveAction(BuildContext context, ActionItem action) async {
+  Future<void> _handleSaveAction(
+      BuildContext context, ActionItem action) async {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -114,7 +116,8 @@ class UniversalActionOverlayProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _handleAcceptAction(BuildContext context, ActionItem action) async {
+  Future<void> _handleAcceptAction(
+      BuildContext context, ActionItem action) async {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -125,7 +128,8 @@ class UniversalActionOverlayProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _handleShareAction(BuildContext context, ActionItem action) async {
+  Future<void> _handleShareAction(
+      BuildContext context, ActionItem action) async {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -136,7 +140,8 @@ class UniversalActionOverlayProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _handleRemindAction(BuildContext context, ActionItem action) async {
+  Future<void> _handleRemindAction(
+      BuildContext context, ActionItem action) async {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -147,7 +152,8 @@ class UniversalActionOverlayProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _handleWatchAction(BuildContext context, ActionItem action) async {
+  Future<void> _handleWatchAction(
+      BuildContext context, ActionItem action) async {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -158,7 +164,8 @@ class UniversalActionOverlayProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _handleContactAction(BuildContext context, ActionItem action) async {
+  Future<void> _handleContactAction(
+      BuildContext context, ActionItem action) async {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:rizik_v4/core/wrappers/location_wrapper.dart';
 
 /// Delivery Tracking Screen
 /// Live map tracking of delivery
@@ -25,7 +24,6 @@ class DeliveryTrackingScreen extends StatefulWidget {
 }
 
 class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
-  GoogleMapController? _mapController;
   final Set<Marker> _markers = {};
   final Set<Polyline> _polylines = {};
 
@@ -85,7 +83,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
         ),
         markers: _markers,
         polylines: _polylines,
-        onMapCreated: (controller) => _mapController = controller,
+        onMapCreated: (_) {},
       ),
     );
   }

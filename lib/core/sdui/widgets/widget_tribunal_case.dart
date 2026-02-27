@@ -13,13 +13,13 @@ class WidgetTribunalCase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveData = data['data'] is Map<String, dynamic> 
-        ? data['data'] as Map<String, dynamic> 
+    final effectiveData = data['data'] is Map<String, dynamic>
+        ? data['data'] as Map<String, dynamic>
         : data;
 
-    final disputeId = effectiveData['disputeId'] as String? ?? 'default_dispute';
+    final disputeId =
+        effectiveData['disputeId'] as String? ?? 'default_dispute';
     final showEvidence = effectiveData['showEvidence'] as bool? ?? true;
-    final userId = effectiveData['userId'] as String? ?? 'user_123';
 
     final dispute = _getMockDispute(disputeId);
 
@@ -103,12 +103,14 @@ class WidgetTribunalCase extends StatelessWidget {
                     SizedBox(width: 6),
                     Text(
                       'ভোটের সময়সীমা',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
                 Text(
-                  _getTimeRemaining(dispute.votingStartedAt?.add(const Duration(hours: 24))),
+                  _getTimeRemaining(
+                      dispute.votingStartedAt?.add(const Duration(hours: 24))),
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -182,23 +184,6 @@ class WidgetTribunalCase extends StatelessWidget {
     }
   }
 
-  String _getStatusText(DisputeStatus status) {
-    switch (status) {
-      case DisputeStatus.filed:
-        return 'Filed';
-      case DisputeStatus.underReview:
-        return 'Under Review';
-      case DisputeStatus.voting:
-        return 'Voting Active';
-      case DisputeStatus.resolved:
-        return 'Resolved';
-      case DisputeStatus.appealed:
-        return 'Appealed';
-      case DisputeStatus.closed:
-        return 'Closed';
-    }
-  }
-
   Widget _buildVoteTally(SquadDispute dispute) {
     // Mock tally
     return Container(
@@ -221,7 +206,8 @@ class WidgetTribunalCase extends StatelessWidget {
   Widget _buildTallyItem(String label, int count, Color color) {
     return Column(
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+        Text(label,
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
         const SizedBox(height: 4),
         Text(
           count.toString(),
@@ -248,23 +234,6 @@ class WidgetTribunalCase extends StatelessWidget {
     if (deadline.isBefore(now)) return 'শেষ';
     final diff = deadline.difference(now);
     return '${diff.inHours}ঘ ${diff.inMinutes.remainder(60)}মি';
-  }
-
-  IconData _getTypeIcon(DisputeType type) {
-    switch (type) {
-      case DisputeType.incomeSplit:
-        return Icons.attach_money;
-      case DisputeType.workDistribution:
-        return Icons.work;
-      case DisputeType.memberConduct:
-        return Icons.person;
-      case DisputeType.resourceUsage:
-        return Icons.inventory;
-      case DisputeType.decisionMaking:
-        return Icons.gavel;
-      case DisputeType.other:
-        return Icons.help_outline;
-    }
   }
 
   String _getTypeName(DisputeType type) {
@@ -332,7 +301,7 @@ class WidgetTribunalCase extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.grey.shade300),
-                  image: evidence.fileUrl != null 
+                  image: evidence.fileUrl != null
                       ? DecorationImage(
                           image: NetworkImage(evidence.fileUrl!),
                           fit: BoxFit.cover,

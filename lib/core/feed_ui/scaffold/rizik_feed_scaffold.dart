@@ -6,7 +6,7 @@ import 'package:rizik_v4/core/feed_ui/components/edge_animations.dart';
 import 'package:rizik_v4/core/feed_ui/layers/rizik_action_rail.dart';
 
 /// RizikFeedScaffold - Main 5-Layer Feed Container
-/// 
+///
 /// Layer Architecture:
 /// - Layer 5: Top HUD (Avatar, Balance, Search, Notifications)
 /// - Layer 4: Category Bar (Following/Live, Balance Pill, Flow Chips)
@@ -17,28 +17,28 @@ import 'package:rizik_v4/core/feed_ui/layers/rizik_action_rail.dart';
 class RizikFeedScaffold extends StatefulWidget {
   // Video/Image backdrop
   final String? videoUrl;
-  
+
   // Creator info
   final String creatorUsername;
   final String? creatorAvatarUrl;
   final bool isVerified;
-  
+
   // Content info
   final String description;
   final String? flowBadge;
   final String? audioTitle;
-  
+
   // Engagement stats
   final int likeCount;
   final int commentCount;
   final int shareCount;
   final bool isLiked;
   final bool isBookmarked;
-  
+
   // User info
   final String? userAvatarUrl;
   final String balanceText;
-  
+
   // Callbacks
   final VoidCallback? onLikeTap;
   final VoidCallback? onCommentTap;
@@ -48,16 +48,16 @@ class RizikFeedScaffold extends StatefulWidget {
   final VoidCallback? onOrbLongPress;
   final VoidCallback? onSearchTap;
   final VoidCallback? onNotificationTap;
-  
+
   // Categories
   final List<String> flowCategories;
   final int selectedCategoryIndex;
   final ValueChanged<int>? onCategorySelected;
-  
+
   // Layout options
   final bool showBottomOrb;
   final bool showTopHUD;
-  
+
   // Playback Control
   final bool isActive;
   final bool shouldBuffer; // Resource Control
@@ -99,7 +99,7 @@ class RizikFeedScaffold extends StatefulWidget {
   State<RizikFeedScaffold> createState() => _RizikFeedScaffoldState();
 }
 
-class _RizikFeedScaffoldState extends State<RizikFeedScaffold> 
+class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
     with SingleTickerProviderStateMixin {
   late AnimationController _fadeController;
   bool _showUI = true;
@@ -143,10 +143,10 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
           children: [
             // Layer 1: Cinematic Video Backdrop (Living UI)
             _buildVideoBackdrop(),
-            
+
             // Layer 1.5: 4-Side Edge Animations
             const EdgeAnimations(),
-            
+
             // UI Layers with fade animation
             AnimatedOpacity(
               opacity: _showUI ? 1.0 : 0.0,
@@ -162,7 +162,7 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
                       right: 16,
                       child: _buildTopHUD(),
                     ),
-                    
+
                     // Layer 4: Category Bar
                     Positioned(
                       top: MediaQuery.of(context).padding.top + 60,
@@ -170,14 +170,14 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
                       right: 0,
                       child: _buildCategoryBar(),
                     ),
-                    
+
                     // Layer 3: Action Rail
                     Positioned(
                       right: 12,
                       bottom: 160,
                       child: _buildActionRail(),
                     ),
-                    
+
                     // Layer 2: Bottom Metadata
                     Positioned(
                       left: 16,
@@ -189,7 +189,7 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
                 ),
               ),
             ),
-            
+
             // Layer 0: Anchor Orb (optional - hide when using external nav)
             if (widget.showBottomOrb)
               Positioned(
@@ -214,7 +214,8 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
       fallbackWidget: Container(
         color: const Color(0xFF0A0A0F),
         child: const Center(
-          child: Icon(Icons.play_circle_outline, size: 64, color: Colors.white24),
+          child:
+              Icon(Icons.play_circle_outline, size: 64, color: Colors.white24),
         ),
       ),
       shouldMute: false, // Enable Audio for Feed
@@ -222,7 +223,6 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
       shouldBuffer: widget.shouldBuffer, // Control Resource
     );
   }
-
 
   Widget _buildTopHUD() {
     return Row(
@@ -242,15 +242,15 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.account_balance_wallet, 
-                color: Color(0xFF10B981), size: 16),
+              const Icon(Icons.account_balance_wallet,
+                  color: Color(0xFF10B981), size: 16),
               const SizedBox(width: 6),
               Text(widget.balanceText,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                )),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  )),
             ],
           ),
         ),
@@ -264,8 +264,8 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
         // Notifications
         _buildGlassCircle(
           onTap: widget.onNotificationTap,
-          child: const Icon(Icons.notifications_outlined, 
-            color: Colors.white, size: 20),
+          child: const Icon(Icons.notifications_outlined,
+              color: Colors.white, size: 20),
         ),
       ],
     );
@@ -285,30 +285,33 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
                   children: [
                     _buildTabButton('Following', isSelected: true),
                     const SizedBox(width: 16),
-                    _buildTabButton('Live', isSelected: false, hasLiveDot: true),
+                    _buildTabButton('Live',
+                        isSelected: false, hasLiveDot: true),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
               // RZK Balance pill
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.5)),
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.5)),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.token, color: Color(0xFF8B5CF6), size: 14),
                     SizedBox(width: 4),
-                    Text('1.2K RZK', style: TextStyle(
-                      color: Color(0xFFA78BFA),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    )),
+                    Text('1.2K RZK',
+                        style: TextStyle(
+                          color: Color(0xFFA78BFA),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        )),
                   ],
                 ),
               ),
@@ -329,10 +332,11 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
               return GestureDetector(
                 onTap: () => widget.onCategorySelected?.call(index),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isSelected 
-                        ? Colors.white 
+                    color: isSelected
+                        ? Colors.white
                         : Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -353,7 +357,8 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
     );
   }
 
-  Widget _buildTabButton(String text, {bool isSelected = false, bool hasLiveDot = false}) {
+  Widget _buildTabButton(String text,
+      {bool isSelected = false, bool hasLiveDot = false}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -410,39 +415,6 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
       // ⋯ OPTIONS
       onOptions: widget.onMoreTap,
       onOptionsLongPress: () {},
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    int? count,
-    Color color = Colors.white,
-    VoidCallback? onTap,
-    bool flipIcon = false,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap?.call();
-      },
-      child: Column(
-        children: [
-          Transform(
-            transform: flipIcon 
-                ? (Matrix4.identity()..scale(-1.0, 1.0, 1.0))
-                : Matrix4.identity(),
-            alignment: Alignment.center,
-            child: Icon(icon, color: color, size: 28),
-          ),
-          if (count != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              _formatCount(count),
-              style: const TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ],
-        ],
-      ),
     );
   }
 
@@ -584,11 +556,5 @@ class _RizikFeedScaffoldState extends State<RizikFeedScaffold>
         ),
       ),
     );
-  }
-
-  String _formatCount(int count) {
-    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
-    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K';
-    return count.toString();
   }
 }

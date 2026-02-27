@@ -34,7 +34,7 @@ from PIL import Image
 # API CONFIGURATION
 # ============================================================================
 
-SILICONFLOW_API_KEY = "sk-avpyqvixenjmljtfibazyinfprceikgdjiwvnyucqchuwqdp"
+SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "")
 SILICONFLOW_BASE_URL = "https://api.siliconflow.com/v1"
 
 R2_PUBLIC_URL = "https://pub-b00b750231d04ca29f9683a360790349.r2.dev"

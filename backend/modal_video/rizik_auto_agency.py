@@ -76,7 +76,7 @@ agency_image = (
 # CONFIGURATION - SILICONFLOW GLOBAL API
 # ============================================================================
 
-SILICONFLOW_API_KEY = "sk-avpyqvixenjmljtfibazyinfprceikgdjiwvnyucqchuwqdp"
+SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "")
 SILICONFLOW_BASE_URL = "https://api.siliconflow.com/v1"  # GLOBAL (not .cn)
 
 # R2 Storage

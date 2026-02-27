@@ -9,6 +9,17 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  exclude:
+    - auto_audio_check.dart
+    - list_models.dart
+    - soloud_probe.dart
+    - soloud_probe_2.dart
+    - stress_test_extreme.dart
+    - terminal_test.dart
+    - test_bangla_brain.dart
+    - test_full_pipeline.dart
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`

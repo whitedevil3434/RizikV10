@@ -16,8 +16,6 @@ class WidgetMissionOffer extends StatelessWidget {
   Widget build(BuildContext context) {
     // Extract parameters from JSON
     final missionId = data['missionId'] as String? ?? 'default_mission';
-    final showMap = data['showMap'] as bool? ?? true;
-    final autoRefresh = data['autoRefresh'] as bool? ?? false;
 
     // Fetch mission (mock data for now)
     final mission = _getMockMission(missionId);
@@ -81,9 +79,9 @@ class WidgetMissionOffer extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Reward Amount (Prominent)
           Container(
             padding: const EdgeInsets.all(16),
@@ -137,9 +135,9 @@ class WidgetMissionOffer extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Route Info
           Container(
             padding: const EdgeInsets.all(12),
@@ -158,7 +156,8 @@ class WidgetMissionOffer extends StatelessWidget {
                         color: Color(0xFF4CAF50),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.restaurant, color: Colors.white, size: 16),
+                      child: const Icon(Icons.restaurant,
+                          color: Colors.white, size: 16),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -187,7 +186,7 @@ class WidgetMissionOffer extends StatelessWidget {
                     ),
                   ],
                 ),
-                
+
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Row(
@@ -210,7 +209,7 @@ class WidgetMissionOffer extends StatelessWidget {
                     ],
                   ),
                 ),
-                
+
                 // Delivery
                 Row(
                   children: [
@@ -220,7 +219,8 @@ class WidgetMissionOffer extends StatelessWidget {
                         color: Color(0xFFFF5722),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.location_on, color: Colors.white, size: 16),
+                      child: const Icon(Icons.location_on,
+                          color: Colors.white, size: 16),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -252,9 +252,9 @@ class WidgetMissionOffer extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Items
           Container(
             padding: const EdgeInsets.all(10),
@@ -264,7 +264,8 @@ class WidgetMissionOffer extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 16),
+                const Icon(Icons.shopping_bag_outlined,
+                    color: Colors.white, size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -280,9 +281,9 @@ class WidgetMissionOffer extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // OTP Display
           Row(
             children: [
@@ -306,9 +307,9 @@ class WidgetMissionOffer extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Action Buttons
           Row(
             children: [

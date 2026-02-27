@@ -7,6 +7,12 @@ export { ChatRoom, VoiceAgent };
 // Legacy Stubs (To fix deployment migration errors)
 export class MeetingRoom extends DurableObject { }
 export class VoiceAgentV2 extends DurableObject { }
+export class SquadRoom extends DurableObject { }
+
+const corsHeaders = {
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": "*",
+};
 
 // 🔑 LiveKit JWT Token Generator (using Web Crypto API)
 async function generateLiveKitToken(
@@ -75,6 +81,117 @@ async function generateLiveKitToken(
   return `${signingInput}.${encodedSignature}`;
 }
 
+async function generateLiveKitAdminToken(
+  apiKey: string,
+  apiSecret: string,
+  roomName: string,
+): Promise<string> {
+  const header = { alg: "HS256", typ: "JWT" };
+  const now = Math.floor(Date.now() / 1000);
+  const claims = {
+    iss: apiKey,
+    sub: `dispatch-${Date.now()}`,
+    iat: now,
+    nbf: now,
+    exp: now + 3600,
+    video: {
+      roomAdmin: true,
+      room: roomName,
+    },
+  };
+  const base64url = (data: string) =>
+    btoa(data)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+
+  const encodedHeader = base64url(JSON.stringify(header));
+  const encodedClaims = base64url(JSON.stringify(claims));
+  const signingInput = `${encodedHeader}.${encodedClaims}`;
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(apiSecret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    encoder.encode(signingInput),
+  );
+  const encodedSignature = base64url(
+    String.fromCharCode(...new Uint8Array(signature)),
+  );
+  return `${signingInput}.${encodedSignature}`;
+}
+
+function normalizeLiveKitHost(raw: string): string {
+  if (raw.startsWith("wss://")) {
+    return `https://${raw.slice(6)}`;
+  }
+  if (raw.startsWith("ws://")) {
+    return `http://${raw.slice(5)}`;
+  }
+  return raw;
+}
+
+async function dispatchLiveKitAgent(
+  env: any,
+  roomName: string,
+  participantName: string,
+): Promise<{ dispatched: boolean; dispatchError?: string }> {
+  const livekitUrl = env.LIVEKIT_URL;
+  const apiKey = env.LIVEKIT_API_KEY;
+  const apiSecret = env.LIVEKIT_API_SECRET;
+  const agentName = env.LIVEKIT_AGENT_NAME || "rizik-local-final";
+
+  if (!livekitUrl || !apiKey || !apiSecret) {
+    return {
+      dispatched: false,
+      dispatchError: "missing LIVEKIT_URL/LIVEKIT_API_KEY/LIVEKIT_API_SECRET",
+    };
+  }
+
+  const roomAdminToken = await generateLiveKitAdminToken(
+    apiKey,
+    apiSecret,
+    roomName,
+  );
+
+  const host = normalizeLiveKitHost(livekitUrl);
+  const endpoint = `${host}/twirp/livekit.AgentDispatchService/CreateDispatch`;
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${roomAdminToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        room: roomName,
+        agentName,
+        metadata: JSON.stringify({ invitedBy: participantName }),
+      }),
+    });
+
+    if (!response.ok) {
+      const reason = (await response.text()).slice(0, 400);
+      return {
+        dispatched: false,
+        dispatchError: `dispatch failed ${response.status}: ${reason}`,
+      };
+    }
+    return { dispatched: true };
+  } catch (error: any) {
+    return {
+      dispatched: false,
+      dispatchError: error?.message || "dispatch request failed",
+    };
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -99,7 +216,10 @@ export default {
     }
 
     // 🔑 LiveKit Token Generation
-    if (url.pathname === "/api/livekit/token" && request.method === "POST") {
+    if (
+      (url.pathname === "/api/livekit/token" || url.pathname === "/api/token") &&
+      request.method === "POST"
+    ) {
       try {
         const body = await request.json() as { room?: string; participant?: string };
         const roomName = body.room || "rizik-room";
@@ -112,15 +232,20 @@ export default {
           roomName,
           participantName
         );
+        const dispatch = await dispatchLiveKitAgent(env, roomName, participantName);
 
-        return new Response(JSON.stringify({ token }), {
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
-          }
+        return new Response(JSON.stringify({
+          token,
+          dispatched: dispatch.dispatched,
+          dispatchError: dispatch.dispatchError,
+        }), {
+          headers: corsHeaders,
         });
-      } catch (e) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ error: e?.message || "token error" }), {
+          status: 500,
+          headers: corsHeaders,
+        });
       }
     }
 

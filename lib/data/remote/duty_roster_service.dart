@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:rizik_v4/data/models/duty_roster.dart';
 import 'package:rizik_v4/data/models/squad.dart';
 
@@ -12,10 +11,10 @@ class DutyRosterService {
   }) {
     final weekEnd = weekStart.add(const Duration(days: 7));
     final shifts = <Shift>[];
-    
+
     // Default skills if not provided
     final skills = memberSkills ?? _getDefaultSkills(squad.members);
-    
+
     // Generate shifts for each day
     for (int day = 0; day < 7; day++) {
       final date = weekStart.add(Duration(days: day));
@@ -27,7 +26,7 @@ class DutyRosterService {
       );
       shifts.addAll(dailyShifts);
     }
-    
+
     return DutyRoster(
       id: 'roster_${DateTime.now().millisecondsSinceEpoch}',
       squadId: squad.id,
@@ -39,7 +38,7 @@ class DutyRosterService {
       createdAt: DateTime.now(),
     );
   }
-  
+
   /// Generate shifts for a single day
   static List<Shift> _generateDailyShifts({
     required DateTime date,
@@ -48,23 +47,41 @@ class DutyRosterService {
     required List<Shift> existingShifts,
   }) {
     final shifts = <Shift>[];
-    
+
     // Define shift times
     final shiftTimes = [
-      {'start': 6, 'end': 10, 'roles': [DutyRole.chef, DutyRole.buyer]}, // Morning
-      {'start': 10, 'end': 14, 'roles': [DutyRole.chef, DutyRole.delivery]}, // Lunch
-      {'start': 14, 'end': 18, 'roles': [DutyRole.cleaner, DutyRole.manager]}, // Afternoon
-      {'start': 18, 'end': 22, 'roles': [DutyRole.chef, DutyRole.delivery]}, // Dinner
+      {
+        'start': 6,
+        'end': 10,
+        'roles': [DutyRole.chef, DutyRole.buyer]
+      }, // Morning
+      {
+        'start': 10,
+        'end': 14,
+        'roles': [DutyRole.chef, DutyRole.delivery]
+      }, // Lunch
+      {
+        'start': 14,
+        'end': 18,
+        'roles': [DutyRole.cleaner, DutyRole.manager]
+      }, // Afternoon
+      {
+        'start': 18,
+        'end': 22,
+        'roles': [DutyRole.chef, DutyRole.delivery]
+      }, // Dinner
     ];
-    
+
     // Calculate member workload for fair distribution
     final memberHours = _calculateMemberHours(existingShifts, squad.members);
-    
+
     for (final shiftTime in shiftTimes) {
-      final startTime = DateTime(date.year, date.month, date.day, shiftTime['start'] as int);
-      final endTime = DateTime(date.year, date.month, date.day, shiftTime['end'] as int);
+      final startTime =
+          DateTime(date.year, date.month, date.day, shiftTime['start'] as int);
+      final endTime =
+          DateTime(date.year, date.month, date.day, shiftTime['end'] as int);
       final roles = shiftTime['roles'] as List<DutyRole>;
-      
+
       for (final role in roles) {
         // Find best member for this role
         final member = _findBestMemberForRole(
@@ -76,7 +93,7 @@ class DutyRosterService {
           endTime: endTime,
           existingShifts: [...existingShifts, ...shifts],
         );
-        
+
         if (member != null) {
           shifts.add(Shift(
             id: 'shift_${DateTime.now().millisecondsSinceEpoch}_${shifts.length}',
@@ -87,17 +104,17 @@ class DutyRosterService {
             endTime: endTime,
             status: ShiftStatus.scheduled,
           ));
-          
+
           // Update member hours
-          memberHours[member.userId] = (memberHours[member.userId] ?? 0) + 
+          memberHours[member.userId] = (memberHours[member.userId] ?? 0) +
               (endTime.difference(startTime).inMinutes / 60.0);
         }
       }
     }
-    
+
     return shifts;
   }
-  
+
   /// Find best member for a specific role
   static SquadMember? _findBestMemberForRole({
     required DutyRole role,
@@ -113,23 +130,23 @@ class DutyRosterService {
       final skills = memberSkills[member.userId] ?? [];
       return skills.contains(role);
     }).toList();
-    
+
     if (qualifiedMembers.isEmpty) {
       // If no one has the skill, allow anyone
       return squad.members.isNotEmpty ? squad.members.first : null;
     }
-    
+
     // Check for conflicts and find member with least hours
     SquadMember? bestMember;
     double minHours = double.infinity;
-    
+
     for (final member in qualifiedMembers) {
       // Check if member has conflicting shift
       final hasConflict = existingShifts.any((shift) {
         return shift.memberId == member.userId &&
             _shiftsOverlap(shift.startTime, shift.endTime, startTime, endTime);
       });
-      
+
       if (!hasConflict) {
         final hours = memberHours[member.userId] ?? 0;
         if (hours < minHours) {
@@ -138,10 +155,10 @@ class DutyRosterService {
         }
       }
     }
-    
+
     return bestMember;
   }
-  
+
   /// Check if two shifts overlap
   static bool _shiftsOverlap(
     DateTime start1,
@@ -151,36 +168,38 @@ class DutyRosterService {
   ) {
     return start1.isBefore(end2) && end1.isAfter(start2);
   }
-  
+
   /// Calculate total hours worked by each member
   static Map<String, double> _calculateMemberHours(
     List<Shift> shifts,
     List<SquadMember> members,
   ) {
     final hours = <String, double>{};
-    
+
     // Initialize with 0 for all members
     for (final member in members) {
       hours[member.userId] = 0;
     }
-    
+
     // Sum up hours from shifts
     for (final shift in shifts) {
-      hours[shift.memberId] = (hours[shift.memberId] ?? 0) + shift.durationHours;
+      hours[shift.memberId] =
+          (hours[shift.memberId] ?? 0) + shift.durationHours;
     }
-    
+
     return hours;
   }
-  
+
   /// Get default skills for members (everyone can do everything)
-  static Map<String, List<DutyRole>> _getDefaultSkills(List<SquadMember> members) {
+  static Map<String, List<DutyRole>> _getDefaultSkills(
+      List<SquadMember> members) {
     final skills = <String, List<DutyRole>>{};
     for (final member in members) {
       skills[member.userId] = DutyRole.values;
     }
     return skills;
   }
-  
+
   /// Validate shift swap request
   static SwapValidationResult validateSwap({
     required DutySwap swap,
@@ -194,7 +213,7 @@ class DutyRosterService {
         reasonBn: 'অতীতের শিফট অদলবদল করা যাবে না',
       );
     }
-    
+
     // Check if target member has conflicting shift
     if (swap.shift != null) {
       final targetShifts = roster.getShiftsForMember(swap.targetId);
@@ -206,7 +225,7 @@ class DutyRosterService {
           swap.shift!.endTime,
         );
       });
-      
+
       if (hasConflict) {
         return SwapValidationResult(
           valid: false,
@@ -215,10 +234,10 @@ class DutyRosterService {
         );
       }
     }
-    
+
     return SwapValidationResult(valid: true);
   }
-  
+
   /// Process shift swap
   static DutyRoster processSwap({
     required DutyRoster roster,
@@ -234,19 +253,18 @@ class DutyRosterService {
       }
       return shift;
     }).toList();
-    
+
     // Remove the swap from pending
-    final updatedSwaps = roster.pendingSwaps
-        .where((s) => s.id != swap.id)
-        .toList();
-    
+    final updatedSwaps =
+        roster.pendingSwaps.where((s) => s.id != swap.id).toList();
+
     return roster.copyWith(
       shifts: updatedShifts,
       pendingSwaps: updatedSwaps,
       lastModified: DateTime.now(),
     );
   }
-  
+
   /// Mark shift as completed
   static DutyRoster completeShift({
     required DutyRoster roster,
@@ -265,11 +283,12 @@ class DutyRosterService {
       }
       return shift;
     }).toList();
-    
+
     // Update performance scores
-    final updatedPerformance = Map<String, MemberPerformance>.from(roster.performanceScores);
+    final updatedPerformance =
+        Map<String, MemberPerformance>.from(roster.performanceScores);
     final shift = roster.shifts.firstWhere((s) => s.id == shiftId);
-    
+
     final currentPerf = updatedPerformance[shift.memberId];
     if (currentPerf != null) {
       updatedPerformance[shift.memberId] = MemberPerformance(
@@ -278,7 +297,8 @@ class DutyRosterService {
         completedShifts: currentPerf.completedShifts + 1,
         missedShifts: currentPerf.missedShifts,
         averageScore: performanceScore != null
-            ? ((currentPerf.averageScore * currentPerf.completedShifts) + performanceScore) /
+            ? ((currentPerf.averageScore * currentPerf.completedShifts) +
+                    performanceScore) /
                 (currentPerf.completedShifts + 1)
             : currentPerf.averageScore,
         totalHours: currentPerf.totalHours + shift.durationHours,
@@ -293,14 +313,14 @@ class DutyRosterService {
         totalHours: shift.durationHours,
       );
     }
-    
+
     return roster.copyWith(
       shifts: updatedShifts,
       performanceScores: updatedPerformance,
       lastModified: DateTime.now(),
     );
   }
-  
+
   /// Mark shift as missed
   static DutyRoster markShiftMissed({
     required DutyRoster roster,
@@ -312,11 +332,12 @@ class DutyRosterService {
       }
       return shift;
     }).toList();
-    
+
     // Update performance scores
-    final updatedPerformance = Map<String, MemberPerformance>.from(roster.performanceScores);
+    final updatedPerformance =
+        Map<String, MemberPerformance>.from(roster.performanceScores);
     final shift = roster.shifts.firstWhere((s) => s.id == shiftId);
-    
+
     final currentPerf = updatedPerformance[shift.memberId];
     if (currentPerf != null) {
       updatedPerformance[shift.memberId] = MemberPerformance(
@@ -337,19 +358,18 @@ class DutyRosterService {
         totalHours: 0,
       );
     }
-    
+
     return roster.copyWith(
       shifts: updatedShifts,
       performanceScores: updatedPerformance,
       lastModified: DateTime.now(),
     );
   }
-  
+
   /// Check for missed shifts and update status
   static DutyRoster checkMissedShifts(DutyRoster roster) {
-    final now = DateTime.now();
     var updatedRoster = roster;
-    
+
     for (final shift in roster.shifts) {
       if (shift.isOverdue && shift.status == ShiftStatus.scheduled) {
         updatedRoster = markShiftMissed(
@@ -358,27 +378,29 @@ class DutyRosterService {
         );
       }
     }
-    
+
     return updatedRoster;
   }
-  
+
   /// Get roster statistics
   static RosterStatistics getRosterStatistics(DutyRoster roster) {
     final totalShifts = roster.shifts.length;
-    final completedShifts = roster.shifts.where((s) => s.status == ShiftStatus.completed).length;
-    final missedShifts = roster.shifts.where((s) => s.status == ShiftStatus.missed).length;
+    final completedShifts =
+        roster.shifts.where((s) => s.status == ShiftStatus.completed).length;
+    final missedShifts =
+        roster.shifts.where((s) => s.status == ShiftStatus.missed).length;
     final upcomingShifts = roster.upcomingShifts.length;
-    
+
     // Calculate average performance score
     final scoresWithValues = roster.shifts
         .where((s) => s.performanceScore != null)
         .map((s) => s.performanceScore!)
         .toList();
-    
+
     final averagePerformance = scoresWithValues.isNotEmpty
         ? scoresWithValues.reduce((a, b) => a + b) / scoresWithValues.length
         : 0.0;
-    
+
     return RosterStatistics(
       totalShifts: totalShifts,
       completedShifts: completedShifts,
@@ -388,38 +410,39 @@ class DutyRosterService {
       averagePerformance: averagePerformance,
     );
   }
-  
+
   /// Get member with most hours
   static String? getMemberWithMostHours(DutyRoster roster) {
     if (roster.performanceScores.isEmpty) return null;
-    
+
     String? topMember;
     double maxHours = 0;
-    
+
     roster.performanceScores.forEach((memberId, performance) {
       if (performance.totalHours > maxHours) {
         maxHours = performance.totalHours;
         topMember = memberId;
       }
     });
-    
+
     return topMember;
   }
-  
+
   /// Get member with best performance
   static String? getMemberWithBestPerformance(DutyRoster roster) {
     if (roster.performanceScores.isEmpty) return null;
-    
+
     String? topMember;
     double maxScore = 0;
-    
+
     roster.performanceScores.forEach((memberId, performance) {
-      if (performance.averageScore > maxScore && performance.completedShifts > 0) {
+      if (performance.averageScore > maxScore &&
+          performance.completedShifts > 0) {
         maxScore = performance.averageScore;
         topMember = memberId;
       }
     });
-    
+
     return topMember;
   }
 }
@@ -429,7 +452,7 @@ class SwapValidationResult {
   final bool valid;
   final String? reason;
   final String? reasonBn;
-  
+
   SwapValidationResult({
     required this.valid,
     this.reason,
@@ -445,7 +468,7 @@ class RosterStatistics {
   final int upcomingShifts;
   final double completionRate;
   final double averagePerformance;
-  
+
   RosterStatistics({
     required this.totalShifts,
     required this.completedShifts,

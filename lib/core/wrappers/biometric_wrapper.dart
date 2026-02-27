@@ -39,11 +39,7 @@ class BiometricWrapper {
     try {
       return await _auth.authenticate(
         localizedReason: reason,
-        options: AuthenticationOptions(
-          stickyAuth: sticky,
-          sensitiveTransaction: sensitiveTransaction,
-          biometricOnly: true,
-        ),
+        biometricOnly: true,
       );
     } on PlatformException catch (e) {
       print('Biometric auth failed: $e');

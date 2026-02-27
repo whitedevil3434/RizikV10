@@ -770,4 +770,26 @@ class FeedProvider extends ChangeNotifier {
     );
     addPartnerPost(newPost);
   }
+
+  // Claim an unclaimed order
+  void claimOrder(String orderId) {
+    // Find and remove from partner feed (unclaimed items)
+    _partnerFeedItems.removeWhere((item) => item.id == orderId);
+    
+    // In a real app, this would also update the backend and notify the consumer
+    // For now, we'll add an "Active Order" card to the partner's feed
+    final activeOrder = ActiveOrderAlertCardData(
+      id: 'active_$orderId',
+      heightFactor: 1.1,
+      orderId: orderId.contains('ORD') ? orderId : 'ORD${_generateId().substring(0, 4)}',
+      partnerName: 'আপনার রান্নাঘর',
+      status: 'preparing',
+      estimatedDelivery: DateTime.now().add(const Duration(minutes: 40)),
+      items: ['অর্ডার করা আইটেম'],
+      totalAmount: 450.0,
+    );
+    
+    _partnerFeedItems.insert(0, activeOrder);
+    notifyListeners();
+  }
 }

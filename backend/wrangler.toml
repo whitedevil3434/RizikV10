@@ -6,9 +6,9 @@ compatibility_date = "2024-04-01"
 [vars]
 AI_MODEL_NAME = "@cf/meta/llama-3.1-8b-instruct"     # Fast, no reasoning tags
 AI_MODEL_FALLBACK = "@cf/meta/llama-3.1-8b-instruct"  # Fallback model
-GROQ_API_KEY = "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"
-LIVEKIT_API_KEY = "APImSG78KpGRGdm"
-LIVEKIT_API_SECRET = "MdKvfAwLfivlzlQmgRfJ268XvW79vSyqidour2e1kQnC"
+GROQ_API_KEY = ""
+LIVEKIT_URL = "wss://rizik-ai-femz194x.livekit.cloud"
+LIVEKIT_AGENT_NAME = "rizik-local-final"
 
 [durable_objects]
 bindings = [

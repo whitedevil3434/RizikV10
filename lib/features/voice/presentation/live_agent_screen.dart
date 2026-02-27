@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:rizik_v4/core/theme/ui_tokens.dart';
 import 'package:rizik_v4/features/voice/state/voice_session_provider.dart';
 
 class LiveAgentScreen extends ConsumerStatefulWidget {
@@ -13,7 +15,9 @@ class LiveAgentScreen extends ConsumerStatefulWidget {
 class _LiveAgentScreenState extends ConsumerState<LiveAgentScreen> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  String _status = "Initializing...";
+  String _status = 'Initializing...';
+  bool _isConnecting = false;
+  bool _micDenied = false;
 
   @override
   void initState() {
@@ -22,19 +26,64 @@ class _LiveAgentScreenState extends ConsumerState<LiveAgentScreen> {
   }
 
   Future<void> _connect() async {
-    final status = await Permission.microphone.request();
-    if (status != PermissionStatus.granted) {
-      setState(() => _status = "Microphone denied");
-      return;
+    setState(() {
+      _isConnecting = true;
+      _micDenied = false;
+      _status = 'Checking microphone permission...';
+    });
+
+    // On some desktop builds, permission_handler may not be wired.
+    // Fail open here and let lower layers handle mic availability.
+    try {
+      final status = await Permission.microphone.request();
+      if (!mounted) return;
+      if (status != PermissionStatus.granted) {
+        setState(() {
+          _status = 'Microphone permission denied';
+          _isConnecting = false;
+          _micDenied = true;
+        });
+        return;
+      }
+    } on MissingPluginException {
+      if (!mounted) return;
+      setState(() {
+        _status = 'Microphone permission handler unavailable (desktop mode)';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _status = 'Microphone check skipped: $e';
+      });
     }
 
     try {
-      setState(() => _status = "Connecting...");
-      ref.read(voiceSessionProvider.notifier).startSession();
-      setState(() => _status = "Rizik Active (Cloudflare Edition)");
+      setState(() => _status = 'Connecting...');
+      await ref.read(voiceSessionProvider.notifier).startSession();
+      if (!mounted) return;
+      final state = ref.read(voiceSessionProvider);
+      if (state.error != null && state.error!.isNotEmpty) {
+        setState(() {
+          _status = 'Connection error: ${state.error}';
+          _isConnecting = false;
+        });
+        return;
+      }
+      setState(() {
+        _status = 'Rizik Active (Cloudflare Edition)';
+        _isConnecting = false;
+      });
     } catch (e) {
-      setState(() => _status = "Error: $e");
+      if (!mounted) return;
+      setState(() {
+        _status = 'Error: $e';
+        _isConnecting = false;
+      });
     }
+  }
+
+  Future<void> _openSettings() async {
+    await openAppSettings();
   }
 
   void _handleSend() {
@@ -60,7 +109,6 @@ class _LiveAgentScreenState extends ConsumerState<LiveAgentScreen> {
 
   @override
   void dispose() {
-    print("🧹 Cleaning up voice agent...");
     ref.read(voiceSessionProvider.notifier).endSession();
     _textController.dispose();
     _scrollController.dispose();
@@ -72,6 +120,8 @@ class _LiveAgentScreenState extends ConsumerState<LiveAgentScreen> {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
     final sessionState = ref.watch(voiceSessionProvider);
     final chatHistory = sessionState.transcripts;
+    final hasSessionError =
+        sessionState.error != null && sessionState.error!.isNotEmpty;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -88,8 +138,12 @@ class _LiveAgentScreenState extends ConsumerState<LiveAgentScreen> {
         title: Column(
           children: [
             const Text(
-              "Rizik Live Agent",
-              style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+              'Rizik Live Agent',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             Text(
               _status,
@@ -101,6 +155,50 @@ class _LiveAgentScreenState extends ConsumerState<LiveAgentScreen> {
       ),
       body: Column(
         children: [
+          if (_micDenied || hasSessionError)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                UiTokens.pagePadding,
+                4,
+                UiTokens.pagePadding,
+                10,
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: UiTokens.cardBorderRadius,
+                  border: Border.all(color: UiTokens.borderColor(context)),
+                  color: Colors.amber.withValues(alpha: 0.08),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _micDenied
+                          ? 'Microphone permission is required for voice session.'
+                          : 'Live agent failed to connect: ${sessionState.error}',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ElevatedButton(
+                          onPressed: _isConnecting ? null : _connect,
+                          child: const Text('Retry'),
+                        ),
+                        if (_micDenied)
+                          OutlinedButton(
+                            onPressed: _openSettings,
+                            child: const Text('Open Settings'),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
@@ -109,20 +207,27 @@ class _LiveAgentScreenState extends ConsumerState<LiveAgentScreen> {
               itemBuilder: (context, index) {
                 final item = chatHistory[index];
                 final isUser = item.isUser;
-                
+
                 return Align(
-                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  alignment:
+                      isUser ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.75),
                     decoration: BoxDecoration(
                       color: isUser ? Colors.black : Colors.grey[200],
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(16),
                         topRight: const Radius.circular(16),
-                        bottomLeft: isUser ? const Radius.circular(16) : const Radius.circular(4),
-                        bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(16),
+                        bottomLeft: isUser
+                            ? const Radius.circular(16)
+                            : const Radius.circular(4),
+                        bottomRight: isUser
+                            ? const Radius.circular(4)
+                            : const Radius.circular(16),
                       ),
                     ),
                     child: Text(
@@ -142,8 +247,9 @@ class _LiveAgentScreenState extends ConsumerState<LiveAgentScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border(top: BorderSide(color: Colors.grey[200]!)),
-              boxShadow: [
-                const BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -2))
+              boxShadow: const [
+                BoxShadow(
+                    color: Colors.black12, blurRadius: 4, offset: Offset(0, -2))
               ],
             ),
             child: Row(
@@ -151,12 +257,14 @@ class _LiveAgentScreenState extends ConsumerState<LiveAgentScreen> {
                 Expanded(
                   child: TextField(
                     controller: _textController,
+                    enabled: !_isConnecting && !_micDenied,
                     decoration: InputDecoration(
-                      hintText: "Type or ask Rizik...",
+                      hintText: 'Type or ask Rizik...',
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       filled: true,
                       fillColor: Colors.grey[100],
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
                         borderSide: BorderSide.none,
@@ -167,11 +275,17 @@ class _LiveAgentScreenState extends ConsumerState<LiveAgentScreen> {
                 ),
                 const SizedBox(width: 8),
                 GestureDetector(
-                  onTap: _handleSend,
-                  child: const CircleAvatar(
+                  onTap: (_isConnecting || _micDenied) ? null : _handleSend,
+                  child: CircleAvatar(
                     radius: 24,
-                    backgroundColor: Colors.black,
-                    child: Icon(Icons.arrow_upward, color: Colors.white, size: 20),
+                    backgroundColor: (_isConnecting || _micDenied)
+                        ? Colors.grey
+                        : Colors.black,
+                    child: const Icon(
+                      Icons.arrow_upward,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
               ],

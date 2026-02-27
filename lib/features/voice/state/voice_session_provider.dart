@@ -36,7 +36,9 @@ class VoiceSessionState {
   }
 }
 
-final voiceSessionProvider = StateNotifierProvider.autoDispose<VoiceSessionNotifier, VoiceSessionState>((ref) {
+final voiceSessionProvider =
+    StateNotifierProvider.autoDispose<VoiceSessionNotifier, VoiceSessionState>(
+        (ref) {
   final livekitService = LiveKitService();
   return VoiceSessionNotifier(livekitService, ref);
 });
@@ -54,21 +56,22 @@ final voiceSessionProvider = StateNotifierProvider.autoDispose<VoiceSessionNotif
 class VoiceSessionNotifier extends StateNotifier<VoiceSessionState> {
   final LiveKitService _livekitService;
   final Ref _ref;
-  
-  StreamSubscription? _statusSub;
+
   StreamSubscription? _aiSub;
   StreamSubscription? _sttSub;
   StreamSubscription? _interruptSub;
 
   bool _isDisposed = false;
 
-  VoiceSessionNotifier(this._livekitService, this._ref) : super(VoiceSessionState());
+  VoiceSessionNotifier(this._livekitService, this._ref)
+      : super(VoiceSessionState());
 
   @override
   bool get mounted => !_isDisposed;
 
   Future<void> startSession() async {
-    if (state.status == VoiceSessionStatus.connected || state.status == VoiceSessionStatus.connecting) return;
+    if (state.status == VoiceSessionStatus.connected ||
+        state.status == VoiceSessionStatus.connecting) return;
 
     // 0. Permission Check
     try {
@@ -76,9 +79,9 @@ class VoiceSessionNotifier extends StateNotifier<VoiceSessionState> {
       if (!status.isGranted) {
         status = await Permission.microphone.request();
         if (status != PermissionStatus.granted) {
-           print("❌ Microphone permission denied");
-           state = state.copyWith(error: "Microphone permission denied");
-           return;
+          print("❌ Microphone permission denied");
+          state = state.copyWith(error: "Microphone permission denied");
+          return;
         }
       }
     } catch (e) {
@@ -120,9 +123,8 @@ class VoiceSessionNotifier extends StateNotifier<VoiceSessionState> {
       // 3. Connect to LiveKit Room
       // TODO: Get real user name from auth profile if available
       await _livekitService.connect(
-        roomName: "rizik-room-${DateTime.now().millisecondsSinceEpoch}", 
-        participantName: "user-${DateTime.now().millisecondsSinceEpoch}"
-      );
+          roomName: "rizik-room-${DateTime.now().millisecondsSinceEpoch}",
+          participantName: "user-${DateTime.now().millisecondsSinceEpoch}");
 
       if (!_isDisposed) {
         state = state.copyWith(status: VoiceSessionStatus.connected);
@@ -132,23 +134,23 @@ class VoiceSessionNotifier extends StateNotifier<VoiceSessionState> {
           print("⚠️ Failed to update Mojo state: $e");
         }
       }
-
     } catch (e) {
       print("❌ LiveKit Connection Failed: $e");
       if (!_isDisposed) {
-        state = state.copyWith(status: VoiceSessionStatus.disconnected, error: e.toString());
+        state = state.copyWith(
+            status: VoiceSessionStatus.disconnected, error: e.toString());
       }
     }
   }
 
   void sendText(String text) {
     if (!_isDisposed) {
-       final newEntry = TranscriptEntry(text: text, isUser: true);
-       state = state.copyWith(
-         transcripts: [...state.transcripts, newEntry],
-       );
-       
-       _livekitService.sendTextInput(text);
+      final newEntry = TranscriptEntry(text: text, isUser: true);
+      state = state.copyWith(
+        transcripts: [...state.transcripts, newEntry],
+      );
+
+      _livekitService.sendTextInput(text);
     }
   }
 
@@ -159,18 +161,18 @@ class VoiceSessionNotifier extends StateNotifier<VoiceSessionState> {
     } catch (e) {
       print("⚠️ Error closing LiveKit resources: $e");
     }
-    
+
     _aiSub?.cancel();
     _sttSub?.cancel();
     _interruptSub?.cancel();
-    
+
     if (!_isDisposed) {
-        state = state.copyWith(status: VoiceSessionStatus.disconnected);
-        try {
-          _ref.read(mojoProvider.notifier).setMojoState(MojoState.idle);
-        } catch (e) {
-           // Ignore if provider is gone
-        }
+      state = state.copyWith(status: VoiceSessionStatus.disconnected);
+      try {
+        _ref.read(mojoProvider.notifier).setMojoState(MojoState.idle);
+      } catch (e) {
+        // Ignore if provider is gone
+      }
     }
   }
 

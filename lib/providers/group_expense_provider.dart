@@ -20,11 +20,10 @@ class GroupExpenseProvider with ChangeNotifier {
   // Dependencies
   KhataProvider? _khataProvider;
   AuraProvider? _auraProvider;
-  TrustScoreProvider? _trustScoreProvider;
 
   List<ExpenseGroup> get groups => _groups;
-  List<ExpenseGroup> get activeGroups => 
-    _groups.where((g) => g.isActive).toList();
+  List<ExpenseGroup> get activeGroups =>
+      _groups.where((g) => g.isActive).toList();
   List<GroupExpense> get expenses => _expenses;
   List<Settlement> get settlements => _settlements;
   bool get isLoading => _isLoading;
@@ -42,7 +41,9 @@ class GroupExpenseProvider with ChangeNotifier {
   }) {
     _khataProvider = khataProvider;
     _auraProvider = auraProvider;
-    _trustScoreProvider = trustScoreProvider;
+    if (trustScoreProvider != null) {
+      // Reserved for future trust-based split rules.
+    }
   }
 
   /// Load data from storage
@@ -137,7 +138,8 @@ class GroupExpenseProvider with ChangeNotifier {
     notifyListeners();
 
     // Award XP for creating group
-    await _auraProvider?.awardXP(xpAmount: 100, reason: 'Created expense group');
+    await _auraProvider?.awardXP(
+        xpAmount: 100, reason: 'Created expense group');
 
     debugPrint('✅ Created group: ${group.name}');
     return group;
@@ -311,7 +313,6 @@ class GroupExpenseProvider with ChangeNotifier {
     return BillSplitter.simplifyDebts(groupId, balances, names);
   }
 
-
   /// Record settlement
   /// This creates a PAYMENT TRANSACTION that zeros out the debt
   Future<void> recordSettlement({
@@ -408,8 +409,6 @@ class GroupExpenseProvider with ChangeNotifier {
       // Skip the person who paid
       if (userId == expense.paidBy) continue;
 
-      final member = group.members.firstWhere((m) => m.userId == userId);
-
       // Record as borrowed (they owe the payer)
       await _khataProvider!.recordBorrowed(
         personId: expense.paidBy,
@@ -449,9 +448,9 @@ class GroupExpenseProvider with ChangeNotifier {
 
   /// Get user's groups
   List<ExpenseGroup> getUserGroups(String userId) {
-    return activeGroups.where((g) => 
-      g.members.any((m) => m.userId == userId)
-    ).toList();
+    return activeGroups
+        .where((g) => g.members.any((m) => m.userId == userId))
+        .toList();
   }
 
   /// Update group
@@ -488,9 +487,10 @@ class GroupExpenseProvider with ChangeNotifier {
 
   /// Get pending settlements for a user
   List<Settlement> getPendingSettlements(String userId) {
-    return _settlements.where((s) => 
-      (s.from == userId || s.to == userId) &&
-      s.status == SettlementStatus.pending
-    ).toList();
+    return _settlements
+        .where((s) =>
+            (s.from == userId || s.to == userId) &&
+            s.status == SettlementStatus.pending)
+        .toList();
   }
 }

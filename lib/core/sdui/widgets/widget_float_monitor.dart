@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rizik_v4/data/models/mover_float.dart';
 import 'package:rizik_v4/data/remote/mover_float_service.dart';
-import 'package:rizik_v4/core/theme/rizik_colors.dart';
 
 /// SDUI Widget: Mover Float Monitor
 /// Displays mover cash float balance, daily limit, and auto-deduction tracking
@@ -57,9 +56,9 @@ class WidgetFloatMonitor extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Available Float (Large Display)
           Container(
             padding: const EdgeInsets.all(20),
@@ -100,9 +99,9 @@ class WidgetFloatMonitor extends StatelessWidget {
           _buildUsageBar(moverFloat, stats),
           const SizedBox(height: 24),
           _buildStatsGrid(moverFloat, stats),
-          
+
           const SizedBox(height: 12),
-          
+
           // Repayment Countdown
           Container(
             padding: const EdgeInsets.all(10),
@@ -115,7 +114,8 @@ class WidgetFloatMonitor extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.access_time, color: Colors.white70, size: 16),
+                    const Icon(Icons.access_time,
+                        color: Colors.white70, size: 16),
                     const SizedBox(width: 6),
                     const Text(
                       'পরবর্তী রিসেট',
@@ -137,7 +137,7 @@ class WidgetFloatMonitor extends StatelessWidget {
               ],
             ),
           ),
-          
+
           if (showRepaymentPreview && moverFloat.remainingBalance > 0) ...[
             const SizedBox(height: 12),
             const Divider(color: Colors.white24),
@@ -150,8 +150,9 @@ class WidgetFloatMonitor extends StatelessWidget {
   }
 
   Widget _buildUsageBar(MoverFloat moverFloat, FloatStatistics stats) {
-    final usagePercent = moverFloat.dailyLimit > 0 
-        ? (moverFloat.dailyLimit - moverFloat.currentFloat) / moverFloat.dailyLimit 
+    final usagePercent = moverFloat.dailyLimit > 0
+        ? (moverFloat.dailyLimit - moverFloat.currentFloat) /
+            moverFloat.dailyLimit
         : 0.0;
 
     return Column(
@@ -191,35 +192,20 @@ class WidgetFloatMonitor extends StatelessWidget {
       crossAxisSpacing: 12,
       childAspectRatio: 1.5,
       children: [
-        _buildStatCard(
-          'দৈনিক সীমা', 
-          'Daily Limit', 
-          '৳${moverFloat.dailyLimit}', 
-          Icons.speed
-        ),
-        _buildStatCard(
-          'অবশিষ্ট', 
-          'Remaining', 
-          '৳${moverFloat.currentFloat}', 
-          Icons.account_balance_wallet
-        ),
-        _buildStatCard(
-          'পরিশোধিত', 
-          'Repaid Today', 
-          '৳${moverFloat.repaidToday}', 
-          Icons.check_circle_outline
-        ),
-        _buildStatCard(
-          'মোট ব্যবহার', 
-          'Total Used', 
-          '৳${stats.totalDeposited}', 
-          Icons.history
-        ),
+        _buildStatCard('দৈনিক সীমা', 'Daily Limit', '৳${moverFloat.dailyLimit}',
+            Icons.speed),
+        _buildStatCard('অবশিষ্ট', 'Remaining', '৳${moverFloat.currentFloat}',
+            Icons.account_balance_wallet),
+        _buildStatCard('পরিশোধিত', 'Repaid Today', '৳${moverFloat.repaidToday}',
+            Icons.check_circle_outline),
+        _buildStatCard('মোট ব্যবহার', 'Total Used', '৳${stats.totalDeposited}',
+            Icons.history),
       ],
     );
   }
 
-  Widget _buildStatCard(String titleBn, String titleEn, String value, IconData icon) {
+  Widget _buildStatCard(
+      String titleBn, String titleEn, String value, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -298,10 +284,10 @@ class WidgetFloatMonitor extends StatelessWidget {
     final now = DateTime.now();
     final midnight = DateTime(now.year, now.month, now.day + 1);
     final difference = midnight.difference(now);
-    
+
     final hours = difference.inHours;
     final minutes = difference.inMinutes.remainder(60);
-    
+
     return '${hours}ঘ ${minutes}মি';
   }
 

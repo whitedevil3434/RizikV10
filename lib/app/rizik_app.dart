@@ -8,6 +8,10 @@ import 'package:rizik_v4/features/seeker/marketplace/logic/order_provider.dart';
 import 'package:rizik_v4/features/fintech/wallet/logic/moneybag_provider.dart';
 import 'package:rizik_v4/core/state/profile_provider.dart';
 import 'package:rizik_v4/features/force/team_ops/logic/squad_provider.dart';
+import 'package:rizik_v4/features/source/inventory/logic/inventory_provider.dart';
+import 'package:rizik_v4/features/connect/logic/chat_badge_provider.dart';
+import 'package:rizik_v4/features/squad/logic/squad_alert_provider.dart';
+import 'package:rizik_v4/features/alerts/logic/unified_alerts_provider.dart';
 
 class RizikApp extends ConsumerWidget {
   const RizikApp({super.key});
@@ -22,6 +26,10 @@ class RizikApp extends ConsumerWidget {
         provider.ChangeNotifierProvider(create: (_) => MoneybagProvider()),
         provider.ChangeNotifierProvider(create: (_) => ProfileProvider()),
         provider.ChangeNotifierProvider(create: (_) => SquadProvider()),
+        provider.ChangeNotifierProvider(create: (_) => InventoryProvider()),
+        provider.ChangeNotifierProvider(create: (_) => ChatBadgeProvider()),
+        provider.ChangeNotifierProvider(create: (_) => SquadAlertProvider()),
+        provider.ChangeNotifierProvider(create: (_) => UnifiedAlertsProvider()),
       ],
       child: MaterialApp.router(
         title: 'Rizik V10',
@@ -30,7 +38,7 @@ class RizikApp extends ConsumerWidget {
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
             seedColor: RizikColors.rizikGreen,
-            background: RizikColors.background,
+            surface: RizikColors.background,
           ),
           textTheme: GoogleFonts.hindSiliguriTextTheme(),
           scaffoldBackgroundColor: RizikColors.background,

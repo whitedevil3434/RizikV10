@@ -48,13 +48,13 @@ class MoneybagTransactionOrchestrator {
 
   // Wallet balances (in-memory for atomicity)
   final Map<MoneybagType, double> _balances = {};
-  
+
   // Transaction locks to prevent concurrent modifications
   final Map<MoneybagType, bool> _locks = {};
 
   // Failed transaction queue for retry
   final List<_QueuedTransaction> _failedTransactions = [];
-  
+
   // Retry configuration
   static const int maxRetries = 3;
   static const Duration initialBackoff = Duration(seconds: 1);
@@ -89,7 +89,8 @@ class MoneybagTransactionOrchestrator {
 
     // Store original balances for rollback
     final originalFromBalance = _balances[fromWallet] ?? 0.0;
-    final originalToBalance = toWallet != null ? (_balances[toWallet] ?? 0.0) : null;
+    final originalToBalance =
+        toWallet != null ? (_balances[toWallet] ?? 0.0) : null;
 
     try {
       // Check balance
@@ -103,7 +104,7 @@ class MoneybagTransactionOrchestrator {
       // Execute atomic operation on Moneybag
       _balances[fromWallet] = originalFromBalance - amount;
       if (toWallet != null) {
-        _balances[toWallet!] = originalToBalance! + amount;
+        _balances[toWallet] = originalToBalance! + amount;
       }
 
       // Create transaction record
@@ -228,14 +229,15 @@ class MoneybagTransactionOrchestrator {
     // Determine which Khata to write to based on wallet type
     final khataType = _mapWalletToKhataType(fromWallet);
     final khata = khataProvider!.getKhataByType(khataType);
-    
+
     if (khata == null) {
       throw Exception('No Khata found for type: ${khataType.key}');
     }
 
     // Map transaction source to Khata category and description
-    final categoryAndDesc = _mapTransactionToKhataEntry(transaction, counterpartyName);
-    
+    final categoryAndDesc =
+        _mapTransactionToKhataEntry(transaction, counterpartyName);
+
     // Create Khata entry
     final khataEntry = KhataEntry(
       date: _formatDate(transaction.timestamp),
@@ -260,7 +262,8 @@ class MoneybagTransactionOrchestrator {
       entry: khataEntry,
     );
 
-    debugPrint('✅ Dual-write successful: Moneybag ${transaction.id} → Khata ${khataEntry.id}');
+    debugPrint(
+        '✅ Dual-write successful: Moneybag ${transaction.id} → Khata ${khataEntry.id}');
     return khataEntry.id;
   }
 
@@ -398,7 +401,8 @@ class MoneybagTransactionOrchestrator {
     String? videoId,
     String? creatorId,
     double platformFeeRate = 0.05, // 5% platform fee
-    double videoCommissionRate = 0.15, // 15% creator commission for video orders
+    double videoCommissionRate =
+        0.15, // 15% creator commission for video orders
     MoneybagType fromWallet = MoneybagType.escrow, // Default to escrow
   }) async {
     final results = <TransactionResult>[];
@@ -457,7 +461,8 @@ class MoneybagTransactionOrchestrator {
       }
 
       // 3. Platform fee (just logging, not transferring)
-      debugPrint('💰 Platform fee collected: ৳${platformFee.toStringAsFixed(2)}');
+      debugPrint(
+          '💰 Platform fee collected: ৳${platformFee.toStringAsFixed(2)}');
 
       return results;
     } catch (e) {
@@ -477,7 +482,8 @@ class MoneybagTransactionOrchestrator {
     required String description,
   }) async {
     try {
-      debugPrint('💸 Executing Social Ledger transaction: $fromUserId → $toUserId (৳${amount.toStringAsFixed(2)})');
+      debugPrint(
+          '💸 Executing Social Ledger transaction: $fromUserId → $toUserId (৳${amount.toStringAsFixed(2)})');
 
       // 1. Debit from fromUser's Personal Moneybag
       final debitResult = await executeTransaction(
@@ -505,7 +511,8 @@ class MoneybagTransactionOrchestrator {
       // 2. Credit to toUser's Personal Moneybag
       // Note: In a real implementation, this would need to access toUser's wallet
       // For now, we'll log this as a pending credit
-      debugPrint('✅ Social Ledger debit successful. Credit to $toUserId pending.');
+      debugPrint(
+          '✅ Social Ledger debit successful. Credit to $toUserId pending.');
 
       // 3. Update Trust Scores for both parties
       // This would integrate with TrustScoreService
@@ -554,7 +561,8 @@ class MoneybagTransactionOrchestrator {
       final totalPayout = viewEarnings + commissionEarnings;
 
       if (totalPayout <= 0) {
-        debugPrint('⚠️ No payout needed for video $videoId (views: $viewCount, orders: $orderCount)');
+        debugPrint(
+            '⚠️ No payout needed for video $videoId (views: $viewCount, orders: $orderCount)');
         return TransactionResult.success(
           transactionId: 'no_payout_$videoId',
           metadata: {
@@ -596,15 +604,18 @@ class MoneybagTransactionOrchestrator {
       );
 
       if (payoutResult.success) {
-        debugPrint('✅ Video creator payout successful: ৳${totalPayout.toStringAsFixed(2)}');
-        debugPrint('   - View earnings: ৳${viewEarnings.toStringAsFixed(2)} ($viewCount views)');
-        debugPrint('   - Commission earnings: ৳${commissionEarnings.toStringAsFixed(2)} ($orderCount orders)');
+        debugPrint(
+            '✅ Video creator payout successful: ৳${totalPayout.toStringAsFixed(2)}');
+        debugPrint(
+            '   - View earnings: ৳${viewEarnings.toStringAsFixed(2)} ($viewCount views)');
+        debugPrint(
+            '   - Commission earnings: ৳${commissionEarnings.toStringAsFixed(2)} ($orderCount orders)');
 
         // 5. Award XP for video performance
         // This would integrate with AuraService
         final xpAmount = (orderCount * 20) + (viewCount ~/ 100);
         debugPrint('🎮 XP awarded to creator: $xpAmount XP');
-        
+
         // Return result with enhanced metadata
         return TransactionResult.success(
           transactionId: payoutResult.transactionId!,
@@ -664,7 +675,8 @@ class MoneybagTransactionOrchestrator {
       );
 
       if (escrowResult.success) {
-        debugPrint('✅ C2C payment held in escrow: ৳${amount.toStringAsFixed(2)}');
+        debugPrint(
+            '✅ C2C payment held in escrow: ৳${amount.toStringAsFixed(2)}');
         debugPrint('   Awaiting delivery confirmation to release to seller');
       }
 
@@ -703,8 +715,9 @@ class MoneybagTransactionOrchestrator {
       );
 
       if (releaseResult.success) {
-        debugPrint('✅ C2C payment released to seller: ৳${amount.toStringAsFixed(2)}');
-        
+        debugPrint(
+            '✅ C2C payment released to seller: ৳${amount.toStringAsFixed(2)}');
+
         // Update Trust Scores for both parties
         debugPrint('📊 Trust Score updates queued for buyer and seller');
       }
@@ -730,7 +743,8 @@ class MoneybagTransactionOrchestrator {
     Map<String, double>? customSplits,
   }) async {
     try {
-      debugPrint('👥 Processing Squad payment: ৳${amount.toStringAsFixed(2)} for ${squadMemberIds.length} members');
+      debugPrint(
+          '👥 Processing Squad payment: ৳${amount.toStringAsFixed(2)} for ${squadMemberIds.length} members');
 
       // Calculate splits
       Map<String, double> splits;
@@ -761,16 +775,18 @@ class MoneybagTransactionOrchestrator {
       );
 
       if (result.success) {
-        debugPrint('✅ Squad payment processed: ৳${amount.toStringAsFixed(2)} for ${squadMemberIds.length} members');
-        
+        debugPrint(
+            '✅ Squad payment processed: ৳${amount.toStringAsFixed(2)} for ${squadMemberIds.length} members');
+
         // Create Squad ledger entries for each member
         for (var entry in splits.entries) {
           debugPrint('   - ${entry.key}: ৳${entry.value.toStringAsFixed(2)}');
         }
-        
+
         // TODO: Notify all squad members
         // This would integrate with notification service
-        debugPrint('📱 Notifications queued for ${squadMemberIds.length} squad members');
+        debugPrint(
+            '📱 Notifications queued for ${squadMemberIds.length} squad members');
       }
 
       return result;
@@ -798,7 +814,7 @@ class MoneybagTransactionOrchestrator {
 
     while (attempt < maxAttempts) {
       attempt++;
-      
+
       final result = await executeTransaction(
         fromWallet: fromWallet,
         toWallet: toWallet,
@@ -825,7 +841,8 @@ class MoneybagTransactionOrchestrator {
       }
 
       if (attempt < maxAttempts) {
-        debugPrint('⏳ Retrying transaction (attempt $attempt/$maxAttempts) after ${backoff.inSeconds}s...');
+        debugPrint(
+            '⏳ Retrying transaction (attempt $attempt/$maxAttempts) after ${backoff.inSeconds}s...');
         await Future.delayed(backoff);
         backoff *= 2; // Exponential backoff
       }
@@ -843,13 +860,14 @@ class MoneybagTransactionOrchestrator {
       counterpartyName: counterpartyName,
     );
 
-    return TransactionResult.failure('Transaction failed after $maxAttempts attempts');
+    return TransactionResult.failure(
+        'Transaction failed after $maxAttempts attempts');
   }
 
   /// Check if error is retryable
   bool _isRetryableError(String? error) {
     if (error == null) return false;
-    
+
     // Retryable errors
     final retryablePatterns = [
       'locked',
@@ -888,16 +906,19 @@ class MoneybagTransactionOrchestrator {
     );
 
     _failedTransactions.add(queued);
-    debugPrint('📋 Queued failed transaction for manual reconciliation: ${queued.sourceId}');
-    
+    debugPrint(
+        '📋 Queued failed transaction for manual reconciliation: ${queued.sourceId}');
+
     // TODO: Log to persistent storage or alert system
   }
 
   /// Get failed transactions queue
-  List<_QueuedTransaction> get failedTransactions => List.unmodifiable(_failedTransactions);
+  List<_QueuedTransaction> get failedTransactions =>
+      List.unmodifiable(_failedTransactions);
 
   /// Retry a queued transaction
-  Future<TransactionResult> retryQueuedTransaction(_QueuedTransaction queued) async {
+  Future<TransactionResult> retryQueuedTransaction(
+      _QueuedTransaction queued) async {
     final result = await executeTransactionWithRetry(
       fromWallet: queued.fromWallet,
       toWallet: queued.toWallet,
@@ -911,7 +932,8 @@ class MoneybagTransactionOrchestrator {
 
     if (result.success) {
       _failedTransactions.remove(queued);
-      debugPrint('✅ Queued transaction successfully retried: ${queued.sourceId}');
+      debugPrint(
+          '✅ Queued transaction successfully retried: ${queued.sourceId}');
     }
 
     return result;

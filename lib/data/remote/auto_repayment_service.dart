@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:rizik_v4/data/models/rizik_dhaar_loan.dart';
 import 'package:rizik_v4/data/models/trust_score.dart';
 import 'package:rizik_v4/data/remote/rizik_dhaar_service.dart';
@@ -21,7 +20,7 @@ class AutoRepaymentService {
 
     // Calculate 20% deduction
     final deductionAmount = RizikDhaarService.calculateAutoDeduction(earnings);
-    
+
     if (deductionAmount <= 0) {
       return RepaymentResult(
         success: true,
@@ -43,7 +42,8 @@ class AutoRepaymentService {
         continue;
       }
 
-      final amountToDeduct = remainingDeduction.clamp(0.0, loan.remainingAmount);
+      final amountToDeduct =
+          remainingDeduction.clamp(0.0, loan.remainingAmount);
       final updatedLoan = RizikDhaarService.processRepayment(
         loan: loan,
         amount: amountToDeduct.toDouble(),
@@ -67,12 +67,12 @@ class AutoRepaymentService {
     required double amount,
   }) {
     final daysRemaining = loan.dueDate.difference(DateTime.now()).inDays;
-    
+
     // Calculate bonus (1% per week early)
     final weeksEarly = (daysRemaining / 7).floor();
     final bonusPercentage = (weeksEarly * 1.0).clamp(0, 5); // Max 5% bonus
     final bonusAmount = loan.remainingAmount * bonusPercentage / 100;
-    
+
     // Apply bonus discount
     final effectiveAmount = amount + bonusAmount;
     final updatedLoan = RizikDhaarService.processRepayment(
@@ -102,14 +102,14 @@ class AutoRepaymentService {
       if (RizikDhaarService.shouldMarkAsDefaulted(loan)) {
         // Mark as overdue/defaulted
         final daysOverdue = DateTime.now().difference(loan.dueDate).inDays;
-        
+
         final updatedLoan = loan.copyWith(
           status: daysOverdue > 30 ? LoanStatus.defaulted : LoanStatus.overdue,
         );
-        
+
         overdueLoans.add(updatedLoan);
         updatedLoans.add(updatedLoan);
-        
+
         // Calculate trust score penalty (0.1 per week overdue, max 1.0)
         final weeksOverdue = (daysOverdue / 7).ceil();
         trustScorePenalty += (weeksOverdue * 0.1).clamp(0, 1.0);
@@ -127,21 +127,22 @@ class AutoRepaymentService {
 
   /// Calculate repayment progress
   static RepaymentProgress calculateProgress(RizikDhaarLoan loan) {
-    final totalDays = loan.dueDate.difference(loan.approvedDate ?? loan.createdAt).inDays;
-    final elapsedDays = DateTime.now().difference(loan.approvedDate ?? loan.createdAt).inDays;
+    final totalDays =
+        loan.dueDate.difference(loan.approvedDate ?? loan.createdAt).inDays;
+    final elapsedDays =
+        DateTime.now().difference(loan.approvedDate ?? loan.createdAt).inDays;
     final remainingDays = loan.dueDate.difference(DateTime.now()).inDays;
-    
+
     final repaymentPercentage = loan.totalAmount > 0
         ? (loan.repaidAmount / loan.totalAmount * 100)
         : 0.0;
-    
-    final timePercentage = totalDays > 0
-        ? (elapsedDays / totalDays * 100)
-        : 0.0;
-    
+
+    final timePercentage =
+        totalDays > 0 ? (elapsedDays / totalDays * 100) : 0.0;
+
     // Check if on track (repayment % should be >= time %)
     final isOnTrack = repaymentPercentage >= timePercentage;
-    
+
     return RepaymentProgress(
       repaymentPercentage: repaymentPercentage,
       timePercentage: timePercentage,

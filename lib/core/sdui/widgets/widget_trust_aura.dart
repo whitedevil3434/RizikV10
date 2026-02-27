@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:rizik_v4/data/models/trust_score.dart' as trust;
-import 'package:rizik_v4/data/remote/trust_score_service.dart';
 
 /// SDUI Widget: Trust Aura Display
 /// Visualizes user trust score with circular "aura ring" and category breakdown
@@ -45,9 +44,9 @@ class WidgetTrustAura extends StatelessWidget {
         children: [
           // Aura Ring Visualization
           _buildAuraRing(trustScore, compact),
-          
+
           const SizedBox(height: 16),
-          
+
           // Trust Level Name
           Text(
             trustScore.trustLevel.nameBn,
@@ -57,12 +56,12 @@ class WidgetTrustAura extends StatelessWidget {
               color: Color(trustScore.trustLevel.color),
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // Stats Row
           _buildStatsRow(trustScore, compact),
-          
+
           // Category Breakdown (optional)
           if (showCategories) ...[
             const SizedBox(height: 16),
@@ -78,7 +77,7 @@ class WidgetTrustAura extends StatelessWidget {
   /// Build circular aura ring with score
   Widget _buildAuraRing(trust.TrustScore score, bool compact) {
     final size = compact ? 100.0 : 140.0;
-    
+
     return SizedBox(
       width: size,
       height: size,
@@ -94,7 +93,7 @@ class WidgetTrustAura extends StatelessWidget {
               backgroundColor: Colors.grey.shade200,
             ),
           ),
-          
+
           // Center content
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -125,7 +124,7 @@ class WidgetTrustAura extends StatelessWidget {
   Widget _buildStatsRow(trust.TrustScore score, bool compact) {
     final iconSize = compact ? 16.0 : 20.0;
     final fontSize = compact ? 12.0 : 14.0;
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -189,7 +188,7 @@ class WidgetTrustAura extends StatelessWidget {
         ...score.categories.entries.map((entry) {
           final category = entry.key;
           final value = entry.value;
-          
+
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Row(
@@ -251,7 +250,7 @@ class WidgetTrustAura extends StatelessWidget {
     // For demo purposes, generate varied scores based on profileId hash
     final hash = profileId.hashCode.abs();
     final variance = (hash % 100) / 100.0;
-    
+
     return trust.TrustScore(
       userId: profileId,
       overall: 3.5 + variance * 1.5, // 3.5 - 5.0 range

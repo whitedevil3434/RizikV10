@@ -1,6 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:rizik_v4/data/models/squad.dart';
-import 'package:rizik_v4/data/models/user_profile.dart';
 
 class SquadService {
   SupabaseClient get _client => Supabase.instance.client;
@@ -42,20 +41,14 @@ class SquadService {
     // Let's check if we defined a trigger. We didn't explicitly define a trigger in the SQL artifact for wallet creation on squad creation.
     // So we should create it here.
 
-    final walletResponse = await _client
-        .from('wallets')
-        .insert({
-          'type': 'squad',
-          'squad_id': squadId,
-          'balance': 0.0,
-          'currency': 'BDT',
-        })
-        .select()
-        .single();
-    
-    final walletId = walletResponse['id'] as String;
+    await _client.from('wallets').insert({
+      'type': 'squad',
+      'squad_id': squadId,
+      'balance': 0.0,
+      'currency': 'BDT',
+    });
 
-    // Update squad with wallet_id if needed (though schema has foreign key from wallet to squad, 
+    // Update squad with wallet_id if needed (though schema has foreign key from wallet to squad,
     // or squad to wallet? Schema says: squads has no wallet_id, wallets has squad_id.
     // So we are good.
 
@@ -64,18 +57,14 @@ class SquadService {
 
   /// Get squad by ID
   Future<Squad> getSquadById(String squadId) async {
-    final response = await _client
-        .from('squads')
-        .select('''
+    final response = await _client.from('squads').select('''
           *,
           members:squad_members(
             *,
             profile:user_profiles(*)
           ),
           wallet:wallets(*)
-        ''')
-        .eq('id', squadId)
-        .single();
+        ''').eq('id', squadId).single();
 
     return _mapToSquad(response);
   }
@@ -89,23 +78,19 @@ class SquadService {
         .eq('user_id', userId)
         .eq('status', 'active');
 
-    final squadIds = (memberResponse as List)
-        .map((m) => m['squad_id'] as String)
-        .toList();
+    final squadIds =
+        (memberResponse as List).map((m) => m['squad_id'] as String).toList();
 
     if (squadIds.isEmpty) return [];
 
-    final response = await _client
-        .from('squads')
-        .select('''
+    final response = await _client.from('squads').select('''
           *,
           members:squad_members(
             *,
             profile:user_profiles(*)
           ),
           wallet:wallets(*)
-        ''')
-        .inFilter('id', squadIds);
+        ''').inFilter('id', squadIds);
 
     return (response as List).map((json) => _mapToSquad(json)).toList();
   }
@@ -153,9 +138,8 @@ class SquadService {
   // Helper to map JSON to Squad model
   Squad _mapToSquad(Map<String, dynamic> json) {
     final membersList = (json['members'] as List<dynamic>);
-    final walletJson = (json['wallet'] as List<dynamic>).isNotEmpty 
-        ? json['wallet'][0] 
-        : null;
+    final walletJson =
+        (json['wallet'] as List<dynamic>).isNotEmpty ? json['wallet'][0] : null;
 
     // Map members
     final members = membersList.map((m) {
@@ -182,7 +166,8 @@ class SquadService {
         balance: (walletJson['balance'] as num).toDouble(),
         transactions: [], // TODO: Fetch transactions separately or join
         lockedFunds: 0.0, // TODO: Implement locked funds logic
-        lastUpdated: DateTime.parse(walletJson['updated_at'] ?? DateTime.now().toIso8601String()),
+        lastUpdated: DateTime.parse(
+            walletJson['updated_at'] ?? DateTime.now().toIso8601String()),
         squadId: json['id'],
       );
     }
@@ -199,7 +184,8 @@ class SquadService {
       walletId: walletJson?['id'] ?? '',
       wallet: wallet,
       createdAt: DateTime.parse(json['created_at']),
-      lastUpdated: DateTime.parse(json['updated_at'] ?? DateTime.now().toIso8601String()),
+      lastUpdated: DateTime.parse(
+          json['updated_at'] ?? DateTime.now().toIso8601String()),
       trustScore: json['trust_score'] ?? 100,
     );
   }

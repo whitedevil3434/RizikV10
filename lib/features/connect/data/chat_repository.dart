@@ -3,36 +3,62 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:rizik_v4/core/config/env_config.dart';
 
 class ChatRepository {
   WebSocketChannel? _channel;
-  final StreamController<Map<String, dynamic>> _messageController = StreamController.broadcast();
+  StreamSubscription<dynamic>? _subscription;
+  final StreamController<Map<String, dynamic>> _messageController =
+      StreamController.broadcast();
 
   Stream<Map<String, dynamic>> get messages => _messageController.stream;
 
   void connect(String roomId) {
-    // Construct WS URL (WSS for production)
-    final wsUrl = Uri.parse('${EnvConfig.backendUrl}/api/chat/room/$roomId/ws').replace(scheme: 'wss');
+    final wsUrl = _buildWsUrl(roomId);
+    try {
+      _subscription?.cancel();
+      _channel?.sink.close();
 
-    _channel = WebSocketChannel.connect(wsUrl);
+      final channel = WebSocketChannel.connect(wsUrl);
+      _channel = channel;
 
-    _channel!.stream.listen(
-      (data) {
-        try {
-          final msg = jsonDecode(data);
-          _messageController.add(msg);
-        } catch (e) {
-          print('Chat Parse Error: $e');
-        }
-      },
-      onError: (e) => print('Chat WS Error: $e'),
-      onDone: () => print('Chat WS Closed'),
+      channel.ready.then((_) {
+        _subscription = channel.stream.listen(
+          (data) {
+            try {
+              final msg = jsonDecode(data);
+              _messageController.add(msg);
+            } catch (e) {
+              debugPrint('Chat Parse Error: $e');
+            }
+          },
+          onError: (e) => debugPrint('Chat WS Error: $e'),
+          onDone: () => debugPrint('Chat WS Closed'),
+        );
+      }).catchError((e) {
+        debugPrint('Chat connect handshake failed: $e');
+        _channel = null;
+      });
+    } catch (e) {
+      debugPrint('Chat connect failed: $e');
+    }
+  }
+
+  Uri _buildWsUrl(String roomId) {
+    final base = Uri.parse(EnvConfig.backendUrl);
+    final wsScheme = base.scheme == 'https' ? 'wss' : 'ws';
+    return Uri(
+      scheme: wsScheme,
+      host: base.host,
+      port: base.hasPort ? base.port : null,
+      path: '/api/chat/room/$roomId/ws',
     );
   }
 
-  void sendMessage(String roomId, String senderId, String content, {String type = 'text'}) {
+  void sendMessage(String roomId, String senderId, String content,
+      {String type = 'text'}) {
     if (_channel == null) return;
 
     final payload = {
@@ -46,6 +72,7 @@ class ChatRepository {
   }
 
   void dispose() {
+    _subscription?.cancel();
     _channel?.sink.close();
     _messageController.close();
   }

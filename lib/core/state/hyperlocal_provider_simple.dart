@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rizik_v4/data/remote/hyperlocal_service.dart';
+import 'package:rizik_v4/data/models/hyperlocal_service.dart';
 import 'package:rizik_v4/data/remote/hyperlocal_service.dart';
 
 /// Simplified Hyperlocal Provider for MVP

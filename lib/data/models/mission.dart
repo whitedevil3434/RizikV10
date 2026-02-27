@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 enum MissionStatus {
   available,
   accepted,
@@ -93,7 +91,8 @@ class Mission {
         distance: json['distance'],
         estimatedMinutes: json['estimatedMinutes'],
         otp: json['otp'],
-        status: MissionStatus.values.firstWhere((e) => e.name == json['status']),
+        status:
+            MissionStatus.values.firstWhere((e) => e.name == json['status']),
         createdAt: DateTime.parse(json['createdAt']),
       );
 }

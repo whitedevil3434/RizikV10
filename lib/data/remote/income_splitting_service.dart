@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:rizik_v4/data/models/squad.dart';
 
 /// Service for splitting income among squad members
@@ -72,7 +71,8 @@ class IncomeSplittingService {
   }
 
   /// Distribute equally among active members
-  static Map<String, double> _distributeEqually(Squad squad, double totalAmount) {
+  static Map<String, double> _distributeEqually(
+      Squad squad, double totalAmount) {
     final activeMembers = squad.members.where((m) => m.isActive).toList();
     if (activeMembers.isEmpty) return {};
 
@@ -107,7 +107,8 @@ class IncomeSplittingService {
     final total = distribution.values.fold(0.0, (sum, val) => sum + val);
     if (total == 0.0) return distribution;
 
-    return distribution.map((key, value) => MapEntry(key, (value / total) * 100));
+    return distribution
+        .map((key, value) => MapEntry(key, (value / total) * 100));
   }
 
   /// Calculate bonus distribution for completing mission chains
@@ -217,9 +218,8 @@ class IncomeSplittingService {
       );
 
       if (member.role != SquadRole.leader &&
-          topPerformer.value > averages.values.reduce((a, b) => a + b) /
-              averages.length *
-              1.5) {
+          topPerformer.value >
+              averages.values.reduce((a, b) => a + b) / averages.length * 1.5) {
         suggestions[member.userId] =
             'Consider promoting to a higher role based on performance';
       }
@@ -227,6 +227,7 @@ class IncomeSplittingService {
 
     return suggestions;
   }
+
   /// Calculate dynamic distribution based on Role, Performance, and Equality
   static Map<String, double> calculateDynamicDistribution({
     required Squad squad,
@@ -240,7 +241,7 @@ class IncomeSplittingService {
 
     final distribution = <String, double>{};
     final roleBase = _getDefaultWeightage(squad.type);
-    
+
     // 1. Calculate Total Role Points
     double totalRolePoints = 0.0;
     for (final member in activeMembers) {
@@ -289,7 +290,7 @@ class IncomeSplittingService {
     final distribution = useDynamic
         ? calculateDynamicDistribution(squad: squad, totalAmount: totalAmount)
         : calculateDistribution(squad: squad, totalAmount: totalAmount);
-        
+
     return calculateAmounts(
       distribution: distribution,
       totalAmount: totalAmount,

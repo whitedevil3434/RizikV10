@@ -46,7 +46,8 @@ class ActionEngine {
         case 'request_swap':
           await _requestShiftSwap(params);
           onSuccess?.call('শিফট স্বাপ রিকোয়েস্ট পাঠানো হয়েছে');
-          _showSnackbar(context, 'শিফট স্বাপ রিকোয়েস্ট পাঠানো হয়েছে', Colors.teal);
+          _showSnackbar(
+              context, 'শিফট স্বাপ রিকোয়েস্ট পাঠানো হয়েছে', Colors.teal);
           break;
 
         case 'clock_in':
@@ -91,7 +92,8 @@ class ActionEngine {
   }
 
   // Legacy method for backward compatibility
-  static void handleAction(BuildContext context, String actionType, Map<String, dynamic>? data) {
+  static void handleAction(
+      BuildContext context, String actionType, Map<String, dynamic>? data) {
     execute(
       context: context,
       action: actionType,
@@ -137,9 +139,7 @@ class ActionEngine {
 
   static Future<void> _castTribunalVote(Map<String, dynamic> params) async {
     final disputeId = params['disputeId'] as String;
-    final voterId = params['voterId'] as String;
     final vote = params['vote'] as String; // 'favor', 'against', 'abstain'
-    final weight = params['weight'] as double? ?? 1.0;
 
     debugPrint('🗳️ Casting vote: $vote for dispute: $disputeId');
 
@@ -153,7 +153,6 @@ class ActionEngine {
   // ============================================================
 
   static Future<void> _applyForLoan(Map<String, dynamic> params) async {
-    final userId = params['userId'] as String;
     final amount = params['amount'] as double;
     final type = params['type'] as String;
 
@@ -170,7 +169,6 @@ class ActionEngine {
 
   static Future<void> _requestShiftSwap(Map<String, dynamic> params) async {
     final shiftId = params['shiftId'] as String;
-    final requesterId = params['requesterId'] as String;
 
     debugPrint('🔄 Shift swap request for: $shiftId');
 
@@ -207,7 +205,6 @@ class ActionEngine {
 
   static Future<void> _startQuest(Map<String, dynamic> params) async {
     final questId = params['questId'] as String;
-    final userId = params['userId'] as String;
 
     debugPrint('🎯 Starting quest: $questId');
 
@@ -222,9 +219,9 @@ class ActionEngine {
 
   static void _navigate(BuildContext context, Map<String, dynamic> params) {
     final route = params['route'] as String;
-    
+
     debugPrint('🧭 Navigate to: $route');
-    
+
     // TODO: Implement actual navigation
     // Navigator.pushNamed(context, route);
   }

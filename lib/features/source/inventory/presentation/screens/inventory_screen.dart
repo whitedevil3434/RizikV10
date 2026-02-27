@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rizik_v4/core/theme/rizik_colors.dart';
+import 'package:rizik_v4/core/theme/ui_tokens.dart';
 import 'package:rizik_v4/features/squad/presentation/screens/squad_dashboard_screen.dart';
 
 class InventoryScreen extends ConsumerStatefulWidget {
@@ -36,7 +37,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
           _isProcessing = false;
           _voiceInputController.clear();
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(response)),
         );
@@ -62,7 +63,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
         backgroundColor: RizikColors.cardSurface,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(UiTokens.pagePadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -70,8 +71,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: RizikColors.rizikGreen.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: RizikColors.rizikGreen.withValues(alpha: 0.1),
+                borderRadius: UiTokens.cardBorderRadius,
+                border: Border.all(color: UiTokens.borderColor(context)),
               ),
               child: const Column(
                 children: [
@@ -88,7 +90,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: UiTokens.sectionGap + 10),
 
             // Input Area
             TextField(
@@ -96,7 +98,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               decoration: InputDecoration(
                 hintText: 'Type command here...',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: UiTokens.cardBorderRadius,
                 ),
                 suffixIcon: IconButton(
                   icon: _isProcessing
@@ -111,16 +113,16 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               ),
               onSubmitted: (_) => _sendVoiceCommand(),
             ),
-            
-            const SizedBox(height: 24),
+
+            const SizedBox(height: UiTokens.sectionGap + 10),
 
             // AI Response Area
             if (_aiResponse != null)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: UiTokens.cardBorderRadius,
                   border: Border.all(color: Colors.green),
                 ),
                 child: Column(
@@ -140,7 +142,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               ),
 
             const Spacer(),
-            
+
             // Mock Inventory List (Placeholder)
             const Text(
               'Recent Updates',
@@ -148,21 +150,31 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
             ),
             const SizedBox(height: 8),
             Expanded(
-              child: ListView(
-                children: const [
-                  ListTile(
-                    leading: Icon(Icons.inventory_2_outlined),
-                    title: Text('Rice (Chal)'),
-                    subtitle: Text('Added 5kg • Just now'),
-                    trailing: Text('+5 kg', style: TextStyle(color: Colors.green)),
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.inventory_2_outlined),
-                    title: Text('Oil (Tel)'),
-                    subtitle: Text('Added 2L • 2 hours ago'),
-                    trailing: Text('+2 L', style: TextStyle(color: Colors.green)),
-                  ),
-                ],
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: UiTokens.cardBorderRadius,
+                  border: Border.all(color: UiTokens.borderColor(context)),
+                ),
+                child: ListView(
+                  children: const [
+                    ListTile(
+                      leading: Icon(Icons.inventory_2_outlined),
+                      title: Text('Rice (Chal)'),
+                      subtitle: Text('Added 5kg • Just now'),
+                      trailing:
+                          Text('+5 kg', style: TextStyle(color: Colors.green)),
+                    ),
+                    Divider(height: 1),
+                    ListTile(
+                      leading: Icon(Icons.inventory_2_outlined),
+                      title: Text('Oil (Tel)'),
+                      subtitle: Text('Added 2L • 2 hours ago'),
+                      trailing:
+                          Text('+2 L', style: TextStyle(color: Colors.green)),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:rizik_v4/data/models/role_fluidity_tracker.dart';
-import 'package:rizik_v4/data/models/user_role.dart';
 import 'package:rizik_v4/data/remote/role_fluidity_service.dart';
 
 /// Provider for managing role fluidity tracking
@@ -46,7 +45,8 @@ class RoleFluidityProvider with ChangeNotifier {
       if (trackersJson != null) {
         final List<dynamic> trackersList = jsonDecode(trackersJson);
         _history = trackersList
-            .map((json) => RoleFluidityTracker.fromJson(json as Map<String, dynamic>))
+            .map((json) =>
+                RoleFluidityTracker.fromJson(json as Map<String, dynamic>))
             .toList();
 
         // Get or create today's tracker
@@ -56,7 +56,8 @@ class RoleFluidityProvider with ChangeNotifier {
         );
 
         // Add today's tracker to history if not already there
-        if (_history.isEmpty || !_isSameDay(_history.last.date, _todayTracker!.date)) {
+        if (_history.isEmpty ||
+            !_isSameDay(_history.last.date, _todayTracker!.date)) {
           _history.add(_todayTracker!);
         }
       } else {
@@ -146,7 +147,8 @@ class RoleFluidityProvider with ChangeNotifier {
   void _updateHistory() {
     if (_todayTracker == null) return;
 
-    final index = _history.indexWhere((t) => _isSameDay(t.date, _todayTracker!.date));
+    final index =
+        _history.indexWhere((t) => _isSameDay(t.date, _todayTracker!.date));
     if (index != -1) {
       _history[index] = _todayTracker!;
     } else {
@@ -172,7 +174,8 @@ class RoleFluidityProvider with ChangeNotifier {
     final weekAgo = now.subtract(const Duration(days: 7));
 
     final weekTrackers = _history.where((t) {
-      return t.date.isAfter(weekAgo) && t.date.isBefore(now.add(const Duration(days: 1)));
+      return t.date.isAfter(weekAgo) &&
+          t.date.isBefore(now.add(const Duration(days: 1)));
     }).toList();
 
     return RoleFluidityService.getWeeklySummary(weekTrackers);
@@ -204,7 +207,7 @@ class RoleFluidityProvider with ChangeNotifier {
   List<RoleFluidityTracker> getTrackersInRange(DateTime start, DateTime end) {
     return _history.where((t) {
       return t.date.isAfter(start.subtract(const Duration(days: 1))) &&
-             t.date.isBefore(end.add(const Duration(days: 1)));
+          t.date.isBefore(end.add(const Duration(days: 1)));
     }).toList();
   }
 
@@ -235,9 +238,8 @@ class RoleFluidityProvider with ChangeNotifier {
       'tripleRoleDays': tripleRoleDays,
       'totalXp': totalXp,
       'daysTracked': monthTrackers.length,
-      'averageDailyEarnings': monthTrackers.isNotEmpty 
-          ? totalEarnings / monthTrackers.length 
-          : 0.0,
+      'averageDailyEarnings':
+          monthTrackers.isNotEmpty ? totalEarnings / monthTrackers.length : 0.0,
     };
   }
 

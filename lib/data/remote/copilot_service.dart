@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'dart:math';
-import 'package:flutter/foundation.dart';
 import 'package:rizik_v4/data/models/opportunity.dart';
 
 /// Co-Pilot Service - Context detection and opportunity matching
@@ -46,7 +44,8 @@ class CoPilotService {
     if (destLat == null || destLng == null) return null;
 
     // Direct distance from user to destination
-    final directDistance = calculateDistance(userLat, userLng, destLat, destLng);
+    final directDistance =
+        calculateDistance(userLat, userLng, destLat, destLng);
 
     // Distance via opportunity (user -> opp -> dest)
     final toOpp = calculateDistance(userLat, userLng, oppLat, oppLng);
@@ -95,7 +94,8 @@ class CoPilotService {
     if (context.availableMinutes != null) {
       if (opportunity.estimatedMinutes <= context.availableMinutes!) {
         score += 15;
-      } else if (opportunity.estimatedMinutes <= context.availableMinutes! * 1.2) {
+      } else if (opportunity.estimatedMinutes <=
+          context.availableMinutes! * 1.2) {
         score += 8;
       }
     } else {
@@ -103,13 +103,15 @@ class CoPilotService {
     }
 
     // Factor 5: Skill match - 10 points
-    if (opportunity.requiredSkills == null || opportunity.requiredSkills!.isEmpty) {
+    if (opportunity.requiredSkills == null ||
+        opportunity.requiredSkills!.isEmpty) {
       score += 10; // No skills required
     } else {
       final matchingSkills = opportunity.requiredSkills!
           .where((skill) => context.skills.contains(skill))
           .length;
-      final skillMatchRatio = matchingSkills / opportunity.requiredSkills!.length;
+      final skillMatchRatio =
+          matchingSkills / opportunity.requiredSkills!.length;
       score += skillMatchRatio * 10;
     }
 
@@ -126,7 +128,8 @@ class CoPilotService {
       if (!opp.isValid) return false;
 
       // Check role requirement
-      if (opp.requiredRole != 'any' && opp.requiredRole != context.currentRole) {
+      if (opp.requiredRole != 'any' &&
+          opp.requiredRole != context.currentRole) {
         return false;
       }
 
@@ -164,7 +167,8 @@ class CoPilotService {
     }).toList();
 
     // Sort by relevance score (highest first)
-    scoredOpportunities.sort((a, b) => b.relevanceScore.compareTo(a.relevanceScore));
+    scoredOpportunities
+        .sort((a, b) => b.relevanceScore.compareTo(a.relevanceScore));
 
     return scoredOpportunities;
   }

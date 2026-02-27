@@ -15,7 +15,6 @@ class MorphEngine {
       case UserRole.source:
         return Colors.amber.shade800;
       case UserRole.seeker:
-      default:
         return RizikColors.rizikGreen;
     }
   }
@@ -27,7 +26,6 @@ class MorphEngine {
       case UserRole.source:
         return Colors.amber.shade50;
       case UserRole.seeker:
-      default:
         return RizikColors.background;
     }
   }
@@ -39,7 +37,6 @@ class MorphEngine {
       case UserRole.source:
         return 'Source Mode';
       case UserRole.seeker:
-      default:
         return 'Seeker Mode';
     }
   }

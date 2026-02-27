@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:rizik_v4/data/models/aura_progress.dart' as aura;
 import 'package:rizik_v4/data/models/aura_level.dart';
 import 'package:rizik_v4/data/models/quest.dart';
-import 'package:rizik_v4/data/remote/aura_service.dart';
 
 /// SDUI Widget: Aura Card (XP & Level Progression)
 /// Displays current XP, level badge, quest tracker, and unlockable features
@@ -85,7 +84,8 @@ class WidgetAuraCard extends StatelessWidget {
               ),
               // Badge count
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFD700).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -112,9 +112,9 @@ class WidgetAuraCard extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // XP Progress Bar
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,7 +165,7 @@ class WidgetAuraCard extends StatelessWidget {
               ),
             ],
           ),
-          
+
           // Active Quests (if enabled)
           if (showQuests) ...[
             const SizedBox(height: 16),
@@ -173,7 +173,7 @@ class WidgetAuraCard extends StatelessWidget {
             const SizedBox(height: 12),
             _buildQuestSection(compact),
           ],
-          
+
           // Unlocked Features Preview
           const SizedBox(height: 16),
           const Divider(),
@@ -187,7 +187,7 @@ class WidgetAuraCard extends StatelessWidget {
   /// Build quest tracker section
   Widget _buildQuestSection(bool compact) {
     final activeQuests = _getMockActiveQuests();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -248,9 +248,11 @@ class WidgetAuraCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: _getDifficultyColor(quest.difficulty).withOpacity(0.2),
+                    color:
+                        _getDifficultyColor(quest.difficulty).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -294,7 +296,7 @@ class WidgetAuraCard extends StatelessWidget {
   Widget _buildUnlockedFeatures(aura.AuraProgress progress, bool compact) {
     final unlockedFeatures = progress.currentLevel.unlockedFeatures;
     final nextFeatures = progress.nextLevel?.unlockedFeatures ?? [];
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -312,16 +314,16 @@ class WidgetAuraCard extends StatelessWidget {
           runSpacing: 6,
           children: [
             ...unlockedFeatures.map((feature) => _buildFeatureChip(
-              feature,
-              isUnlocked: true,
-              compact: compact,
-            )),
+                  feature,
+                  isUnlocked: true,
+                  compact: compact,
+                )),
             if (nextFeatures.isNotEmpty && progress.nextLevel != null)
               ...nextFeatures.take(2).map((feature) => _buildFeatureChip(
-                feature,
-                isUnlocked: false,
-                compact: compact,
-              )),
+                    feature,
+                    isUnlocked: false,
+                    compact: compact,
+                  )),
           ],
         ),
       ],
@@ -329,7 +331,8 @@ class WidgetAuraCard extends StatelessWidget {
   }
 
   /// Build feature chip
-  Widget _buildFeatureChip(String feature, {required bool isUnlocked, required bool compact}) {
+  Widget _buildFeatureChip(String feature,
+      {required bool isUnlocked, required bool compact}) {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: compact ? 8 : 10,
@@ -341,9 +344,7 @@ class WidgetAuraCard extends StatelessWidget {
             : Colors.grey.shade200,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isUnlocked
-              ? const Color(0xFF66BB6A)
-              : Colors.grey.shade400,
+          color: isUnlocked ? const Color(0xFF66BB6A) : Colors.grey.shade400,
           width: 1,
         ),
       ),
@@ -360,7 +361,8 @@ class WidgetAuraCard extends StatelessWidget {
             style: TextStyle(
               fontSize: compact ? 10 : 11,
               fontWeight: isUnlocked ? FontWeight.w600 : FontWeight.normal,
-              color: isUnlocked ? const Color(0xFF388E3C) : Colors.grey.shade600,
+              color:
+                  isUnlocked ? const Color(0xFF388E3C) : Colors.grey.shade600,
             ),
           ),
         ],
@@ -400,7 +402,7 @@ class WidgetAuraCard extends StatelessWidget {
   aura.AuraProgress _getMockAuraProgress(String userId) {
     final hash = userId.hashCode.abs();
     final xpVariance = (hash % 5000);
-    
+
     return aura.AuraProgress(
       userId: userId,
       currentLevel: AuraLevel.apprentice, // Can be dynamic based on XP

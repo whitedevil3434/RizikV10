@@ -3,13 +3,12 @@ import 'package:rizik_v4/data/models/virtual_storefront.dart';
 import 'package:rizik_v4/data/models/user_profile.dart';
 import 'package:rizik_v4/data/remote/virtual_storefront_service.dart';
 import 'package:rizik_v4/features/seeker/household/logic/khata_provider.dart';
-import 'package:rizik_v4/core/state/profile_provider.dart';
 
 /// Provider for managing virtual storefronts
 /// Handles store operations, inventory sync, and filtering
 class VirtualStorefrontProvider extends ChangeNotifier {
   final VirtualStorefrontService _service = VirtualStorefrontService();
-  
+
   // State
   List<VirtualStorefront> _allStorefronts = [];
   List<VirtualStorefront> _filteredStorefronts = [];
@@ -119,11 +118,11 @@ class VirtualStorefrontProvider extends ChangeNotifier {
         status: status,
       );
       _allStorefronts[index] = updated;
-      
+
       if (_currentStorefront?.id == storefrontId) {
         _currentStorefront = updated;
       }
-      
+
       _applyFilters();
       notifyListeners();
     }
@@ -144,7 +143,7 @@ class VirtualStorefrontProvider extends ChangeNotifier {
       );
 
       _allStorefronts[index] = updated;
-      
+
       if (_currentStorefront?.id == storefrontId) {
         _currentStorefront = updated;
       }
@@ -171,11 +170,11 @@ class VirtualStorefrontProvider extends ChangeNotifier {
         quantity: quantity,
       );
       _allStorefronts[index] = updated;
-      
+
       if (_currentStorefront?.id == storefrontId) {
         _currentStorefront = updated;
       }
-      
+
       notifyListeners();
     }
   }
@@ -195,11 +194,11 @@ class VirtualStorefrontProvider extends ChangeNotifier {
           quantityToDeduct: quantity,
         );
         _allStorefronts[index] = updated;
-        
+
         if (_currentStorefront?.id == storefrontId) {
           _currentStorefront = updated;
         }
-        
+
         notifyListeners();
       } catch (e) {
         _error = e.toString();
@@ -215,11 +214,11 @@ class VirtualStorefrontProvider extends ChangeNotifier {
     if (index != -1) {
       final updated = _service.incrementActiveOrders(_allStorefronts[index]);
       _allStorefronts[index] = updated;
-      
+
       if (_currentStorefront?.id == storefrontId) {
         _currentStorefront = updated;
       }
-      
+
       _applyFilters();
       notifyListeners();
     }
@@ -231,11 +230,11 @@ class VirtualStorefrontProvider extends ChangeNotifier {
     if (index != -1) {
       final updated = _service.decrementActiveOrders(_allStorefronts[index]);
       _allStorefronts[index] = updated;
-      
+
       if (_currentStorefront?.id == storefrontId) {
         _currentStorefront = updated;
       }
-      
+
       _applyFilters();
       notifyListeners();
     }
@@ -263,11 +262,11 @@ class VirtualStorefrontProvider extends ChangeNotifier {
         onTimeDeliveryRate: onTimeDeliveryRate,
       );
       _allStorefronts[index] = updated;
-      
+
       if (_currentStorefront?.id == storefrontId) {
         _currentStorefront = updated;
       }
-      
+
       _applyFilters();
       notifyListeners();
     }
@@ -287,11 +286,11 @@ class VirtualStorefrontProvider extends ChangeNotifier {
         auraLevel: auraLevel,
       );
       _allStorefronts[index] = updated;
-      
+
       if (_currentStorefront?.id == storefrontId) {
         _currentStorefront = updated;
       }
-      
+
       _applyFilters();
       notifyListeners();
     }
@@ -375,23 +374,17 @@ class VirtualStorefrontProvider extends ChangeNotifier {
 
   /// Get stores by category
   List<VirtualStorefront> getStoresByCategory(String category) {
-    return _filteredStorefronts
-        .where((s) => s.category == category)
-        .toList();
+    return _filteredStorefronts.where((s) => s.category == category).toList();
   }
 
   /// Get open stores
   List<VirtualStorefront> getOpenStores() {
-    return _filteredStorefronts
-        .where((s) => s.isOpen)
-        .toList();
+    return _filteredStorefronts.where((s) => s.isOpen).toList();
   }
 
   /// Get verified stores
   List<VirtualStorefront> getVerifiedStores() {
-    return _filteredStorefronts
-        .where((s) => s.isVerified)
-        .toList();
+    return _filteredStorefronts.where((s) => s.isVerified).toList();
   }
 
   /// Get stores needing inventory sync
@@ -413,9 +406,9 @@ class VirtualStorefrontProvider extends ChangeNotifier {
       final query = _searchQuery.toLowerCase();
       filtered = filtered.where((s) {
         return s.storeName.toLowerCase().contains(query) ||
-               s.partnerName.toLowerCase().contains(query) ||
-               s.category.toLowerCase().contains(query) ||
-               (s.description?.toLowerCase().contains(query) ?? false);
+            s.partnerName.toLowerCase().contains(query) ||
+            s.category.toLowerCase().contains(query) ||
+            (s.description?.toLowerCase().contains(query) ?? false);
       }).toList();
     }
 

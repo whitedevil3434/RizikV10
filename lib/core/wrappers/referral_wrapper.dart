@@ -41,10 +41,10 @@ class ReferralWrapper {
         .select('count')
         .eq('referrer_id', user.id)
         .count(CountOption.exact);
-    
+
     return {
       'total_referrals': response.count,
-      'earnings': (response.count ?? 0) * 50, // 50 taka per referral example
+      'earnings': response.count * 50, // 50 taka per referral example
     };
   }
 }

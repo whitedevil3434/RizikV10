@@ -48,7 +48,9 @@ app.*.map.json
 node_modules/
 backend/node_modules/
 .env
+.env.notes
 .dev.vars
+.local/
 
 # Cloudflare Wrangler
 .wrangler/
@@ -70,3 +72,6 @@ link-call-web/.next/
 *.dylib
 *.sst
 node_modules/
+
+# Ignored AI Memory Vaults
+memory/.ai_secret_vault.env

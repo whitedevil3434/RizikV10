@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:rizik_v4/data/models/rizik_dhaar_loan.dart';
 import 'package:rizik_v4/data/models/trust_score.dart';
 
@@ -22,9 +21,11 @@ class RizikDhaarService {
     }
 
     // Check for active loans
-    final activeLoans = existingLoans.where((loan) =>
-        loan.status == LoanStatus.active ||
-        loan.status == LoanStatus.repaying).toList();
+    final activeLoans = existingLoans
+        .where((loan) =>
+            loan.status == LoanStatus.active ||
+            loan.status == LoanStatus.repaying)
+        .toList();
 
     if (activeLoans.isNotEmpty) {
       return LoanEligibilityResult(
@@ -35,8 +36,9 @@ class RizikDhaarService {
     }
 
     // Check for defaulted loans
-    final defaultedLoans = existingLoans.where((loan) =>
-        loan.status == LoanStatus.defaulted).toList();
+    final defaultedLoans = existingLoans
+        .where((loan) => loan.status == LoanStatus.defaulted)
+        .toList();
 
     if (defaultedLoans.isNotEmpty) {
       return LoanEligibilityResult(
@@ -51,8 +53,10 @@ class RizikDhaarService {
     if (requestedAmount > maxAmount) {
       return LoanEligibilityResult(
         eligible: false,
-        reason: 'Maximum loan amount for your trust score is ৳${maxAmount.toStringAsFixed(0)}',
-        reasonBn: 'আপনার ট্রাস্ট স্কোরের জন্য সর্বোচ্চ ঋণ ৳${maxAmount.toStringAsFixed(0)}',
+        reason:
+            'Maximum loan amount for your trust score is ৳${maxAmount.toStringAsFixed(0)}',
+        reasonBn:
+            'আপনার ট্রাস্ট স্কোরের জন্য সর্বোচ্চ ঋণ ৳${maxAmount.toStringAsFixed(0)}',
         maxAmount: maxAmount,
       );
     }
@@ -173,7 +177,8 @@ class RizikDhaarService {
       termDays: application.termDays,
     );
 
-    final totalAmount = application.amount + (application.amount * interestRate / 100);
+    final totalAmount =
+        application.amount + (application.amount * interestRate / 100);
 
     final schedule = generateRepaymentSchedule(
       totalAmount: totalAmount,
@@ -250,7 +255,8 @@ class RizikDhaarService {
 
   /// Check if loan is overdue and should be marked as defaulted
   static bool shouldMarkAsDefaulted(RizikDhaarLoan loan) {
-    if (loan.status != LoanStatus.active && loan.status != LoanStatus.repaying) {
+    if (loan.status != LoanStatus.active &&
+        loan.status != LoanStatus.repaying) {
       return false;
     }
 
@@ -348,30 +354,37 @@ class RizikDhaarService {
   /// Check for expired vouchers
   static List<LockedVoucher> getExpiredVouchers(List<LockedVoucher> vouchers) {
     final now = DateTime.now();
-    return vouchers.where((v) => now.isAfter(v.expiryDate) && v.remainingAmount > 0).toList();
+    return vouchers
+        .where((v) => now.isAfter(v.expiryDate) && v.remainingAmount > 0)
+        .toList();
   }
 
   /// Check for expiring soon vouchers (within 7 days)
-  static List<LockedVoucher> getExpiringSoonVouchers(List<LockedVoucher> vouchers) {
+  static List<LockedVoucher> getExpiringSoonVouchers(
+      List<LockedVoucher> vouchers) {
     final now = DateTime.now();
     final sevenDaysLater = now.add(const Duration(days: 7));
-    return vouchers.where((v) =>
-        v.expiryDate.isAfter(now) &&
-        v.expiryDate.isBefore(sevenDaysLater) &&
-        v.remainingAmount > 0).toList();
+    return vouchers
+        .where((v) =>
+            v.expiryDate.isAfter(now) &&
+            v.expiryDate.isBefore(sevenDaysLater) &&
+            v.remainingAmount > 0)
+        .toList();
   }
 
   /// Get loan summary statistics
   static LoanSummary getLoanSummary(List<RizikDhaarLoan> loans) {
     final totalBorrowed = loans.fold(0.0, (sum, loan) => sum + loan.amount);
     final totalRepaid = loans.fold(0.0, (sum, loan) => sum + loan.paidAmount);
-    final activeLoans = loans.where((loan) =>
-        loan.status == LoanStatus.active ||
-        loan.status == LoanStatus.repaying).length;
-    final completedLoans = loans.where((loan) =>
-        loan.status == LoanStatus.completed).length;
-    final defaultedLoans = loans.where((loan) =>
-        loan.status == LoanStatus.defaulted).length;
+    final activeLoans = loans
+        .where((loan) =>
+            loan.status == LoanStatus.active ||
+            loan.status == LoanStatus.repaying)
+        .length;
+    final completedLoans =
+        loans.where((loan) => loan.status == LoanStatus.completed).length;
+    final defaultedLoans =
+        loans.where((loan) => loan.status == LoanStatus.defaulted).length;
 
     return LoanSummary(
       totalBorrowed: totalBorrowed,
@@ -379,7 +392,8 @@ class RizikDhaarService {
       activeLoans: activeLoans,
       completedLoans: completedLoans,
       defaultedLoans: defaultedLoans,
-      repaymentRate: totalBorrowed > 0 ? (totalRepaid / totalBorrowed * 100) : 0,
+      repaymentRate:
+          totalBorrowed > 0 ? (totalRepaid / totalBorrowed * 100) : 0,
     );
   }
 }
