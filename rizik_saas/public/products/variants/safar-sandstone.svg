@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" fill="none">
+  <defs>
+    <pattern id="p3" width="54" height="54" patternUnits="userSpaceOnUse">
+      <circle cx="27" cy="27" r="13" stroke="#9C7A57" stroke-width="1.2"/>
+      <path d="M0 27H54M27 0V54" stroke="#B89267" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="1000" fill="#EFEADE"/>
+  <rect x="100" y="170" width="1400" height="720" rx="26" fill="#B88D63"/>
+  <rect x="210" y="290" width="1080" height="430" rx="28" fill="#D7C1A0"/>
+  <rect x="210" y="290" width="1080" height="430" rx="28" fill="url(#p3)" opacity="0.78"/>
+  <rect x="515" y="435" width="470" height="105" rx="52.5" fill="#F4EFE2"/>
+  <text x="750" y="495" text-anchor="middle" fill="#71563E" font-size="60" font-family="Avenir Next, Segoe UI, sans-serif" font-weight="700">Rizik</text>
+  <text x="750" y="528" text-anchor="middle" fill="#8A6B4A" font-size="30" font-family="Avenir Next, Segoe UI, sans-serif">Safar Mat · Sandstone Loom</text>
+</svg>

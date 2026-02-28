@@ -9,8 +9,8 @@
   --color-brand-accent: #00B16A;
   /* Keeping the emerald for specific success/action states */
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-bengali: var(--font-hind-siliguri), sans-serif;
+  --font-sans: "Avenir Next", "Segoe UI", "Noto Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-bengali: "Noto Sans Bengali", "Hind Siliguri", sans-serif;
 }
 
 /* Base styles to force smooth scrolling and premium selection colors */

@@ -1,5 +1,7 @@
 "use client";
 
+export const runtime = 'edge';
+
 import { useCartStore } from "@/lib/store/cart";
 import Link from "next/link";
 import { ShoppingCartIcon, CheckIcon } from "@heroicons/react/24/outline";
@@ -7,12 +9,12 @@ import { useState } from "react";
 
 // Product data (same as store fallback — will unify with DB later)
 const allProducts = [
-    { sku: "MAT-GLOW-01", name: "Barishal Eco Pray Mat - Glow Series", category: "ECO_MAT", description: "100% Biodegradable, Night-Glow ink array engineered for Taraweeh and Tahajjud night prayers. Our phosphorescent ink charges naturally under room light and emits a soft glow for 6+ hours. The non-woven jute-blend fabric decomposes into natural fertilizer within 90 days. Each mat features embedded Qibla direction indicators.", base_price_bdt: 150, specs: ["Glow Duration: 6+ hours", "Material: Non-woven jute blend", "Decomposition: 90 days", "Size: 120cm × 60cm"] },
-    { sku: "MAT-SCENT-01", name: "Barishal Eco Pray Mat - Oud Infused", category: "ECO_MAT", description: "100% Biodegradable prayer mat with chemically bonded Oud & Jasmine fragrance. The scent molecules are embedded at the fiber level meaning the aroma persists through 50+ uses. Premium non-woven construction with silk-touch finish.", base_price_bdt: 120, specs: ["Scent: Oud + Jasmine blend", "Longevity: 50+ uses", "Material: Silk-touch non-woven", "Size: 120cm × 60cm"] },
-    { sku: "MAT-STANDARD-01", name: "Barishal Eco Pray Mat - Classic", category: "ECO_MAT", description: "The original biodegradable non-woven prayer mat. Affordable, planet-friendly, and built to serve the mass market. Zero plastic footprint.", base_price_bdt: 50, specs: ["Material: 100% Non-woven fiber", "Weight: Ultra-light 45g", "Foldable: Pocket-size", "Size: 110cm × 55cm"] },
-    { sku: "BIO-VEG-01", name: "Bio-Shield Matrix - Vegetable Membrane", category: "BIO_SHIELD", description: "Active packaging membrane for fresh vegetables and fruits. 30 GSM non-woven base with 20 Micron LDPE and our proprietary Chitosan/Collagen oxygen barrier. Extends shelf life to 15 days without refrigeration.", base_price_bdt: 25, specs: ["Shelf Life: 15 days", "GSM: 30 + 20μ LDPE", "Barrier: Chitosan/Collagen", "Min Order: 500 units"] },
-    { sku: "BIO-SPICE-01", name: "Bio-Shield Matrix - Raw Spice Pouch", category: "BIO_SHIELD", description: "Specialized active packaging for raw spices and dried goods. 50 GSM standard LDPE with enhanced moisture barrier. Preserves aroma, color, and potency for 6 months at ambient temperature.", base_price_bdt: 45, specs: ["Shelf Life: 6 months", "GSM: 50 Standard LDPE", "Moisture Barrier: Enhanced", "Min Order: 500 units"] },
-    { sku: "BIO-RETORT-V1", name: "Bio-Shield Retort Pouch (1yr)", category: "BIO_SHIELD", description: "God Mode active packaging. 80 GSM + 50 Micron Thick LDPE triple-layer sandwich membrane. Survives 121°C retort cooking. Zero refrigeration required for 1 full year. The ultimate solution for cooked meat preservation.", base_price_bdt: 85, specs: ["Shelf Life: 1 year", "Heat Tolerance: 121°C", "GSM: 80 + 50μ LDPE", "Min Order: 500 units"] },
+    { sku: "MAT-GLOW-01", name: "Barishal Eco Pray Mat - Glow Series", category: "ECO_MAT", description: "Biodegradable prayer mat series with low-light guidance support and durable everyday handling.", base_price_bdt: 150, specs: ["Use Case: Night prayers", "Material: Non-woven fiber blend", "Sustainability: Compostable profile", "Size: 120cm x 60cm"] },
+    { sku: "MAT-SCENT-01", name: "Barishal Eco Pray Mat - Oud Infused", category: "ECO_MAT", description: "Biodegradable prayer mat with a premium fragrance profile and soft-touch finish.", base_price_bdt: 120, specs: ["Scent Profile: Oud + Jasmine", "User Focus: Premium retail", "Material: Soft-touch non-woven", "Size: 120cm x 60cm"] },
+    { sku: "MAT-STANDARD-01", name: "Barishal Eco Pray Mat - Classic", category: "ECO_MAT", description: "Entry-level biodegradable prayer mat designed for volume distribution programs.", base_price_bdt: 50, specs: ["Use Case: Community rollout", "Material: Non-woven fiber", "Form: Foldable", "Size: 110cm x 55cm"] },
+    { sku: "BIO-VEG-01", name: "Bio-Shield Matrix - Vegetable Membrane", category: "BIO_SHIELD", description: "Active packaging program for short-cycle produce distribution.", base_price_bdt: 25, specs: ["Shelf Window: Up to 15 days", "Program: Fresh produce", "Compliance: Food-contact workflow", "Min Order: 500 units"] },
+    { sku: "BIO-SPICE-01", name: "Bio-Shield Matrix - Raw Spice Pouch", category: "BIO_SHIELD", description: "Active packaging program for dry goods and spice value chains.", base_price_bdt: 45, specs: ["Shelf Window: Up to 6 months", "Program: Dry goods", "Focus: Moisture management", "Min Order: 500 units"] },
+    { sku: "BIO-RETORT-V1", name: "Bio-Shield Retort Pouch (1yr)", category: "BIO_SHIELD", description: "High-barrier packaging program for extended cooked-food logistics.", base_price_bdt: 85, specs: ["Shelf Window: Up to 1 year", "Program: Cooked food", "Focus: Extended distribution", "Min Order: 500 units"] },
 ];
 
 export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -95,8 +97,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                                 onClick={handleAddToCart}
                                 disabled={added}
                                 className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-bold shadow-md transition-all ${added
-                                        ? "bg-[#00B16A] text-white"
-                                        : "bg-[#031E49] text-white hover:bg-[#0A2D6C]"
+                                    ? "bg-[#00B16A] text-white"
+                                    : "bg-[#031E49] text-white hover:bg-[#0A2D6C]"
                                     }`}
                             >
                                 {added ? (

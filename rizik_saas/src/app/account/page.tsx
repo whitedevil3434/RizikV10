@@ -1,21 +1,82 @@
-"use client";
-
-import { useState } from "react";
+import { redirect } from "next/navigation";
 import { signOutAction } from "@/lib/actions/auth";
+import { updateAccountProfileAction } from "@/lib/actions/account";
+import { createAdminClient } from "@/lib/supabase/client";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { UserCircleIcon, BellIcon, ShieldCheckIcon, ArrowRightStartOnRectangleIcon } from "@heroicons/react/24/outline";
 
-export default function AccountPage() {
-    const [saved, setSaved] = useState(false);
+const errorMessages: Record<string, string> = {
+    invalid_name: "Full name must be between 2 and 120 characters.",
+    profile_update_failed: "Could not update profile right now.",
+};
 
-    function handleSave() {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+function initialsFromName(name: string): string {
+    return name
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() || "")
+        .join("") || "R";
+}
+
+export default async function AccountPage({
+    searchParams,
+}: {
+    searchParams?: Promise<{ saved?: string; error?: string }>;
+}) {
+    const params = (await searchParams) || {};
+    const supabase = await createServerSupabaseClient();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+        redirect("/login?next=/account");
     }
+
+    let profile: { full_name: string | null; role: string | null; avatar_url: string | null } | null = null;
+    try {
+        const admin = createAdminClient();
+        const { data } = await admin
+            .from("user_profiles")
+            .select("full_name, role, avatar_url")
+            .eq("id", user.id)
+            .maybeSingle();
+        profile = (data as { full_name: string | null; role: string | null; avatar_url: string | null } | null) || null;
+    } catch {
+        const { data } = await supabase
+            .from("user_profiles")
+            .select("full_name, role, avatar_url")
+            .eq("id", user.id)
+            .maybeSingle();
+        profile = (data as { full_name: string | null; role: string | null; avatar_url: string | null } | null) || null;
+    }
+
+    const resolvedName =
+        (profile?.full_name as string | null) ||
+        (user.user_metadata?.full_name as string | undefined) ||
+        user.email?.split("@")[0] ||
+        "Rizik Member";
+    const resolvedRole = (profile?.role as string | null) || "CUSTOMER";
+    const resolvedAvatar = (profile?.avatar_url as string | null) || (user.user_metadata?.avatar_url as string | undefined) || null;
+    const resolvedInitials = initialsFromName(resolvedName);
 
     return (
         <div className="min-h-screen bg-[#F5F2EB] py-12">
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-3xl font-bold text-[#031E49] mb-8">Account Settings</h1>
+
+                {params.saved ? (
+                    <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+                        Profile updated successfully.
+                    </div>
+                ) : null}
+
+                {params.error ? (
+                    <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                        {errorMessages[params.error] || "Failed to update account profile."}
+                    </div>
+                ) : null}
 
                 {/* Profile Section */}
                 <div className="bg-white rounded-2xl border border-[#031E49]/10 p-8 shadow-sm mb-6">
@@ -25,29 +86,30 @@ export default function AccountPage() {
                     </div>
 
                     <div className="flex items-center gap-6 mb-6">
-                        <div className="w-16 h-16 rounded-full bg-[#031E49] flex items-center justify-center text-[#F5F2EB] text-2xl font-bold">
-                            S
-                        </div>
+                        {resolvedAvatar ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={resolvedAvatar} alt="Profile avatar" className="w-16 h-16 rounded-full object-cover border border-[#031E49]/15" />
+                        ) : (
+                            <div className="w-16 h-16 rounded-full bg-[#031E49] flex items-center justify-center text-[#F5F2EB] text-2xl font-bold">
+                                {resolvedInitials}
+                            </div>
+                        )}
                         <div>
-                            <p className="font-bold text-[#031E49]">Sabbir Ahmed</p>
-                            <p className="text-sm text-[#0A2D6C]/50">sabbir@rizik.io • SUPER_ADMIN</p>
+                            <p className="font-bold text-[#031E49]">{resolvedName}</p>
+                            <p className="text-sm text-[#0A2D6C]/50">{user.email} • {resolvedRole}</p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
+                    <form action={updateAccountProfileAction} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="sm:col-span-2">
                             <label className="block text-sm font-bold text-[#031E49] mb-1.5">Full Name</label>
                             <input
                                 type="text"
-                                defaultValue="Sabbir Ahmed"
-                                className="w-full px-4 py-3 rounded-xl border border-[#031E49]/20 bg-[#F5F2EB]/50 text-sm text-[#031E49] focus:outline-none focus:ring-2 focus:ring-[#031E49]"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-[#031E49] mb-1.5">Phone Number</label>
-                            <input
-                                type="tel"
-                                defaultValue="+880 1XXX-XXXXXX"
+                                name="full_name"
+                                required
+                                minLength={2}
+                                maxLength={120}
+                                defaultValue={resolvedName}
                                 className="w-full px-4 py-3 rounded-xl border border-[#031E49]/20 bg-[#F5F2EB]/50 text-sm text-[#031E49] focus:outline-none focus:ring-2 focus:ring-[#031E49]"
                             />
                         </div>
@@ -55,19 +117,18 @@ export default function AccountPage() {
                             <label className="block text-sm font-bold text-[#031E49] mb-1.5">Email</label>
                             <input
                                 type="email"
-                                defaultValue="sabbir@rizik.io"
+                                value={user.email || ""}
                                 disabled
                                 className="w-full px-4 py-3 rounded-xl border border-[#031E49]/20 bg-[#F5F2EB]/30 text-sm text-[#031E49]/50 cursor-not-allowed"
                             />
                         </div>
-                    </div>
-
-                    <button
-                        onClick={handleSave}
-                        className={`mt-6 px-6 py-3 rounded-xl text-sm font-bold shadow-md transition-all ${saved ? "bg-[#00B16A] text-white" : "bg-[#031E49] text-white hover:bg-[#0A2D6C]"}`}
-                    >
-                        {saved ? "✓ Saved!" : "Save Changes"}
-                    </button>
+                        <button
+                            type="submit"
+                            className="mt-2 px-6 py-3 rounded-xl text-sm font-bold shadow-md transition-all bg-[#031E49] text-white hover:bg-[#0A2D6C]"
+                        >
+                            Save Changes
+                        </button>
+                    </form>
                 </div>
 
                 {/* Notifications */}
@@ -104,7 +165,7 @@ export default function AccountPage() {
 
                     <button className="w-full text-left p-4 rounded-xl border border-[#031E49]/10 hover:bg-[#F5F2EB]/50 transition-colors">
                         <p className="text-sm font-bold text-[#031E49]">Change Password</p>
-                        <p className="text-xs text-[#0A2D6C]/40">Update your account password</p>
+                        <p className="text-xs text-[#0A2D6C]/40">Use account recovery in login screen for secure reset</p>
                     </button>
                 </div>
 

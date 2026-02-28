@@ -1,4 +1,7 @@
+export const runtime = 'edge';
+
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/client';
 import { NextResponse } from 'next/server';
 
 /**
@@ -15,6 +18,12 @@ export async function GET(request: Request) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
 
         if (!error) {
+            let adminSupabase: ReturnType<typeof createAdminClient> | null = null;
+            try {
+                adminSupabase = createAdminClient();
+            } catch {
+                adminSupabase = null;
+            }
             // Check if user_profiles row exists, if not create one
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
@@ -22,14 +31,20 @@ export async function GET(request: Request) {
                     .from('user_profiles')
                     .select('id')
                     .eq('id', user.id)
-                    .single();
+                    .maybeSingle();
 
                 if (!existingProfile) {
-                    await supabase.from('user_profiles').insert({
+                    const profileData = {
                         id: user.id,
                         full_name: user.user_metadata?.full_name || user.email || 'New User',
                         role: 'CUSTOMER',
-                    });
+                    };
+
+                    if (adminSupabase) {
+                        await adminSupabase.from('user_profiles').upsert(profileData, { onConflict: "id" });
+                    } else {
+                        await supabase.from('user_profiles').upsert(profileData, { onConflict: "id" });
+                    }
                 }
             }
 

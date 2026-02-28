@@ -1,70 +1,127 @@
+"use client";
+
 import Link from "next/link";
-import { ChartBarIcon, ChatBubbleLeftRightIcon, QrCodeIcon, TruckIcon, UserGroupIcon, CubeIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowTrendingUpIcon,
+  BoltIcon,
+  ChartBarIcon,
+  ChatBubbleLeftRightIcon,
+  CubeIcon,
+  QrCodeIcon,
+  RectangleStackIcon,
+  TruckIcon,
+  UserGroupIcon,
+  UsersIcon,
+  WrenchScrewdriverIcon,
+} from "@heroicons/react/24/outline";
+import OpsShell from "@/components/workspace/ops-shell";
+import { adminNavItems } from "@/lib/workspace/nav";
+
+const stats = [
+  { label: "Revenue (MTD)", value: "৳ 2.4M", delta: "+18%" },
+  { label: "Active Orders", value: "142", delta: "+7 today" },
+  { label: "Open Tickets", value: "12", delta: "3 urgent" },
+  { label: "Line Utilization", value: "88%", delta: "Stable" },
+];
+
+const modules = [
+  { href: "/admin/orders", label: "Orders", desc: "B2B and B2C fulfillment pipeline", icon: TruckIcon, tone: "bg-blue-50 text-blue-700" },
+  { href: "/admin/products", label: "Products", desc: "Catalog, pricing, and lifecycle control", icon: CubeIcon, tone: "bg-emerald-50 text-emerald-700" },
+  { href: "/admin/crm", label: "Support CRM", desc: "Customer ticket and escalation desk", icon: ChatBubbleLeftRightIcon, tone: "bg-amber-50 text-amber-700" },
+  { href: "/admin/production", label: "Production", desc: "Batch execution and line health", icon: WrenchScrewdriverIcon, tone: "bg-fuchsia-50 text-fuchsia-700" },
+  { href: "/admin/inventory", label: "Inventory", desc: "Warehouse stock and reorder alerts", icon: RectangleStackIcon, tone: "bg-rose-50 text-rose-700" },
+  { href: "/admin/qr", label: "QR Tags", desc: "Traceability label generation", icon: QrCodeIcon, tone: "bg-cyan-50 text-cyan-700" },
+  { href: "/admin/fair", label: "Fair Ops", desc: "Campaign onboarding, leaderboard, and task controls", icon: BoltIcon, tone: "bg-lime-50 text-lime-700" },
+  { href: "/admin/squads", label: "Squad Ops", desc: "Temporary workforce assignments and squad jobs", icon: UsersIcon, tone: "bg-sky-50 text-sky-700" },
+  { href: "/admin/team", label: "Team & RBAC", desc: "Employee access and role governance", icon: UserGroupIcon, tone: "bg-violet-50 text-violet-700" },
+  { href: "/admin/analytics", label: "Analytics", desc: "Commercial and operational insights", icon: ChartBarIcon, tone: "bg-teal-50 text-teal-700" },
+];
+
+const priorityBoard = [
+  { owner: "Production", task: "Close QA checks for batch RB-8406", eta: "11:30", status: "In Progress" },
+  { owner: "Logistics", task: "Dispatch Chittagong enterprise lot", eta: "13:00", status: "Queued" },
+  { owner: "Support", task: "Resolve priority ticket cluster", eta: "14:15", status: "Attention" },
+  { owner: "Fair Ops", task: "Review pending task submissions and scoreboard deltas", eta: "15:15", status: "Review" },
+  { owner: "Supply", task: "Confirm next-week resin PO", eta: "16:00", status: "Pending" },
+];
 
 export default function AdminDashboard() {
-    const stats = [
-        { label: "Total Revenue (MTD)", value: "৳ 2.4M", change: "+18%", positive: true },
-        { label: "Active Orders", value: "142", change: "+7", positive: true },
-        { label: "Production Batches", value: "48", change: "3 pending QA", positive: false },
-        { label: "Support Tickets", value: "12", change: "3 open", positive: false },
-    ];
+  return (
+    <OpsShell
+      title="Operations Hub"
+      subtitle="Unified control layer for revenue, production, workforce, logistics, and support operations."
+      activeHref="/admin"
+      scopeLabel="Admin ERP"
+      roleLabel="Executive Operations"
+      navItems={adminNavItems}
+      quickLinks={[
+        { href: "/admin/orders", label: "Orders", tone: "neutral" },
+        { href: "/admin/fair", label: "Fair Ops", tone: "neutral" },
+        { href: "/admin/squads", label: "Squad Ops", tone: "primary" },
+      ]}
+    >
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+        {stats.map((item) => (
+          <article key={item.label} className="rounded-2xl border border-[#031E49]/10 bg-white p-5 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.12em] text-[#031E49]/45 font-semibold">{item.label}</p>
+            <p className="mt-2 text-3xl font-bold text-[#031E49]">{item.value}</p>
+            <p className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#00B16A]">
+              <ArrowTrendingUpIcon className="h-3.5 w-3.5" />
+              {item.delta}
+            </p>
+          </article>
+        ))}
+      </section>
 
-    const modules = [
-        { name: "Logistics & Orders", desc: "Track shipments, manage fulfillment pipeline", icon: TruckIcon, href: "/admin/orders", color: "bg-blue-50 text-blue-700" },
-        { name: "Support CRM", desc: "Customer communications, ticket management", icon: ChatBubbleLeftRightIcon, href: "/admin/crm", color: "bg-amber-50 text-amber-700" },
-        { name: "QR Production Tags", desc: "Generate and manage cryptographic product QR codes", icon: QrCodeIcon, href: "/admin/qr", color: "bg-emerald-50 text-emerald-700" },
-        { name: "Team & Hierarchy", desc: "Employee profiles, RBAC roles, department structure", icon: UserGroupIcon, href: "#", color: "bg-purple-50 text-purple-700" },
-        { name: "Inventory", desc: "Raw materials, finished goods, warehouse stock levels", icon: CubeIcon, href: "#", color: "bg-rose-50 text-rose-700" },
-        { name: "Analytics", desc: "Revenue reports, conversion funnels, customer insights", icon: ChartBarIcon, href: "#", color: "bg-cyan-50 text-cyan-700" },
-    ];
-
-    return (
-        <div className="w-full flex h-screen bg-[#F5F2EB]">
-            {/* Sidebar */}
-            <aside className="w-64 bg-[#031E49] text-white flex flex-col flex-shrink-0">
-                <div className="p-6 border-b border-white/10">
-                    <span className="font-bold text-xl tracking-tight text-[#F5F2EB]">Rizik<span className="text-[#00B16A]">ERP</span></span>
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <article className="lg:col-span-2 rounded-3xl border border-[#031E49]/10 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-xl font-bold text-[#031E49]">Operational Priority Board</h2>
+            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#00B16A]">Live Snapshot</span>
+          </div>
+          <div className="space-y-3">
+            {priorityBoard.map((row) => (
+              <div key={row.task} className="rounded-xl border border-[#031E49]/10 p-4 bg-[#F5F2EB]/60">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-[#031E49]">{row.task}</p>
+                  <span className="text-[11px] px-2 py-1 rounded-full bg-[#031E49]/8 text-[#031E49] font-semibold">{row.status}</span>
                 </div>
-                <nav className="flex-1 p-4 space-y-2">
-                    <a href="/admin" className="block px-4 py-2 rounded-lg bg-white/20 text-white text-sm font-bold shadow-inner">Command Center</a>
-                    <a href="/admin/orders" className="block px-4 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white/70 hover:text-white transition-colors">Logistics & Orders</a>
-                    <a href="/admin/crm" className="block px-4 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white/70 hover:text-white transition-colors">Support CRM</a>
-                    <a href="/admin/qr" className="block px-4 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white/70 hover:text-white transition-colors">QR Production Tags</a>
-                </nav>
-            </aside>
+                <div className="mt-2 text-xs text-[#0A2D6C]/60">Owner: {row.owner} · Target: {row.eta}</div>
+              </div>
+            ))}
+          </div>
+        </article>
 
-            {/* Main Area */}
-            <main className="flex-1 overflow-y-auto p-12">
-                <header className="mb-10">
-                    <h1 className="text-3xl font-bold text-[#031E49] mb-2">Command Center</h1>
-                    <p className="text-[#0A2D6C]/60">Rizik Ecosystem Administrative Overview</p>
-                </header>
+        <article className="rounded-3xl border border-[#031E49]/10 bg-gradient-to-br from-[#031E49] to-[#0A2D6C] p-6 shadow-sm text-white">
+          <p className="text-xs uppercase tracking-[0.12em] text-white/60 font-semibold">Control Note</p>
+          <h3 className="mt-3 text-2xl font-bold">Everything in One Surface</h3>
+          <p className="mt-3 text-sm text-white/75 leading-relaxed">
+            Admin and employee operations are now aligned in one management surface with clear role boundaries and shared execution data.
+          </p>
+          <Link href="/admin/squads" className="mt-6 inline-flex px-4 py-2 rounded-full bg-white text-[#031E49] text-sm font-bold hover:bg-[#F5F2EB]">
+            Open Squad Control
+          </Link>
+        </article>
+      </section>
 
-                {/* KPI Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                    {stats.map((s, i) => (
-                        <div key={i} className="bg-white rounded-2xl border border-[#031E49]/10 p-6 shadow-sm">
-                            <div className="text-sm font-medium text-[#0A2D6C]/60 mb-1">{s.label}</div>
-                            <div className="text-3xl font-bold text-[#031E49]">{s.value}</div>
-                            <div className={`mt-3 text-xs font-semibold ${s.positive ? 'text-[#00B16A]' : 'text-amber-600'}`}>{s.change}</div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Module Cards */}
-                <h2 className="text-xl font-bold text-[#031E49] mb-6">ERP Modules</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {modules.map((m, i) => (
-                        <Link key={i} href={m.href} className="group bg-white rounded-2xl border border-[#031E49]/10 p-6 shadow-sm hover:shadow-lg transition-all hover:-translate-y-0.5">
-                            <div className={`w-12 h-12 rounded-xl ${m.color} flex items-center justify-center mb-4`}>
-                                <m.icon className="w-6 h-6" />
-                            </div>
-                            <h3 className="font-bold text-[#031E49] mb-1 group-hover:text-[#00B16A] transition-colors">{m.name}</h3>
-                            <p className="text-sm text-[#0A2D6C]/50">{m.desc}</p>
-                        </Link>
-                    ))}
-                </div>
-            </main>
+      <section>
+        <h2 className="text-xl font-bold text-[#031E49] mb-4">Full Management Modules</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {modules.map((module) => (
+            <Link
+              key={module.href}
+              href={module.href}
+              className="group rounded-2xl border border-[#031E49]/10 bg-white p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
+            >
+              <div className={`h-10 w-10 rounded-xl ${module.tone} flex items-center justify-center`}>
+                <module.icon className="h-5 w-5" />
+              </div>
+              <h3 className="mt-4 text-base font-bold text-[#031E49] group-hover:text-[#00B16A]">{module.label}</h3>
+              <p className="mt-2 text-sm text-[#0A2D6C]/60">{module.desc}</p>
+            </Link>
+          ))}
         </div>
-    );
+      </section>
+    </OpsShell>
+  );
 }

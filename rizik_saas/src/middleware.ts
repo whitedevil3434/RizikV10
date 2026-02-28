@@ -1,44 +1,48 @@
-// filepath: /Users/sabbir/RizikV10/rizik_saas/src/middleware.ts
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { isAuthSurfacePath, isControlPlanePath } from "@/lib/auth/policy";
 
-// This is a placeholder for Supabase Auth Middleware
-// It ensures that /admin routes are protected and /portal is routed based on RBAC
+function hasSupabaseAuthCookie(request: NextRequest): boolean {
+    return request.cookies
+        .getAll()
+        .some((cookie) => cookie.name.includes("auth-token") && cookie.name.startsWith("sb-"));
+}
+
+function normalizeHost(hostname: string): string {
+    return hostname.trim().toLowerCase();
+}
 
 export function middleware(request: NextRequest) {
-    const path = request.nextUrl.pathname;
+    const pathname = request.nextUrl.pathname;
+    const search = request.nextUrl.search;
+    const isControlPlane = isControlPlanePath(pathname);
 
-    // We will integrate Supabase SSR auth here.
-    // For now, this is the architectural structure showing the BRAC-style separation.
+    const opsHost = process.env.OPS_HOSTNAME ? normalizeHost(process.env.OPS_HOSTNAME) : "";
+    const currentHost = normalizeHost(request.headers.get("host") || "");
+    const isOpsHost = Boolean(opsHost) && currentHost.split(":")[0] === opsHost.split(":")[0];
 
-    const isPublicRoute =
-        path === '/' ||
-        path === '/store' ||
-        path.startsWith('/mats') ||
-        path.startsWith('/bio-shield') ||
-        path.startsWith('/verify'); // The QR scanning route
-
-    const isAdminRoute = path.startsWith('/admin');
-    const isPortalRoute = path.startsWith('/portal'); // B2B Specific
-
-    // Example Logic (to be replaced with actual Supabase JWT check)
-    // const token = request.cookies.get('sb-access-token');
-    // const userRole = request.cookies.get('rzk-user-role')?.value || 'GUEST';
-
-    // *** DEVELOPMENT OVERRIDE FOR UI TESTING ***
-    // Bypassing strict auth checks so we can see the /admin and /portal pages
-
-    /*
-    if (isAdminRoute && userRole !== 'SUPER_ADMIN' && userRole !== 'LOGISTICS_MANAGER' && userRole !== 'PRODUCTION_MANAGER') {
-        // Redirect unauthorized users trying to access ERP
-        return NextResponse.redirect(new URL('/login?error=Unauthorized_ERP_Access', request.url));
+    // Optional host-level split: keep admin/portal under a dedicated ops hostname.
+    if (isControlPlane && opsHost && !isOpsHost) {
+        const opsUrl = request.nextUrl.clone();
+        opsUrl.host = opsHost;
+        return NextResponse.redirect(opsUrl);
     }
 
-    if (isPortalRoute && userRole !== 'B2B_BUYER' && userRole !== 'SUPER_ADMIN') {
-        // Redirect basic B2C customers away from the B2B wholesale board
-        return NextResponse.redirect(new URL('/store', request.url));
+    // Dedicated ops host should stay focused on control-plane routes.
+    if (opsHost && isOpsHost && !isControlPlane && !isAuthSurfacePath(pathname) && pathname !== "/account") {
+        const adminUrl = request.nextUrl.clone();
+        adminUrl.pathname = "/admin";
+        adminUrl.search = "";
+        return NextResponse.redirect(adminUrl);
     }
-    */
+
+    // Early auth gate for admin/portal paths. Role checks are handled in route layouts.
+    if (isControlPlane && !hasSupabaseAuthCookie(request)) {
+        const loginUrl = request.nextUrl.clone();
+        loginUrl.pathname = "/login";
+        loginUrl.search = `?next=${encodeURIComponent(`${pathname}${search}`)}`;
+        return NextResponse.redirect(loginUrl);
+    }
 
     return NextResponse.next();
 }
@@ -52,7 +56,8 @@ export const config = {
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
          * - rizik-logo.svg
+         * - rizik-mark.svg
          */
-        '/((?!api|_next/static|_next/image|favicon.ico|rizik-logo.svg).*)',
+        "/((?!api|_next/static|_next/image|favicon.ico|rizik-logo.svg|rizik-mark.svg).*)",
     ],
-}
+};

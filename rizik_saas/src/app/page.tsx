@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 
 export default function Home() {
@@ -16,7 +17,7 @@ export default function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00B16A] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00B16A]"></span>
             </span>
-            <span className="text-xs font-semibold text-[#031E49]/70">Phase 1: Empire Consolidation Active</span>
+            <span className="text-xs font-semibold text-[#031E49]/70">Integrated Manufacturing and Supply Platform</span>
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 text-[#031E49]">
@@ -26,8 +27,8 @@ export default function Home() {
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-[#0A2D6C]/60 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Rizik Global is the architectural nexus bridging sustainable manufacturing with God-tier Active Packaging. We don't just innovate; we dominate.
+          <p className="text-lg md:text-xl text-[#0A2D6C]/75 mb-10 max-w-2xl mx-auto leading-relaxed">
+            Rizik Global unifies sustainable manufacturing, advanced packaging, and enterprise distribution under one operating standard.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
@@ -44,6 +45,33 @@ export default function Home() {
             >
               Explore Bio-Shield Tech
             </Link>
+            <Link
+              href="/fair"
+              className="inline-flex items-center justify-center px-8 py-4 font-bold text-[#031E49] transition-all duration-200 bg-[#00B16A]/10 border-2 border-[#00B16A]/30 rounded-full hover:bg-[#00B16A]/20"
+            >
+              Join Rizik Fair
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="w-full py-16 bg-white border-t border-[#031E49]/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="rounded-3xl border border-[#031E49]/10 bg-[#F5F2EB] p-8 md:p-10">
+            <p className="text-xs uppercase tracking-[0.14em] text-[#00784D] font-semibold">Launch Campaign</p>
+            <h2 className="mt-3 text-3xl font-bold text-[#031E49]">Rizik Fair: Department War + Squad Workforce Entry</h2>
+            <p className="mt-4 max-w-3xl text-sm md:text-base text-[#0A2D6C]/70">
+              Label QR scans now route participants to fair onboarding, task dashboards, countdown tracking, and
+              department-level competition with sponsor and gift-hamper rewards.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/fair" className="px-5 py-2.5 rounded-full bg-[#031E49] text-white text-sm font-bold hover:bg-[#0A2D6C]">
+                Open Fair Landing
+              </Link>
+              <Link href="/community" className="px-5 py-2.5 rounded-full border border-[#031E49]/15 bg-white text-[#031E49] text-sm font-bold hover:bg-[#F5F2EB]">
+                View Community Feed
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -53,7 +81,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-[#031E49] mb-4">The Three Pillars of Rizik Global</h2>
-            <p className="text-[#0A2D6C]/60 max-w-2xl mx-auto">Our holding company operates across three core verticals, each designed to dominate its respective market.</p>
+            <p className="text-[#0A2D6C]/75 max-w-2xl mx-auto">Our holding company operates across three core verticals with shared quality, compliance, and execution standards.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Card 1 */}
@@ -64,8 +92,8 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-xl font-bold text-[#031E49] mb-3">Bio-Shield Poly-Tech</h3>
-              <p className="text-[#0A2D6C]/60 leading-relaxed">
-                The Triple-Layer Sandwich membrane. Our proprietary Chitosan/Collagen filter matrix allows perishables to breathe while locking out oxidation. 1-year shelf life under Retort (121°C).
+              <p className="text-[#0A2D6C]/75 leading-relaxed">
+                Multi-layer active packaging platform designed for stronger shelf stability, safer handling, and reliable performance across food supply workflows.
               </p>
             </div>
 
@@ -77,8 +105,8 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-xl font-bold text-[#031E49] mb-3">Global B2B Logistics</h3>
-              <p className="text-[#0A2D6C]/60 leading-relaxed">
-                Direct distribution to mosques, corporate events, and agro-processors. Our internal Portal connects "Rizik Force" elements to immediate market demands with real-time tracking.
+              <p className="text-[#0A2D6C]/75 leading-relaxed">
+                Direct distribution to mosques, corporate events, and agro-processors with centralized planning, fulfillment visibility, and delivery controls.
               </p>
             </div>
 
@@ -90,10 +118,54 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-xl font-bold text-[#031E49] mb-3">Community Economics</h3>
-              <p className="text-[#0A2D6C]/60 leading-relaxed">
+              <p className="text-[#0A2D6C]/75 leading-relaxed">
                 Empowering rural networks (Barishal base) by decentralizing production. From bespoke Mosque prints to Ramadan Glow-in-the-Dark series—engineered for localized mass scaling.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Visual Storytelling */}
+      <section className="w-full py-20 bg-[#F5F2EB] border-t border-[#031E49]/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
+            <div>
+              <p className="text-xs uppercase tracking-[0.14em] text-[#00784D] font-semibold">Field Stories</p>
+              <h2 className="mt-2 text-3xl font-bold text-[#031E49]">From Community Node to Global Supply</h2>
+            </div>
+            <Link href="/subsidiaries" className="text-sm font-bold text-[#031E49] hover:text-[#00B16A]">
+              Explore All Units
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <article className="bg-white rounded-3xl border border-[#031E49]/10 overflow-hidden shadow-sm">
+              <Image src="/story/mosque-case.jpg" alt="Mosque distribution case" width={960} height={640} className="w-full h-52 object-cover" />
+              <div className="p-6">
+                <p className="text-xs uppercase tracking-[0.12em] text-[#031E49]/70 font-semibold">Case Study 01</p>
+                <h3 className="mt-2 text-xl font-bold text-[#031E49]">Mosque Fleet Delivery</h3>
+                <p className="mt-3 text-sm text-[#0A2D6C]/70">Glow-series mats deployed across clustered Ramadan schedules with synchronized logistics windows.</p>
+              </div>
+            </article>
+
+            <article className="bg-white rounded-3xl border border-[#031E49]/10 overflow-hidden shadow-sm">
+              <Image src="/story/agro-case.jpg" alt="Agro processing case" width={960} height={640} className="w-full h-52 object-cover" />
+              <div className="p-6">
+                <p className="text-xs uppercase tracking-[0.12em] text-[#031E49]/70 font-semibold">Case Study 02</p>
+                <h3 className="mt-2 text-xl font-bold text-[#031E49]">Agro Processor Pilot</h3>
+                <p className="mt-3 text-sm text-[#0A2D6C]/70">Bio-Shield membranes tested for spice and vegetable shelf-life extension in decentralized operations.</p>
+              </div>
+            </article>
+
+            <article className="bg-white rounded-3xl border border-[#031E49]/10 overflow-hidden shadow-sm">
+              <Image src="/story/export-case.jpg" alt="Export readiness case" width={960} height={640} className="w-full h-52 object-cover" />
+              <div className="p-6">
+                <p className="text-xs uppercase tracking-[0.12em] text-[#031E49]/70 font-semibold">Case Study 03</p>
+                <h3 className="mt-2 text-xl font-bold text-[#031E49]">Export Chain Readiness</h3>
+                <p className="mt-3 text-sm text-[#0A2D6C]/70">Traceability-linked packaging flow prepared for high-volume outbound handling and compliance review.</p>
+              </div>
+            </article>
           </div>
         </div>
       </section>

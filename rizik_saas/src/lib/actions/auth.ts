@@ -2,7 +2,42 @@
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/client";
+import { ADMIN_ROLES, canAccessPortalRole, isControlPlanePath } from "@/lib/auth/policy";
 import { redirect } from "next/navigation";
+import { createHash } from "crypto";
+
+function buildShadowPassword(firebaseUid: string): string {
+    const salt = (process.env.FIREBASE_SHADOW_PASSWORD_SALT || process.env.SUPABASE_SERVICE_ROLE_KEY || "rizik-shadow-fallback").trim();
+    const digest = createHash("sha256").update(`${firebaseUid}:${salt}`).digest("hex");
+    return `${digest.slice(0, 30)}#Rz!`;
+}
+
+async function findAuthUserIdByEmail(
+    adminSupabase: ReturnType<typeof createAdminClient>,
+    email: string
+): Promise<string | null> {
+    const normalizedEmail = email.trim().toLowerCase();
+    let page = 1;
+    const perPage = 200;
+    const maxPages = 50;
+
+    while (page <= maxPages) {
+        const { data, error } = await adminSupabase.auth.admin.listUsers({ page, perPage });
+        if (error) {
+            console.error("Firebase sync list users error:", error);
+            return null;
+        }
+
+        const users = data?.users || [];
+        const match = users.find((u) => u.email?.trim().toLowerCase() === normalizedEmail);
+        if (match?.id) return match.id;
+        if (users.length < perPage) return null;
+
+        page += 1;
+    }
+
+    return null;
+}
 
 /**
  * Server Action: Sign up with email/password.
@@ -23,42 +58,69 @@ export async function signUpAction(formData: FormData) {
     if (error) return { error: error.message };
 
     if (data.user) {
-        await supabase.from("user_profiles").insert({
-            id: data.user.id,
-            full_name: fullName,
-            role: "CUSTOMER",
-        });
+        try {
+            const adminSupabase = createAdminClient();
+            await adminSupabase.from("user_profiles").upsert({
+                id: data.user.id,
+                full_name: fullName,
+                role: "CUSTOMER",
+            }, { onConflict: "id" });
+        } catch {
+            await supabase.from("user_profiles").upsert({
+                id: data.user.id,
+                full_name: fullName,
+                role: "CUSTOMER",
+            }, { onConflict: "id" });
+        }
     }
 
-    redirect("/store");
+    return { redirectTo: "/store" };
 }
 
 /**
  * Server Action: Sign in with email/password.
- * Redirects based on user role (BRAC-style RBAC).
+ * Redirects based on user role (RBAC).
  */
 export async function signInAction(formData: FormData) {
     const supabase = await createServerSupabaseClient();
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
+    const requestedNext = (formData.get("next") as string | null) ?? "";
+    const safeNext = requestedNext.startsWith("/") && !requestedNext.startsWith("//")
+        ? requestedNext
+        : "";
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
 
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-        const { data: profile } = await supabase
-            .from("user_profiles")
-            .select("role")
-            .eq("id", user.id)
-            .single();
+        try {
+            const adminSupabase = createAdminClient();
+            const { data: profile } = await adminSupabase
+                .from("user_profiles")
+                .select("role")
+                .eq("id", user.id)
+                .maybeSingle();
 
-        const adminRoles = ["SUPER_ADMIN", "PRODUCTION_MANAGER", "LOGISTICS_MANAGER"];
-        if (profile?.role && adminRoles.includes(profile.role)) redirect("/admin");
-        if (profile?.role === "B2B_BUYER") redirect("/portal");
+            const role = profile?.role || "CUSTOMER";
+            const isAdmin = ADMIN_ROLES.includes(role as (typeof ADMIN_ROLES)[number]);
+            const isPortal = canAccessPortalRole(role);
+
+            if (safeNext && !isControlPlanePath(safeNext)) return { redirectTo: safeNext };
+            if (safeNext.startsWith("/admin") && isAdmin) return { redirectTo: safeNext };
+            if (safeNext.startsWith("/portal") && isPortal) return { redirectTo: safeNext };
+
+            if (isAdmin) return { redirectTo: "/admin" };
+            if (isPortal) return { redirectTo: "/portal" };
+        } catch {
+            if (safeNext && !isControlPlanePath(safeNext)) {
+                return { redirectTo: safeNext };
+            }
+        }
     }
 
-    redirect("/store");
+    return { redirectTo: "/store" };
 }
 
 /**
@@ -75,14 +137,18 @@ export async function signOutAction() {
  * Maps a Firebase user to a Supabase session by creating/verifying a shadow auth user.
  */
 export async function syncFirebaseUserAndSignInAction(firebaseUser: { uid: string, email: string, name: string, photoUrl: string }) {
+    if (!firebaseUser.email) {
+        return { error: "Google account is missing an email address." };
+    }
+
     const adminSupabase = createAdminClient();
     const ssrSupabase = await createServerSupabaseClient();
-    const dummyPassword = `${firebaseUser.uid}#RizikV10`; // Deterministic password based on Firebase UID
+    const shadowPassword = buildShadowPassword(firebaseUser.uid);
 
     // 1. Try to create the user in Supabase Auth as auto-confirmed
     const { data: newAuthUser, error: createError } = await adminSupabase.auth.admin.createUser({
         email: firebaseUser.email,
-        password: dummyPassword,
+        password: shadowPassword,
         email_confirm: true,
         user_metadata: { full_name: firebaseUser.name, avatar_url: firebaseUser.photoUrl }
     });
@@ -96,40 +162,40 @@ export async function syncFirebaseUserAndSignInAction(firebaseUser: { uid: strin
     // 2. Insert or Update user profile 
     // We do this whether newly created or already existing (to update name/avatar if needed)
     // To do this, we need the Supabase UID. 
-    let supabaseUid = newAuthUser?.user?.id;
+    let supabaseUid: string | null = newAuthUser?.user?.id ?? null;
 
     if (!supabaseUid) {
-        // User already existed, fetch their ID
-        const { data: existingUsers } = await adminSupabase.auth.admin.listUsers();
-        const existingUser = existingUsers?.users?.find((u) => u.email === firebaseUser.email);
-        supabaseUid = existingUser?.id;
+        // User already existed, fetch their ID with paginated lookup.
+        supabaseUid = await findAuthUserIdByEmail(adminSupabase, firebaseUser.email);
     }
 
     if (supabaseUid) {
-        await adminSupabase.from("user_profiles").upsert({
-            id: supabaseUid,
-            full_name: firebaseUser.name,
-            avatar_url: firebaseUser.photoUrl,
-            role: "CUSTOMER" // Default role, upsert might overwrite admin role if not careful, so let's only do it if it fails to find one
-        }, { onConflict: 'id' }).select();
+        // Keep a deterministic but secret-salted password for account-link sign-in.
+        await adminSupabase.auth.admin.updateUserById(supabaseUid, {
+            password: shadowPassword,
+            user_metadata: { full_name: firebaseUser.name, avatar_url: firebaseUser.photoUrl },
+        });
 
-        // Actually, to avoid accidentally overwriting a SUPER_ADMIN role with CUSTOMER upon re-login,
-        // let's only insert it if it doesn't already exist.
-        const { data: profile } = await adminSupabase.from("user_profiles").select("role").eq("id", supabaseUid).single();
+        const { data: profile } = await adminSupabase
+            .from("user_profiles")
+            .select("role")
+            .eq("id", supabaseUid)
+            .maybeSingle();
+
         if (!profile) {
-            await adminSupabase.from("user_profiles").insert({
+            await adminSupabase.from("user_profiles").upsert({
                 id: supabaseUid,
                 full_name: firebaseUser.name,
                 avatar_url: firebaseUser.photoUrl,
                 role: "CUSTOMER"
-            });
+            }, { onConflict: "id" });
         }
     }
 
     // 3. Sign them in using the SSR client to set the cookies
     const { error: signInError } = await ssrSupabase.auth.signInWithPassword({
         email: firebaseUser.email,
-        password: dummyPassword
+        password: shadowPassword
     });
 
     if (signInError) {
@@ -144,12 +210,11 @@ export async function syncFirebaseUserAndSignInAction(firebaseUser: { uid: strin
             .from("user_profiles")
             .select("role")
             .eq("id", user.id)
-            .single();
+            .maybeSingle();
 
-        const adminRoles = ["SUPER_ADMIN", "PRODUCTION_MANAGER", "LOGISTICS_MANAGER"];
-        if (profile?.role && adminRoles.includes(profile.role)) redirect("/admin");
-        if (profile?.role === "B2B_BUYER") redirect("/portal");
+        if (profile?.role && ADMIN_ROLES.includes(profile.role as (typeof ADMIN_ROLES)[number])) return { redirectTo: "/admin" };
+        if (profile?.role && canAccessPortalRole(profile.role)) return { redirectTo: "/portal" };
     }
 
-    redirect("/store");
+    return { redirectTo: "/store" };
 }

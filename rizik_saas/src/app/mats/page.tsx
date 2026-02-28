@@ -8,13 +8,13 @@ export default function MatsPage() {
             <section className="relative w-full py-24 flex flex-col items-center justify-center overflow-hidden border-b border-[#031E49]/10 bg-white">
                 <div className="max-w-4xl mx-auto px-4 text-center z-10">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#031E49]/5 border border-[#031E49]/10 mb-6">
-                        <span className="text-xs font-semibold text-[#031E49]/70">Targeting: Ramadan 2026</span>
+                        <span className="text-xs font-semibold text-[#031E49]/70">Seasonal Campaign Ready</span>
                     </div>
                     <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 text-[#031E49]">
                         Barishal <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00B16A] to-emerald-600">Eco-Mats</span>
                     </h1>
                     <p className="text-lg md:text-xl text-[#0A2D6C]/60 max-w-2xl mx-auto leading-relaxed">
-                        100% biodegradable, non-woven prayer mats engineered to dominate the import market through radical localization and aggressive pricing.
+                        100% biodegradable, non-woven prayer mats designed for reliable quality, local production, and accessible pricing.
                     </p>
                 </div>
             </section>
@@ -27,22 +27,22 @@ export default function MatsPage() {
                         {/* Feature 1 */}
                         <div className="p-6 rounded-3xl bg-white border border-[#031E49]/10 flex flex-col h-full hover:-translate-y-1 transition-transform duration-300 hover:shadow-lg">
                             <div className="w-10 h-10 rounded-full bg-[#031E49]/5 flex items-center justify-center mb-4 text-lg">💰</div>
-                            <h3 className="text-lg font-bold text-[#031E49] mb-2">Aggressive Pricing</h3>
-                            <p className="text-sm text-[#0A2D6C]/60">Priced between 50-150 BDT, undercutting Turkish and Chinese imports entirely for the mass market.</p>
+                            <h3 className="text-lg font-bold text-[#031E49] mb-2">Accessible Pricing</h3>
+                            <p className="text-sm text-[#0A2D6C]/60">Priced between 50-150 BDT to support broad affordability for institutional and community buyers.</p>
                         </div>
 
                         {/* Feature 2 */}
                         <div className="p-6 rounded-3xl bg-white border border-[#031E49]/10 flex flex-col h-full hover:-translate-y-1 transition-transform duration-300 hover:shadow-lg">
                             <div className="w-10 h-10 rounded-full bg-[#00B16A]/10 flex items-center justify-center mb-4 text-[#00B16A] text-lg">✨</div>
                             <h3 className="text-lg font-bold text-[#031E49] mb-2">Glow-in-the-Dark</h3>
-                            <p className="text-sm text-[#0A2D6C]/60">Specially formulated glow ink array designed specifically for Taraweeh and Tahajjud night prayers.</p>
+                            <p className="text-sm text-[#0A2D6C]/60">Low-light visual guidance designed for night-prayer use cases.</p>
                         </div>
 
                         {/* Feature 3 */}
                         <div className="p-6 rounded-3xl bg-white border border-[#031E49]/10 flex flex-col h-full hover:-translate-y-1 transition-transform duration-300 hover:shadow-lg">
                             <div className="w-10 h-10 rounded-full bg-[#031E49]/5 flex items-center justify-center mb-4 text-lg">🌸</div>
                             <h3 className="text-lg font-bold text-[#031E49] mb-2">Oud & Jasmine Infused</h3>
-                            <p className="text-sm text-[#0A2D6C]/60">Fabric chemically bonded with traditional scents to create a fully immersive sensory experience.</p>
+                            <p className="text-sm text-[#0A2D6C]/60">Premium fragrance option for specialized retail and gifting channels.</p>
                         </div>
 
                         {/* Feature 4 */}
@@ -64,10 +64,10 @@ export default function MatsPage() {
                             For mosques, corporate gifting, and massive event distributions. Custom prints (names/logos) available for orders exceeding 5,000 units.
                         </p>
                         <Link
-                            href="/portal"
+                            href="/b2b"
                             className="relative z-10 inline-flex items-center justify-center px-8 py-4 font-bold text-[#031E49] transition-all duration-200 bg-[#F5F2EB] rounded-full hover:bg-white shadow-lg"
                         >
-                            Access the B2B Portal
+                            Request B2B Access
                         </Link>
                     </div>
                 </div>
