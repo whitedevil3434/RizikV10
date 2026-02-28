@@ -26,10 +26,13 @@ The Rizik Super-App utilizes a high-performance, hybrid cloud architecture desig
 - **Intelligence**: **Workers AI** (Llama 3.1, Mistral, Whisper for STT).
 
 ### C. Backend Middleware - Vercel Deployment
-- **Project**: `link-call-web` (Next.js 16)
-- **Role**:
-    - **LiveKit Integration**: Generates access tokens for WebRTC voice/video calls.
-    - **Gemini AI Middleware**: Connects to `gemini-2.0-flash` for real-time 3D scene generation (used in the "Hybrid Portal" UI).
+- **Project**: `link-call-web` (Next.js 16 + React 19)
+- **Status**: **Fully Functional Production-Ready Environment**
+- **Key Modules**:
+    - **Rizik 3D Studio (`/editor`)**: A powerful web-based editor for orchestrating 3D environments using Three.js (React Three Fiber).
+    - **Gemini AI Integration**: Uses `gemini-2.0-flash` to transform natural language into complex 3D scenes (found in `/api/gemini`).
+    - **LiveKit Call System**: Robust WebRTC signaling and token generation (`/api/token`) for the Super-App's voice features.
+    - **Aesthetic UI**: Integrated with Framer Motion, GSAP, and Tailwind CSS 4 for a premium "Apple-style" dark interface.
 - **Deployment URL**: `https://link-call-web.vercel.app`
 
 ### D. Data & Auth - Supabase
