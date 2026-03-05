@@ -5,6 +5,8 @@ import { getCurrentUserContext } from '@/lib/auth/session';
 import { canAccessAdminRole, canAccessPortalRole } from '@/lib/auth/policy';
 import './globals.css';
 
+export const runtime = 'edge';
+
 export const metadata: Metadata = {
   title: 'Rizik Global | Engineering the Future of Eco-Tech & Food Safety',
   description: 'Rizik Global is the holding company for Rizik EcoMat, Rizik BioShield, and enterprise supply operations.',
@@ -76,7 +78,6 @@ export default async function RootLayout({
                     </Link>
                   ))}
                   <Link href="/store" className="text-[#031E49]/80 hover:text-[#031E49] px-2 py-2 rounded-md text-sm font-semibold transition-colors">E-Commerce</Link>
-                  <Link href="/bio-shield" className="text-[#031E49]/80 hover:text-[#031E49] px-2 py-2 rounded-md text-sm font-semibold transition-colors">Bio-Shield R&D</Link>
                   <Link href="/cart" className="text-[#031E49]/80 hover:text-[#031E49] px-2 py-2 rounded-md text-sm font-semibold transition-colors">
                     <svg className="w-5 h-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" /></svg>
                     Cart

@@ -1,25 +1,18 @@
-"use client";
-
 import OpsShell from "@/components/workspace/ops-shell";
 import { portalNavItems } from "@/lib/workspace/nav";
+import { getEmployeeTasks, type OpsTask } from "@/lib/ops/data";
 
-const todo = [
-  { task: "Confirm shipment docs for Noor Holdings", owner: "Logistics", due: "11:00" },
-  { task: "Upload QA evidence for batch RB-PRD-2203", owner: "Production", due: "12:15" },
-  { task: "Reply to enterprise escalation thread", owner: "Support", due: "13:00" },
-];
+function groupTasks(tasks: OpsTask[]) {
+  const todo = tasks.filter((task) => task.status === "TODO");
+  const doing = tasks.filter((task) => task.status === "IN_PROGRESS");
+  const done = tasks.filter((task) => task.status === "DONE");
+  return { todo, doing, done };
+}
 
-const doing = [
-  { task: "Finalize warehouse picklist", owner: "Supply", due: "In progress" },
-  { task: "Cross-check SKU shortage with catalog", owner: "Inventory", due: "In progress" },
-];
+export default async function PortalTasksPage() {
+  const tasks = await getEmployeeTasks(100);
+  const grouped = groupTasks(tasks);
 
-const done = [
-  { task: "Morning shift attendance lock", owner: "People Ops", due: "09:00" },
-  { task: "Dispatch slot approval", owner: "Admin", due: "09:20" },
-];
-
-export default function PortalTasksPage() {
   return (
     <OpsShell
       title="My Tasks"
@@ -35,25 +28,31 @@ export default function PortalTasksPage() {
       ]}
     >
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-        <TaskColumn title="To Do" tone="border-[#031E49]/15 bg-white" items={todo} />
-        <TaskColumn title="In Progress" tone="border-[#031E49]/15 bg-white" items={doing} />
-        <TaskColumn title="Completed" tone="border-[#031E49]/15 bg-white" items={done} />
+        <TaskColumn title="To Do" items={grouped.todo} />
+        <TaskColumn title="In Progress" items={grouped.doing} />
+        <TaskColumn title="Completed" items={grouped.done} />
       </section>
     </OpsShell>
   );
 }
 
-function TaskColumn({ title, items, tone }: { title: string; items: { task: string; owner: string; due: string }[]; tone: string }) {
+function TaskColumn({ title, items }: { title: string; items: OpsTask[] }) {
   return (
-    <article className={`rounded-2xl border ${tone} p-4 shadow-sm`}>
+    <article className="rounded-2xl border border-[#031E49]/15 bg-white p-4 shadow-sm">
       <h2 className="text-sm font-bold text-[#031E49] mb-3">{title}</h2>
       <div className="space-y-3">
-        {items.map((item) => (
-          <div key={item.task} className="rounded-xl border border-[#031E49]/10 bg-[#F5F2EB]/45 p-3">
-            <p className="text-sm font-semibold text-[#031E49]">{item.task}</p>
-            <p className="mt-1 text-xs text-[#0A2D6C]/60">Owner: {item.owner} · Due: {item.due}</p>
-          </div>
-        ))}
+        {items.length === 0 ? (
+          <p className="text-xs text-[#0A2D6C]/55">No records.</p>
+        ) : (
+          items.map((item) => (
+            <div key={item.id} className="rounded-xl border border-[#031E49]/10 bg-[#F5F2EB]/45 p-3">
+              <p className="text-sm font-semibold text-[#031E49]">{item.title}</p>
+              <p className="mt-1 text-xs text-[#0A2D6C]/60">
+                Owner: {item.owner_team || "Ops"} · Due: {item.due_at ? new Date(item.due_at).toLocaleString("en-GB", { timeZone: "Asia/Dhaka" }) : "-"}
+              </p>
+            </div>
+          ))
+        )}
       </div>
     </article>
   );

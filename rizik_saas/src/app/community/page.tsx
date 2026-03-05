@@ -6,11 +6,17 @@ import { getCommunityFeed } from "@/lib/community/data";
 const infoMessages: Record<string, string> = {
   posted: "Your post is now published.",
   commented: "Comment added successfully.",
+  submitted: "Post submitted for moderation review.",
+  comment_pending: "Comment submitted and waiting moderation.",
 };
 
 const errorMessages: Record<string, string> = {
   post_too_short: "Post text is too short.",
   post_failed: "Post could not be saved.",
+  invalid_image_type: "Only JPG, PNG, or WEBP images are allowed.",
+  image_too_large: "Image exceeds the 5 MB limit.",
+  image_upload_failed: "Image upload failed. Try again.",
+  media_record_failed: "Media record failed to save.",
   invalid_comment: "Comment is invalid.",
   comment_failed: "Comment could not be saved.",
 };
@@ -18,7 +24,13 @@ const errorMessages: Record<string, string> = {
 export default async function CommunityPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ posted?: string; commented?: string; error?: string }>;
+  searchParams?: Promise<{
+    posted?: string;
+    commented?: string;
+    submitted?: string;
+    comment_pending?: string;
+    error?: string;
+  }>;
 }) {
   const params = (await searchParams) || {};
   const { user } = await getCurrentUserContext();
@@ -36,7 +48,7 @@ export default async function CommunityPage({
           customer privacy.
         </p>
 
-        {params.posted || params.commented || params.error ? (
+        {params.posted || params.commented || params.submitted || params.comment_pending || params.error ? (
           <div className="mt-5 space-y-2">
             {params.posted ? (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
@@ -46,6 +58,16 @@ export default async function CommunityPage({
             {params.commented ? (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
                 {infoMessages.commented}
+              </div>
+            ) : null}
+            {params.submitted ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+                {infoMessages.submitted}
+              </div>
+            ) : null}
+            {params.comment_pending ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+                {infoMessages.comment_pending}
               </div>
             ) : null}
             {params.error ? (
@@ -68,11 +90,15 @@ export default async function CommunityPage({
                   placeholder="Share your update, experience, or review."
                   className="w-full rounded-xl border border-[#031E49]/15 bg-[#F5F2EB]/50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#031E49]/20"
                 />
-                <input
-                  name="image_url"
-                  placeholder="Image URL (optional)"
-                  className="w-full rounded-xl border border-[#031E49]/15 bg-[#F5F2EB]/50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#031E49]/20"
-                />
+                <label className="block">
+                  <span className="text-xs font-semibold text-[#031E49]/70">Attach image (optional, max 5 MB)</span>
+                  <input
+                    type="file"
+                    name="image_file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="mt-1.5 w-full rounded-xl border border-[#031E49]/15 bg-[#F5F2EB]/50 px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-[#031E49] file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white"
+                  />
+                </label>
                 <button
                   type="submit"
                   className="px-5 py-2.5 rounded-full bg-[#031E49] text-white text-sm font-bold hover:bg-[#0A2D6C]"
@@ -114,14 +140,9 @@ export default async function CommunityPage({
                   <p className="mt-3 text-sm text-[#0A2D6C]/75 leading-relaxed">{post.post_text}</p>
 
                   {post.image_url ? (
-                    <a
-                      href={post.image_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-3 inline-flex text-xs font-bold text-[#00B16A] hover:text-emerald-700"
-                    >
-                      View attached image
-                    </a>
+                    <div className="mt-3 rounded-xl border border-[#031E49]/10 overflow-hidden bg-white">
+                      <img src={post.image_url} alt="Community attachment" className="w-full max-h-80 object-cover" />
+                    </div>
                   ) : null}
 
                   <div className="mt-4 space-y-2">

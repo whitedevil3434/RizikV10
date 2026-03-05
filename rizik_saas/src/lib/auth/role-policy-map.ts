@@ -7,6 +7,9 @@ export type Permission =
   | "account:manage"
   | "b2b:inquiry"
   | "portal:view"
+  | "portal:checkin"
+  | "portal:report_issue"
+  | "portal:logistics"
   | "admin:view"
   | "admin:manage_users"
   | "admin:manage_catalog"
@@ -25,9 +28,21 @@ export const ROLE_POLICY_MAP: Record<AppRole, { label: string; permissions: Perm
     label: "B2B Buyer",
     permissions: ["public:view", "store:view", "checkout:use", "account:manage", "b2b:inquiry", "portal:view"],
   },
+  FACTORY_WORKER: {
+    label: "Factory Worker",
+    permissions: ["public:view", "portal:view", "portal:checkin", "portal:report_issue"],
+  },
+  DELIVERY_AGENT: {
+    label: "Delivery Agent",
+    permissions: ["public:view", "portal:view", "portal:checkin", "portal:report_issue", "portal:logistics"],
+  },
+  GENERAL_STAFF: {
+    label: "General Staff",
+    permissions: ["public:view", "portal:view", "portal:checkin", "portal:report_issue"],
+  },
   SUPPORT_AGENT: {
     label: "Support Agent",
-    permissions: ["public:view", "store:view", "account:manage", "portal:view", "admin:view", "admin:manage_orders"],
+    permissions: ["public:view", "store:view", "account:manage", "portal:view", "portal:checkin", "portal:report_issue", "portal:logistics", "admin:view", "admin:manage_orders"],
   },
   PRODUCTION_MANAGER: {
     label: "Production Manager",
@@ -36,6 +51,9 @@ export const ROLE_POLICY_MAP: Record<AppRole, { label: string; permissions: Perm
       "store:view",
       "account:manage",
       "portal:view",
+      "portal:checkin",
+      "portal:report_issue",
+      "portal:logistics",
       "admin:view",
       "admin:manage_orders",
       "admin:manage_catalog",
@@ -48,6 +66,9 @@ export const ROLE_POLICY_MAP: Record<AppRole, { label: string; permissions: Perm
       "store:view",
       "account:manage",
       "portal:view",
+      "portal:checkin",
+      "portal:report_issue",
+      "portal:logistics",
       "admin:view",
       "admin:manage_orders",
     ],
@@ -61,6 +82,9 @@ export const ROLE_POLICY_MAP: Record<AppRole, { label: string; permissions: Perm
       "account:manage",
       "b2b:inquiry",
       "portal:view",
+      "portal:checkin",
+      "portal:report_issue",
+      "portal:logistics",
       "admin:view",
       "admin:manage_users",
       "admin:manage_catalog",

@@ -3,7 +3,7 @@ import { signOutAction } from "@/lib/actions/auth";
 import { updateAccountProfileAction } from "@/lib/actions/account";
 import { createAdminClient } from "@/lib/supabase/client";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { UserCircleIcon, BellIcon, ShieldCheckIcon, ArrowRightStartOnRectangleIcon } from "@heroicons/react/24/outline";
+import { UserCircleIcon, BellIcon, ShieldCheckIcon, ArrowRightStartOnRectangleIcon, ClipboardDocumentListIcon } from "@heroicons/react/24/outline";
 
 const errorMessages: Record<string, string> = {
     invalid_name: "Full name must be between 2 and 120 characters.",
@@ -17,6 +17,62 @@ function initialsFromName(name: string): string {
         .slice(0, 2)
         .map((part) => part[0]?.toUpperCase() || "")
         .join("") || "R";
+}
+
+const statusColors: Record<string, string> = {
+    PENDING: "bg-amber-100 text-amber-700",
+    CONFIRMED: "bg-blue-100 text-blue-700",
+    MANUFACTURING: "bg-indigo-100 text-indigo-700",
+    QA_HOLD: "bg-orange-100 text-orange-700",
+    SHIPPED: "bg-cyan-100 text-cyan-700",
+    DELIVERED: "bg-emerald-100 text-emerald-700",
+    CANCELLED: "bg-red-100 text-red-700",
+};
+
+async function OrderHistorySection({ customerName }: { customerName: string }) {
+    let orders: Array<{ order_code: string; product_sku: string | null; quantity: number; unit_price_bdt: number; status: string; created_at: string }> = [];
+    try {
+        const admin = createAdminClient();
+        const { data } = await admin
+            .from("rizik_order_records")
+            .select("order_code, product_sku, quantity, unit_price_bdt, status, created_at")
+            .eq("customer_name", customerName)
+            .order("created_at", { ascending: false })
+            .limit(20);
+        orders = (data || []) as typeof orders;
+    } catch { /* empty */ }
+
+    return (
+        <div className="bg-white rounded-2xl border border-[#031E49]/10 p-8 shadow-sm mb-6">
+            <div className="flex items-center gap-2 mb-6">
+                <ClipboardDocumentListIcon className="w-5 h-5 text-[#00B16A]" />
+                <h2 className="text-lg font-bold text-[#031E49]">Order History</h2>
+            </div>
+
+            {orders.length === 0 ? (
+                <p className="text-sm text-[#0A2D6C]/50">No orders found. Place your first order from the store!</p>
+            ) : (
+                <div className="space-y-3">
+                    {orders.map((order) => (
+                        <div key={order.order_code} className="flex items-center justify-between p-4 rounded-xl border border-[#031E49]/10 hover:bg-[#F5F2EB]/50 transition-colors">
+                            <div className="min-w-0">
+                                <p className="text-sm font-bold text-[#031E49] font-mono">#{order.order_code}</p>
+                                <p className="text-xs text-[#0A2D6C]/50 mt-0.5">
+                                    {order.product_sku} × {order.quantity} &middot; {new Date(order.created_at).toLocaleDateString("en-GB")}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                                <p className="text-sm font-semibold text-[#031E49]">৳{(order.unit_price_bdt * order.quantity).toLocaleString()}</p>
+                                <span className={`px-2.5 py-1 rounded text-[11px] font-semibold ${statusColors[order.status] || "bg-gray-100 text-gray-700"}`}>
+                                    {order.status}
+                                </span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 }
 
 export default async function AccountPage({
@@ -168,6 +224,9 @@ export default async function AccountPage({
                         <p className="text-xs text-[#0A2D6C]/40">Use account recovery in login screen for secure reset</p>
                     </button>
                 </div>
+
+                {/* Order History */}
+                <OrderHistorySection customerName={resolvedName} />
 
                 {/* Sign Out */}
                 <form action={signOutAction}>

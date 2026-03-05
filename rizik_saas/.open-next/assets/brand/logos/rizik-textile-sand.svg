@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" fill="none">
+  <rect width="1200" height="640" fill="#F5F2EB"/>
+  <g transform="translate(140 220)" fill="#8A6A3F">
+    <path d="M30 0C45 0 50 10 45 25L20 50H5L15 35C20 25 10 15 0 30L-15 45V65H0V40C0 20 10 0 30 0Z"/>
+    <path d="M22 65H45L20 40L5 55Z"/>
+  </g>
+  <g transform="translate(300 225)" fill="#2E2B2B">
+    <path d="M0 0H30V20H62V45H30V112H0Z"/>
+    <path d="M88 0H118V112H88Z"/>
+    <path d="M150 0H236V24L175 88H236V112H150V88L211 24H150Z"/>
+    <path d="M264 0H294V112H264Z"/>
+    <path d="M326 0H356V112H326Z"/>
+    <path d="M356 46L418 0H462L394 55L468 112H424L356 62V46Z"/>
+  </g>
+  <text x="330" y="430" fill="#8A6A3F" font-size="74" font-family="Avenir Next, Segoe UI, sans-serif" letter-spacing="30">TEXTILE</text>
+</svg>

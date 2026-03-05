@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" fill="none">
+  <rect width="1600" height="1000" fill="#EFEADE"/>
+  <rect x="110" y="170" width="1380" height="720" rx="26" fill="#A07A55"/>
+  <rect x="220" y="280" width="1140" height="470" rx="24" fill="#8BA286"/>
+  <g stroke="#4E6B53" stroke-width="4" opacity="0.9">
+    <path d="M360 680C470 520 590 430 790 370"/>
+    <path d="M790 370C950 330 1110 360 1220 470"/>
+    <path d="M520 635C590 580 660 540 730 520"/>
+    <path d="M910 470C970 510 1020 560 1060 620"/>
+  </g>
+  <rect x="560" y="760" width="480" height="88" rx="44" fill="#F4E9DA"/>
+  <text x="800" y="816" text-anchor="middle" fill="#49644F" font-size="42" font-family="Avenir Next, Segoe UI, sans-serif" font-weight="700">Rizik Textile · Eco Leaf Canvas</text>
+</svg>

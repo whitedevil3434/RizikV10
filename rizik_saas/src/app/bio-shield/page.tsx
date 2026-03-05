@@ -1,4 +1,13 @@
-export default function BioShieldPage() {
+import { redirect } from "next/navigation";
+import { getCurrentUserContext } from "@/lib/auth/session";
+import { canAccessAdminRole } from "@/lib/auth/policy";
+
+export default async function BioShieldPage() {
+    const { role } = await getCurrentUserContext();
+    if (!canAccessAdminRole(role)) {
+        redirect("/");
+    }
+
     return (
         <div className="flex flex-col items-center w-full bg-[#F5F2EB] min-h-screen">
 

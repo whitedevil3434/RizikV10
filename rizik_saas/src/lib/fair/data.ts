@@ -52,31 +52,20 @@ export interface FairTaskProgress {
 }
 
 const fallbackEvent: FairEvent = {
-  id: "fallback-fair",
+  id: "unconfigured-fair",
   slug: DEFAULT_FAIR_SLUG,
-  name: "Rizik Fair 2026",
-  tagline: "Department War + Squad Workforce Launch",
+  name: "Rizik Fair",
+  tagline: "Configuration required",
   description:
-    "Scan the label QR, create your fair account, complete launch tasks, and compete for department prizes and sponsor slots.",
-  event_starts_at: "2026-03-28T10:00:00+06:00",
-  event_ends_at: "2026-03-28T20:00:00+06:00",
-  registration_deadline: "2026-03-27T23:59:59+06:00",
+    "Fair data is loaded from the database. No active event is currently configured.",
+  event_starts_at: "2030-01-01T00:00:00+06:00",
+  event_ends_at: "2030-01-01T00:00:00+06:00",
+  registration_deadline: "2030-01-01T00:00:00+06:00",
 };
 
-const fallbackDepartments: FairDepartment[] = [
-  { id: "dept-cse", department_code: "CSE", department_name: "Computer Science & Engineering", institution_name: "Rizik Partner University", total_points: 1180 },
-  { id: "dept-eee", department_code: "EEE", department_name: "Electrical & Electronic Engineering", institution_name: "Rizik Partner University", total_points: 1055 },
-  { id: "dept-bba", department_code: "BBA", department_name: "Business Administration", institution_name: "Rizik Partner University", total_points: 990 },
-  { id: "dept-islamic", department_code: "ISLAMIC", department_name: "Islamic Studies", institution_name: "Rizik Partner Madrasa Network", total_points: 940 },
-];
+const fallbackDepartments: FairDepartment[] = [];
 
-const fallbackTasks: FairTask[] = [
-  { id: "task-1", title: "Create Fair Profile", description: "Complete profile and choose institution + department.", points: 20, task_order: 1, requires_proof: false },
-  { id: "task-2", title: "Join Opening Brief", description: "Attend the fair orientation briefing.", points: 25, task_order: 2, requires_proof: false },
-  { id: "task-3", title: "Share Rizik Fair", description: "Share fair launch message with your network.", points: 30, task_order: 3, requires_proof: true },
-  { id: "task-4", title: "Invite 3 Participants", description: "Bring three eligible participants from your community.", points: 35, task_order: 4, requires_proof: true },
-  { id: "task-5", title: "Complete Squad Orientation", description: "Finish part-time workforce orientation.", points: 40, task_order: 5, requires_proof: false },
-];
+const fallbackTasks: FairTask[] = [];
 
 function sortDepartmentsByScore(items: FairDepartment[]): FairDepartment[] {
   return [...items].sort((a, b) => b.total_points - a.total_points);
@@ -346,59 +335,11 @@ function toNumber(value: number | string | null | undefined): number {
   return 0;
 }
 
-const fallbackLivePositions: DeliveryLivePosition[] = [
-  {
-    id: 1,
-    dispatch_ref: "SHP-7402",
-    latitude: 23.7815,
-    longitude: 90.4002,
-    speed_kmh: 28,
-    location_note: "Dhaka corridor",
-    recorded_at: "2026-02-28T13:20:00+06:00",
-  },
-  {
-    id: 2,
-    dispatch_ref: "SHP-7401",
-    latitude: 23.7637,
-    longitude: 90.3892,
-    speed_kmh: 35,
-    location_note: "On route to Chattogram",
-    recorded_at: "2026-02-28T13:17:00+06:00",
-  },
-];
+const fallbackLivePositions: DeliveryLivePosition[] = [];
 
-const fallbackSquads: SquadOverview[] = [
-  {
-    id: "squad-cse-a",
-    squad_name: "CSE Strike Team A",
-    department_name: "Computer Science & Engineering",
-    squad_type: "TEMP_EXTENSION",
-    is_active: true,
-    member_count: 12,
-    open_jobs: 3,
-  },
-  {
-    id: "squad-islamic-b",
-    squad_name: "Islamic Studies Outreach",
-    department_name: "Islamic Studies",
-    squad_type: "TEMP_EXTENSION",
-    is_active: true,
-    member_count: 9,
-    open_jobs: 2,
-  },
-];
+const fallbackSquads: SquadOverview[] = [];
 
-const fallbackApplications: WorkforceApplication[] = [
-  {
-    id: "app-1",
-    status: "SCREENING",
-    preferred_department: "CSE",
-    created_at: "2026-02-28T11:00:00+06:00",
-    registration_name: "Rizik Fair Applicant",
-    institution_name: "Rizik Partner University",
-    subject_area: "Software Engineering",
-  },
-];
+const fallbackApplications: WorkforceApplication[] = [];
 
 export async function getLatestDeliveryPositions(limit = 8): Promise<DeliveryLivePosition[]> {
   try {
@@ -670,18 +611,7 @@ export async function getSquadOperationsData(slug = DEFAULT_FAIR_SLUG): Promise<
   livePositions: DeliveryLivePosition[];
 }> {
   const landing = await getFairLandingData(slug);
-  const fallbackJobs: SquadJobOverview[] = [
-    {
-      id: "job-1",
-      title: "Campus Outreach Route",
-      department_name: "CSE",
-      status: "OPEN",
-      location_text: "Dhaka North",
-      starts_at: "2026-03-02T10:00:00+06:00",
-      ends_at: "2026-03-02T14:00:00+06:00",
-      squad_name: "CSE Strike Team A",
-    },
-  ];
+  const fallbackJobs: SquadJobOverview[] = [];
 
   if (landing.event.id === fallbackEvent.id) {
     return {

@@ -13,6 +13,7 @@ const eslintConfig = [
     ignores: [
       ".vercel/**",
       ".next/**",
+      ".open-next/**",
       ".turbo/**",
       "out/**",
       "build/**",

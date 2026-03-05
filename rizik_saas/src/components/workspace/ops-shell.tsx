@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import {
+  BellAlertIcon,
   Bars3Icon,
   BoltIcon,
   ChartBarIcon,
   ClipboardDocumentListIcon,
   ClipboardDocumentCheckIcon,
+  ClockIcon,
   CubeIcon,
+  ExclamationTriangleIcon,
   HomeIcon,
   QrCodeIcon,
   RectangleStackIcon,
@@ -20,6 +23,7 @@ import {
   XMarkIcon,
   BookOpenIcon,
   ChatBubbleLeftRightIcon,
+  BanknotesIcon,
 } from "@heroicons/react/24/outline";
 import RizikLogo from "@/components/brand/rizik-logo";
 import type { WorkspaceIconKey, WorkspaceNavItem } from "@/lib/workspace/nav";
@@ -46,6 +50,7 @@ const iconMap: Record<WorkspaceIconKey, React.ComponentType<React.SVGProps<SVGSV
   orders: TruckIcon,
   products: CubeIcon,
   crm: ChatBubbleLeftRightIcon,
+  notifications: BellAlertIcon,
   production: WrenchScrewdriverIcon,
   inventory: RectangleStackIcon,
   qr: QrCodeIcon,
@@ -58,6 +63,10 @@ const iconMap: Record<WorkspaceIconKey, React.ComponentType<React.SVGProps<SVGSV
   requests: ClipboardDocumentListIcon,
   knowledge: BookOpenIcon,
   logistics: TruckIcon,
+  finance: BanknotesIcon,
+  hr: UserGroupIcon,
+  checkin: ClockIcon,
+  report: ExclamationTriangleIcon,
 };
 
 function isActivePath(activeHref: string, itemHref: string): boolean {
@@ -96,9 +105,8 @@ export default function OpsShell({
 
       <div className="flex min-h-screen">
         <aside
-          className={`fixed md:static top-0 left-0 z-50 h-screen w-72 md:w-72 bg-[#031E49] text-white border-r border-white/10 transform transition-transform duration-300 ${
-            isNavOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-          }`}
+          className={`fixed md:static top-0 left-0 z-50 h-screen w-72 md:w-72 bg-[#031E49] text-white border-r border-white/10 transform transition-transform duration-300 ${isNavOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+            }`}
         >
           <div className="h-full flex flex-col">
             <div className="px-5 py-6 border-b border-white/10">
@@ -117,9 +125,8 @@ export default function OpsShell({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`group flex items-start gap-3 rounded-xl px-3 py-3 transition-colors ${
-                      active ? "bg-white/18 text-white shadow-inner" : "text-white/75 hover:bg-white/10 hover:text-white"
-                    }`}
+                    className={`group flex items-start gap-3 rounded-xl px-3 py-3 transition-colors ${active ? "bg-white/18 text-white shadow-inner" : "text-white/75 hover:bg-white/10 hover:text-white"
+                      }`}
                     onClick={() => setIsNavOpen(false)}
                   >
                     <Icon className={`mt-0.5 h-5 w-5 ${active ? "text-[#00B16A]" : "text-white/50 group-hover:text-white/80"}`} />
@@ -163,11 +170,10 @@ export default function OpsShell({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`px-4 py-2 rounded-full text-xs font-bold transition-colors ${
-                      item.tone === "primary"
-                        ? "bg-[#031E49] text-white hover:bg-[#0A2D6C]"
-                        : "border border-[#031E49]/15 bg-white text-[#031E49] hover:bg-[#F5F2EB]"
-                    }`}
+                    className={`px-4 py-2 rounded-full text-xs font-bold transition-colors ${item.tone === "primary"
+                      ? "bg-[#031E49] text-white hover:bg-[#0A2D6C]"
+                      : "border border-[#031E49]/15 bg-white text-[#031E49] hover:bg-[#F5F2EB]"
+                      }`}
                   >
                     {item.label}
                   </Link>
@@ -189,11 +195,10 @@ export default function OpsShell({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`text-center py-2 rounded-lg text-xs font-bold ${
-                      isPrimary
-                        ? "bg-[#031E49] text-white"
-                        : "border border-[#031E49]/15 text-[#031E49]"
-                    }`}
+                    className={`text-center py-2 rounded-lg text-xs font-bold ${isPrimary
+                      ? "bg-[#031E49] text-white"
+                      : "border border-[#031E49]/15 text-[#031E49]"
+                      }`}
                   >
                     {item.label}
                   </Link>

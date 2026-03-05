@@ -158,26 +158,30 @@ export default async function FairLandingPage({
               <p className="text-xs uppercase tracking-[0.14em] font-semibold text-[#031E49]/70">Live Attention Map</p>
             </div>
             <div className="mt-5 space-y-3">
-              {departments.slice(0, 8).map((department, index) => {
-                const width = Math.max(8, Math.round((department.total_points / strongestScore) * 100));
-                return (
-                  <div key={department.id} className="rounded-2xl border border-[#031E49]/10 bg-[#F6F2EA] px-4 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-bold text-[#031E49]">#{index + 1} {department.department_name}</p>
-                        <p className="text-xs text-[#0A2D6C]/75">{department.institution_name || "Rizik Partner Network"}</p>
+              {departments.length === 0 ? (
+                <p className="text-sm text-[#0A2D6C]/60">No department data available yet.</p>
+              ) : (
+                departments.slice(0, 8).map((department, index) => {
+                  const width = Math.max(8, Math.round((department.total_points / strongestScore) * 100));
+                  return (
+                    <div key={department.id} className="rounded-2xl border border-[#031E49]/10 bg-[#F6F2EA] px-4 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-bold text-[#031E49]">#{index + 1} {department.department_name}</p>
+                          <p className="text-xs text-[#0A2D6C]/75">{department.institution_name || "Rizik Partner Network"}</p>
+                        </div>
+                        <p className="text-base font-bold text-[#00784D]">{department.total_points} pts</p>
                       </div>
-                      <p className="text-base font-bold text-[#00784D]">{department.total_points} pts</p>
+                      <div className="mt-2 h-1.5 rounded-full bg-[#031E49]/10 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-[linear-gradient(90deg,#00B16A_0%,#0B4AA3_100%)]"
+                          style={{ width: `${width}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="mt-2 h-1.5 rounded-full bg-[#031E49]/10 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-[linear-gradient(90deg,#00B16A_0%,#0B4AA3_100%)]"
-                        style={{ width: `${width}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </article>
 
@@ -187,22 +191,26 @@ export default async function FairLandingPage({
               <p className="text-xs uppercase tracking-[0.14em] font-semibold text-[#031E49]/70">Onboarding Path</p>
             </div>
             <div className="mt-5 space-y-3">
-              {tasks.map((task) => (
-                <div key={task.id} className="rounded-2xl border border-[#031E49]/10 bg-[#F6F2EA] px-4 py-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-bold text-[#031E49]">
-                      {task.task_order}. {task.title}
-                    </p>
-                    <span className="text-xs font-bold text-[#00784D]">+{task.points}</span>
+              {tasks.length === 0 ? (
+                <p className="text-sm text-[#0A2D6C]/60">No mission tasks are configured yet.</p>
+              ) : (
+                tasks.map((task) => (
+                  <div key={task.id} className="rounded-2xl border border-[#031E49]/10 bg-[#F6F2EA] px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-bold text-[#031E49]">
+                        {task.task_order}. {task.title}
+                      </p>
+                      <span className="text-xs font-bold text-[#00784D]">+{task.points}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-[#0A2D6C]/75">{task.description || "Task details appear in dashboard."}</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${task.requires_proof ? "bg-[#031E49] text-white" : "bg-[#031E49]/10 text-[#031E49]"}`}>
+                        {task.requires_proof ? "Proof Required" : "Self-Verified"}
+                      </span>
+                    </div>
                   </div>
-                  <p className="mt-1 text-xs text-[#0A2D6C]/75">{task.description || "Task details appear in dashboard."}</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${task.requires_proof ? "bg-[#031E49] text-white" : "bg-[#031E49]/10 text-[#031E49]"}`}>
-                      {task.requires_proof ? "Proof Required" : "Self-Verified"}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </article>
         </div>

@@ -4,11 +4,12 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/client";
 import { ADMIN_ROLES, canAccessPortalRole, isControlPlanePath } from "@/lib/auth/policy";
 import { redirect } from "next/navigation";
-import { createHash } from "crypto";
-
-function buildShadowPassword(firebaseUid: string): string {
+async function buildShadowPassword(firebaseUid: string): Promise<string> {
     const salt = (process.env.FIREBASE_SHADOW_PASSWORD_SALT || process.env.SUPABASE_SERVICE_ROLE_KEY || "rizik-shadow-fallback").trim();
-    const digest = createHash("sha256").update(`${firebaseUid}:${salt}`).digest("hex");
+    const data = new TextEncoder().encode(`${firebaseUid}:${salt}`);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const digest = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     return `${digest.slice(0, 30)}#Rz!`;
 }
 
@@ -143,7 +144,7 @@ export async function syncFirebaseUserAndSignInAction(firebaseUser: { uid: strin
 
     const adminSupabase = createAdminClient();
     const ssrSupabase = await createServerSupabaseClient();
-    const shadowPassword = buildShadowPassword(firebaseUser.uid);
+    const shadowPassword = await buildShadowPassword(firebaseUser.uid);
 
     // 1. Try to create the user in Supabase Auth as auto-confirmed
     const { data: newAuthUser, error: createError } = await adminSupabase.auth.admin.createUser({
@@ -153,8 +154,15 @@ export async function syncFirebaseUserAndSignInAction(firebaseUser: { uid: strin
         user_metadata: { full_name: firebaseUser.name, avatar_url: firebaseUser.photoUrl }
     });
 
-    // If there's an error that IS NOT "user already exists", return it
-    if (createError && !createError.message.toLowerCase().includes("already registered")) {
+    // If there's an error that IS NOT "user already exists" (either by code or string match), return it
+    const isEmailExists = createError && (
+        (createError as unknown as { code?: string }).code === 'user_already_exists' ||
+        (createError as unknown as { code?: string }).code === 'email_exists' ||
+        (createError.message || '').toLowerCase().includes("already registered") ||
+        (createError.message || '').toLowerCase().includes("user already exists")
+    );
+
+    if (createError && !isEmailExists) {
         console.error("Firebase sync user creation error:", createError);
         return { error: "Failed to map Google account to Supabase." };
     }

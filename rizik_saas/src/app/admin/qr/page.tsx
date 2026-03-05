@@ -14,11 +14,11 @@ export default function AdminQRGenerator() {
   const [entryMode, setEntryMode] = useState<"VERIFY" | "FAIR">("VERIFY");
 
   const handleGenerate = () => {
-    const mockHash = `RZK-${productId}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+    const tagCode = `RZK-${productId}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
     const origin = typeof window !== "undefined" ? window.location.origin : "https://rizik.global";
     const url = entryMode === "FAIR"
-      ? `${origin}/fair?scan=${encodeURIComponent(mockHash)}`
-      : `${origin}/verify/${mockHash}`;
+      ? `${origin}/fair?scan=${encodeURIComponent(tagCode)}`
+      : `${origin}/verify/${tagCode}`;
     setGeneratedQR(url);
   };
 

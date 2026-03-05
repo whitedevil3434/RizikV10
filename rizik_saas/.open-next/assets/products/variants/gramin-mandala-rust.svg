@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" fill="none">
+  <rect width="1600" height="1000" fill="#EFE9DF"/>
+  <rect x="110" y="170" width="1380" height="720" rx="26" fill="#A07A55"/>
+  <rect x="170" y="260" width="1260" height="520" rx="18" fill="#7E3032"/>
+  <g transform="translate(800 520)">
+    <circle r="200" stroke="#F2DECA" stroke-width="13"/>
+    <circle r="160" stroke="#EFD0B0" stroke-width="10"/>
+    <circle r="120" stroke="#F2DECA" stroke-width="8"/>
+    <circle r="84" stroke="#EFD0B0" stroke-width="7"/>
+    <circle r="36" stroke="#F2DECA" stroke-width="6"/>
+  </g>
+  <rect x="560" y="760" width="480" height="88" rx="44" fill="#F4E9DA"/>
+  <text x="800" y="816" text-anchor="middle" fill="#784A3D" font-size="44" font-family="Avenir Next, Segoe UI, sans-serif" font-weight="700">Rizik EcoMat · Narika Mandala</text>
+</svg>
