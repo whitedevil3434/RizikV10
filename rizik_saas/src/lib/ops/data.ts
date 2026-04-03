@@ -26,6 +26,8 @@ export interface OpsOrder {
   sla_state: string;
   expected_delivery_at: string | null;
   created_at: string;
+  user_id?: string; // Digital order owner
+  trxid?: string;  // Payment proof
 }
 
 export interface OpsSupportTicket {
@@ -89,6 +91,17 @@ export interface OpsNotification {
   created_at: string;
 }
 
+export interface OpsDailyReport {
+  id: string;
+  employee_name: string;
+  report_date: string;
+  summary: string;
+  sales_count: number;
+  orders_handled: number;
+  issues_encountered: string | null;
+  created_at: string;
+}
+
 export interface AdminDashboardData {
   revenue_mtd: number;
   active_orders: number;
@@ -106,6 +119,7 @@ export interface PortalDashboardData {
   team_availability_pct: number;
   feed: Array<{ time: string; title: string; detail: string }>;
   notifications: OpsNotification[];
+  has_daily_report: boolean;
 }
 
 function toNumber(value: unknown): number {
@@ -170,7 +184,7 @@ export async function getOrders(limit = 80): Promise<OpsOrder[]> {
     const admin = createAdminClient();
     const { data, error } = await admin
       .from("rizik_order_records")
-      .select("id, order_code, customer_name, channel, product_sku, quantity, unit_price_bdt, status, sla_state, expected_delivery_at, created_at")
+      .select("id, order_code, customer_name, channel, product_sku, quantity, unit_price_bdt, status, sla_state, expected_delivery_at, created_at, user_id, trxid")
       .order("created_at", { ascending: false })
       .limit(limit);
 
@@ -188,9 +202,41 @@ export async function getOrders(limit = 80): Promise<OpsOrder[]> {
       sla_state: String(row.sla_state || "ON_TRACK"),
       expected_delivery_at: row.expected_delivery_at == null ? null : String(row.expected_delivery_at),
       created_at: String(row.created_at || new Date().toISOString()),
+      user_id: row.user_id ? String(row.user_id) : undefined,
+      trxid: row.trxid ? String(row.trxid) : undefined,
     }));
   } catch {
     return [];
+  }
+}
+
+export async function getOrderById(id: string): Promise<OpsOrder | null> {
+  try {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("rizik_order_records")
+      .select("id, order_code, customer_name, channel, product_sku, quantity, unit_price_bdt, status, sla_state, expected_delivery_at, created_at")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    const row = data as Record<string, unknown>;
+
+    return {
+      id: String(row.id || ""),
+      order_code: String(row.order_code || ""),
+      customer_name: String(row.customer_name || ""),
+      channel: String(row.channel || "B2C"),
+      product_sku: row.product_sku == null ? null : String(row.product_sku),
+      quantity: Math.max(1, Math.floor(toNumber(row.quantity))),
+      unit_price_bdt: toNumber(row.unit_price_bdt),
+      status: String(row.status || "PENDING"),
+      sla_state: String(row.sla_state || "ON_TRACK"),
+      expected_delivery_at: row.expected_delivery_at == null ? null : String(row.expected_delivery_at),
+      created_at: String(row.created_at || new Date().toISOString()),
+    };
+  } catch {
+    return null;
   }
 }
 
@@ -222,12 +268,18 @@ export async function getSupportTickets(limit = 50): Promise<OpsSupportTicket[]>
   }
 }
 
-export async function getEmployeeTasks(limit = 80): Promise<OpsTask[]> {
+export async function getEmployeeTasks(limit = 80, team?: string): Promise<OpsTask[]> {
   try {
     const admin = createAdminClient();
-    const { data, error } = await admin
+    let query = admin
       .from("rizik_employee_tasks")
-      .select("id, title, owner_team, status, due_at, updated_at")
+      .select("id, title, owner_team, status, due_at, updated_at");
+
+    if (team) {
+      query = query.eq("owner_team", team);
+    }
+
+    const { data, error } = await query
       .order("updated_at", { ascending: false })
       .limit(limit);
 
@@ -422,6 +474,14 @@ export async function getPortalDashboardData(): Promise<PortalDashboardData> {
   const activeShipments = shipments.filter((shipment) => !["DELIVERED", "CANCELLED"].includes(shipment.status)).length;
   const teamAvailability = Math.max(0, Math.min(100, 100 - Math.round((highPriorityTasks / Math.max(assignedTasks, 1)) * 25)));
 
+  // Check if daily report already submitted today
+  const admin = createAdminClient();
+  const { data: reportToday } = await admin
+    .from("rizik_daily_reports")
+    .select("id")
+    .eq("report_date", new Date().toISOString().split("T")[0])
+    .limit(1);
+
   const feed = [
     ...tasks.slice(0, 3).map((task) => ({
       time: toDhakaTime(task.updated_at),
@@ -443,5 +503,99 @@ export async function getPortalDashboardData(): Promise<PortalDashboardData> {
     team_availability_pct: teamAvailability,
     feed,
     notifications,
+    has_daily_report: !!reportToday && reportToday.length > 0,
   };
+}
+
+export async function getDailyReports(limit = 100): Promise<OpsDailyReport[]> {
+  try {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("rizik_daily_reports")
+      .select(`
+        id,
+        report_date,
+        summary,
+        sales_count,
+        orders_handled,
+        issues_encountered,
+        created_at,
+        rizik_employees (
+          full_name
+        )
+      `)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error || !data) return [];
+
+    return (data as any[]).map((row) => ({
+      id: row.id,
+      employee_name: row.rizik_employees?.full_name || "Unknown",
+      report_date: row.report_date,
+      summary: row.summary,
+      sales_count: row.sales_count,
+      orders_handled: row.orders_handled,
+      issues_encountered: row.issues_encountered,
+      created_at: row.created_at,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * ✅ Approve Digital Credits for Rizik Writer
+ * Increments user's paid credits and completes the order.
+ */
+export async function approveWriterCredits(orderId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const admin = createAdminClient();
+
+    // 1. Get the order details
+    const { data: order, error: orderError } = await admin
+      .from("rizik_order_records")
+      .select("user_id, quantity, status, channel")
+      .eq("id", orderId)
+      .single();
+
+    if (orderError || !order) return { success: false, error: "Order not found" };
+    if (order.status === "COMPLETED") return { success: false, error: "Order already completed" };
+    if (order.channel !== "DIGITAL") return { success: false, error: "Not a digital order" };
+    if (!order.user_id) return { success: false, error: "No user associated with this order" };
+
+    // 2. Increment user credits
+    // We use a manual increment here for simplicity, or ideally a Postgres function.
+    const { data: usage, error: usageError } = await admin
+      .from("user_usage")
+      .select("paid_credits")
+      .eq("user_id", order.user_id)
+      .single();
+
+    if (usageError || !usage) return { success: false, error: "User usage record not found" };
+
+    const newPaidCredits = (usage.paid_credits || 0) + (order.quantity || 0);
+
+    const { error: updateUsageError } = await admin
+      .from("user_usage")
+      .update({ 
+        paid_credits: newPaidCredits,
+        updated_at: new Date().toISOString() 
+      })
+      .eq("user_id", order.user_id);
+
+    if (updateUsageError) return { success: false, error: "Failed to update credits" };
+
+    // 3. Update order status
+    const { error: updateOrderError } = await admin
+      .from("rizik_order_records")
+      .update({ status: "COMPLETED" })
+      .eq("id", orderId);
+
+    if (updateOrderError) return { success: false, error: "Failed to update order status" };
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 }

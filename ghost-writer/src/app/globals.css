@@ -1,0 +1,327 @@
+:root {
+  --background: #F5F2EB;
+  --surface: #FFFFFF;
+  --surface-hover: #F9F7F2;
+  --border: rgba(4, 32, 76, 0.1);
+  --text-primary: #04204C;
+  --text-secondary: #0A2D6C;
+  --text-muted: rgba(10, 45, 108, 0.6);
+  
+  --accent-primary: #04204C;
+  --accent-secondary: #031E49;
+  --accent-green: #00B16A;
+  --accent-gradient: linear-gradient(135deg, #04204C, #031E49);
+  
+  --error: #D32F2F;
+  --success: #00B16A;
+  
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --shadow-soft: 0 4px 20px rgba(4, 32, 76, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-family: var(--font-inter), sans-serif;
+  line-height: 1.5;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Background effects */
+body::before, body::after {
+  content: '';
+  position: fixed;
+  width: 50vw;
+  height: 50vw;
+  border-radius: 50%;
+  filter: blur(100px);
+  z-index: -1;
+  opacity: 0.1;
+}
+
+body::before {
+  top: -20vw;
+  left: -20vw;
+  background: var(--accent-primary);
+}
+
+body::after {
+  bottom: -20vw;
+  right: -20vw;
+  background: var(--accent-green);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 16px;
+}
+
+h1 { font-size: 3rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.5rem; }
+
+p { margin-bottom: 16px; color: var(--text-secondary); }
+
+a {
+  color: var(--accent-green);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover { color: var(--accent-primary); }
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-md);
+  padding: 32px;
+}
+
+.glass-card {
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-card:hover {
+  background: var(--surface);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
+/* Controls */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-size: 1rem;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: var(--accent-gradient);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #00B16A;
+  box-shadow: 0 8px 30px rgba(0, 177, 106, 0.2);
+}
+
+.btn-secondary {
+  background: #F5F2EB;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: #FFFFFF;
+  border-color: var(--accent-primary);
+}
+
+.btn-icon {
+  padding: 12px;
+  border-radius: 50%;
+}
+
+.input-field {
+  width: 100%;
+  padding: 16px;
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 4px rgba(0, 177, 106, 0.1);
+}
+
+textarea.input-field {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+/* Badges & Tags */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(4, 32, 76, 0.05);
+  color: var(--accent-primary);
+}
+
+.badge.green {
+  background: rgba(0, 177, 106, 0.1);
+  color: var(--accent-green);
+}
+
+/* Animations */
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(6, 182, 212, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+}
+
+.pulse-recording {
+  animation: pulseGlow 2s infinite;
+  background: rgba(211, 47, 47, 0.1) !important;
+  color: var(--error) !important;
+  border-color: var(--error) !important;
+}
+
+/* Layout Utilities */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+}
+
+/* Step Tabs */
+.step-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 32px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.step-tab {
+  padding: 12px 24px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.step-tab:hover {
+  color: var(--text-primary);
+  background: var(--surface);
+}
+
+.step-tab.active {
+  color: white;
+  background: var(--accent-primary);
+  box-shadow: 0 4px 12px rgba(4, 32, 76, 0.2);
+}
+
+/* Credit Pill */
+.credit-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-weight: 700;
+  box-shadow: var(--shadow-soft);
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 100;
+}
+
+/* Modal System */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(4, 32, 76, 0.4);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.modal-content {
+  background: white;
+  width: 100%;
+  max-width: 500px;
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  box-shadow: 0 32px 128px rgba(4, 32, 76, 0.2);
+  position: relative;
+  border: 1px solid var(--border);
+}
+
+.payment-method-card {
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #fdfdfd;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.bkash-logo {
+  height: 40px;
+  width: auto;
+}

@@ -1,10 +1,18 @@
+import { createBrowserClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 // Initialize the Supabase client for client-side operations
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    cookieOptions: {
+        domain: process.env.NODE_ENV === 'production' ? '.rizikecosystem.com' : 'localhost',
+        path: '/',
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+    }
+});
 
 /**
  * Creates a Supabase client with the Service Role key for backend/admin operations.

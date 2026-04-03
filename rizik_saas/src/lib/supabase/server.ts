@@ -19,7 +19,10 @@ export async function createServerSupabaseClient() {
                 setAll(cookiesToSet) {
                     try {
                         cookiesToSet.forEach(({ name, value, options }) =>
-                            cookieStore.set(name, value, options)
+                            cookieStore.set(name, value, {
+                                ...options,
+                                domain: process.env.NODE_ENV === 'production' ? '.rizikecosystem.com' : 'localhost',
+                            })
                         );
                     } catch {
                         // Ignored in Server Components (read-only context)
@@ -48,7 +51,10 @@ export async function createAdminSupabaseClient() {
                 setAll(cookiesToSet) {
                     try {
                         cookiesToSet.forEach(({ name, value, options }) =>
-                            cookieStore.set(name, value, options)
+                            cookieStore.set(name, value, {
+                                ...options,
+                                domain: process.env.NODE_ENV === 'production' ? '.rizikecosystem.com' : 'localhost',
+                            })
                         );
                     } catch {
                         // Ignored in Server Components

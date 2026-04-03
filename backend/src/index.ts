@@ -1,6 +1,8 @@
 import { ChatRoom } from "./do/ChatRoom";
 import { VoiceAgent } from "./do/VoiceAgent";
 import { DurableObject } from "cloudflare:workers";
+import { extractDNA } from "./ghost/dnaEngine";
+import { transformText } from "./ghost/transformEngine";
 
 export { ChatRoom, VoiceAgent };
 
@@ -137,6 +139,104 @@ function normalizeLiveKitHost(raw: string): string {
   return raw;
 }
 
+// 🛡️ Supabase JWT Verification using Web Crypto API
+async function verifySupabaseJWT(token: string, secret: string): Promise<string | null> {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    const [header, payload, signature] = parts;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(`${header}.${payload}`);
+
+    // Import the secret key
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"]
+    );
+
+    // Verify signature
+    const sigBytes = new Uint8Array(
+      atob(signature.replace(/-/g, '+').replace(/_/g, '/'))
+        .split('')
+        .map(c => c.charCodeAt(0))
+    );
+
+    const isValid = await crypto.subtle.verify("HMAC", key, sigBytes, data);
+    if (!isValid) return null;
+
+    // Decode payload
+    const decodedPayload = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    
+    // Check expiration
+    const now = Math.floor(Date.now() / 1000);
+    if (decodedPayload.exp && decodedPayload.exp < now) return null;
+
+    return decodedPayload.sub; // user_id
+  } catch (err) {
+    console.error("JWT Verify Error:", err);
+    return null;
+  }
+}
+
+// 💰 Credit Management via Supabase API
+async function checkAndDecrementCredits(userId: string, env: any): Promise<{ success: boolean, remaining?: number }> {
+  try {
+    const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL || "https://yhwhkwveupjzrwdljivn.supabase.co";
+    const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+
+    // 1. Fetch current usage
+    const fetchRes = await fetch(`${supabaseUrl}/rest/v1/user_usage?user_id=eq.${userId}`, {
+      headers: {
+        "apikey": serviceKey,
+        "Authorization": `Bearer ${serviceKey}`
+      }
+    });
+
+    if (!fetchRes.ok) return { success: false };
+    const usageList = await fetchRes.json() as any[];
+    if (!usageList || usageList.length === 0) return { success: false };
+
+    const usage = usageList[0];
+    let updatePayload: any = {};
+    let remaining = 0;
+
+    if (usage.free_uses_remaining > 0) {
+      updatePayload.free_uses_remaining = usage.free_uses_remaining - 1;
+      remaining = updatePayload.free_uses_remaining + usage.paid_credits;
+    } else if (usage.paid_credits > 0) {
+      updatePayload.paid_credits = usage.paid_credits - 1;
+      remaining = usage.free_uses_remaining + updatePayload.paid_credits;
+    } else {
+      return { success: false };
+    }
+
+    // 2. Update usage
+    const updateRes = await fetch(`${supabaseUrl}/rest/v1/user_usage?user_id=eq.${userId}`, {
+      method: "PATCH",
+      headers: {
+        "apikey": serviceKey,
+        "Authorization": `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify({
+        ...updatePayload,
+        total_transformations: (usage.total_transformations || 0) + 1,
+        updated_at: new Date().toISOString()
+      })
+    });
+
+    return { success: updateRes.ok, remaining };
+  } catch (err) {
+    console.error("Credit Counter Error:", err);
+    return { success: false };
+  }
+}
+
 async function dispatchLiveKitAgent(
   env: any,
   roomName: string,
@@ -196,6 +296,67 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     console.log(`🚦 Traffic Police: ${request.method} ${url.pathname}`);
+
+    // CORS Preflight for all endpoints
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization"
+        }
+      });
+    }
+
+    // 👻 GHOST WRITER API (Hack-proof Server Side Integration)
+    if (url.pathname.startsWith("/api/ghost/") && request.method === "POST") {
+      try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return new Response(JSON.stringify({ error: "Authentication required" }), { status: 401, headers: corsHeaders });
+        }
+        const token = authHeader.split(" ")[1];
+        
+        // 1. Verify JWT
+        const userId = await verifySupabaseJWT(token, env.SUPABASE_JWT_SECRET);
+        if (!userId) {
+          return new Response(JSON.stringify({ error: "Invalid or expired session" }), { status: 401, headers: corsHeaders });
+        }
+
+        // 2. Check & Decrement Credits
+        const creditCheck = await checkAndDecrementCredits(userId, env);
+        if (!creditCheck.success) {
+          return new Response(JSON.stringify({ 
+            error: "Insufficient credits", 
+            code: "INSUFFICIENT_CREDITS",
+            message: "You have used your 3 free credits. Please purchase more to continue." 
+          }), { status: 402, headers: corsHeaders });
+        }
+
+        // 3. Execute DNA/Transform logic
+        if (url.pathname === "/api/ghost/extract") {
+          const { text } = await request.json() as { text: string };
+          const dna = extractDNA(text);
+          return new Response(JSON.stringify({ 
+            success: true, 
+            profile: dna,
+            creditsRemaining: creditCheck.remaining 
+          }), { headers: corsHeaders });
+        }
+
+        if (url.pathname === "/api/ghost/transform") {
+          const { aiText, dnaProfile } = await request.json() as { aiText: string, dnaProfile: any };
+          const humanized = transformText(aiText, dnaProfile);
+          return new Response(JSON.stringify({ 
+            success: true, 
+            text: humanized,
+            creditsRemaining: creditCheck.remaining 
+          }), { headers: corsHeaders });
+        }
+      } catch (err: any) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+      }
+    }
 
     // 🚦 TRAFFIC POLICE: Forward ALL /api/voice/* requests to VoiceAgent
     // Don't filter, don't block, just forward!
