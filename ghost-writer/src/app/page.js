@@ -24,7 +24,7 @@ export default function Home() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlod2hrd3ZldXBqenJ3ZGxqaXZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyMTI4NzgsImV4cCI6MjA4Nzc4ODg3OH0.A5Aj5pSiDEljN0iCve3UlHgXwxCGR_jCpC0lnkIvt3A',
     {
       cookieOptions: {
-        domain: '.rizikecosystem.com',
+        domain: typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'localhost' : '.rizikecosystem.com',
         path: '/',
       }
     }
@@ -37,7 +37,10 @@ export default function Home() {
       if (!session) {
         // Redirect to main login with return path
         const currentUrl = window.location.href;
-        window.location.href = `https://rizikecosystem.com/login?next=${encodeURIComponent(currentUrl)}`;
+        const loginUrl = window.location.hostname === 'localhost' 
+          ? 'http://localhost:3000/login' 
+          : 'https://rizikecosystem.com/login';
+        window.location.href = `${loginUrl}?next=${encodeURIComponent(currentUrl)}`;
         return;
       }
       setUser(session.user);

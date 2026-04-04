@@ -53,7 +53,7 @@ export default function LoginPage() {
                 email: user.email || "",
                 name: user.displayName || "Google User",
                 photoUrl: user.photoURL || ""
-            });
+            }, nextPath);
 
             if (syncResult && 'error' in syncResult && syncResult.error) {
                 setError(syncResult.error);

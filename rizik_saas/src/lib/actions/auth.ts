@@ -78,6 +78,25 @@ export async function signUpAction(formData: FormData) {
     return { redirectTo: "/store" };
 }
 
+function getSafeNextPath(requestedNext: string | null): string {
+    if (!requestedNext) return "";
+    if (requestedNext.startsWith("/") && !requestedNext.startsWith("//")) {
+        return requestedNext;
+    }
+    if (requestedNext.startsWith("http")) {
+        try {
+            const url = new URL(requestedNext);
+            const hostname = url.hostname;
+            if (hostname === "localhost" || hostname.endsWith("rizikecosystem.com")) {
+                return requestedNext;
+            }
+        } catch {
+            return "";
+        }
+    }
+    return "";
+}
+
 /**
  * Server Action: Sign in with email/password.
  * Redirects based on user role (RBAC).
@@ -87,9 +106,7 @@ export async function signInAction(formData: FormData) {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const requestedNext = (formData.get("next") as string | null) ?? "";
-    const safeNext = requestedNext.startsWith("/") && !requestedNext.startsWith("//")
-        ? requestedNext
-        : "";
+    const safeNext = getSafeNextPath(requestedNext);
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
@@ -108,20 +125,29 @@ export async function signInAction(formData: FormData) {
             const isAdmin = ADMIN_ROLES.includes(role as (typeof ADMIN_ROLES)[number]);
             const isPortal = canAccessPortalRole(role);
 
-            if (safeNext && !isControlPlanePath(safeNext)) return { redirectTo: safeNext };
-            if (safeNext.startsWith("/admin") && isAdmin) return { redirectTo: safeNext };
-            if (safeNext.startsWith("/portal") && isPortal) return { redirectTo: safeNext };
+            if (safeNext) {
+                let checkPath = safeNext;
+                try {
+                    if (safeNext.startsWith("http")) checkPath = new URL(safeNext).pathname;
+                } catch {}
+
+                if (!isControlPlanePath(checkPath)) return { redirectTo: safeNext };
+                if (checkPath.startsWith("/admin") && isAdmin) return { redirectTo: safeNext };
+                if (checkPath.startsWith("/portal") && isPortal) return { redirectTo: safeNext };
+            }
 
             if (isAdmin) return { redirectTo: "/admin" };
             if (isPortal) return { redirectTo: "/portal" };
         } catch {
-            if (safeNext && !isControlPlanePath(safeNext)) {
-                return { redirectTo: safeNext };
+            if (safeNext) {
+                let checkPath = safeNext;
+                try { if (safeNext.startsWith("http")) checkPath = new URL(safeNext).pathname; } catch {}
+                if (!isControlPlanePath(checkPath)) return { redirectTo: safeNext };
             }
         }
     }
 
-    return { redirectTo: "/store" };
+    return { redirectTo: safeNext || "/store" };
 }
 
 /**
@@ -137,7 +163,7 @@ export async function signOutAction() {
  * Server Action: Firebase Google OAuth Sync.
  * Maps a Firebase user to a Supabase session by creating/verifying a shadow auth user.
  */
-export async function syncFirebaseUserAndSignInAction(firebaseUser: { uid: string, email: string, name: string, photoUrl: string }) {
+export async function syncFirebaseUserAndSignInAction(firebaseUser: { uid: string, email: string, name: string, photoUrl: string }, nextPath: string = "") {
     if (!firebaseUser.email) {
         return { error: "Google account is missing an email address." };
     }
@@ -212,6 +238,7 @@ export async function syncFirebaseUserAndSignInAction(firebaseUser: { uid: strin
     }
 
     // Redirect based on role
+    const safeNext = getSafeNextPath(nextPath);
     const { data: { user } } = await ssrSupabase.auth.getUser();
     if (user) {
         const { data: profile } = await adminSupabase
@@ -220,9 +247,25 @@ export async function syncFirebaseUserAndSignInAction(firebaseUser: { uid: strin
             .eq("id", user.id)
             .maybeSingle();
 
-        if (profile?.role && ADMIN_ROLES.includes(profile.role as (typeof ADMIN_ROLES)[number])) return { redirectTo: "/admin" };
-        if (profile?.role && canAccessPortalRole(profile.role)) return { redirectTo: "/portal" };
+        const role = profile?.role || "CUSTOMER";
+        const isAdmin = ADMIN_ROLES.includes(role as (typeof ADMIN_ROLES)[number]);
+        const isPortal = canAccessPortalRole(role);
+
+        if (safeNext) {
+            // Reconstruct path to check against control plane prefixes if it's an absolute URL
+            let checkPath = safeNext;
+            try {
+                if (safeNext.startsWith("http")) checkPath = new URL(safeNext).pathname;
+            } catch {}
+
+            if (!isControlPlanePath(checkPath)) return { redirectTo: safeNext };
+            if (checkPath.startsWith("/admin") && isAdmin) return { redirectTo: safeNext };
+            if (checkPath.startsWith("/portal") && isPortal) return { redirectTo: safeNext };
+        }
+
+        if (isAdmin) return { redirectTo: "/admin" };
+        if (isPortal) return { redirectTo: "/portal" };
     }
 
-    return { redirectTo: "/store" };
+    return { redirectTo: safeNext || "/store" };
 }
