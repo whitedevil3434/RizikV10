@@ -37,7 +37,8 @@ export default function WriterPage() {
   const [pipelineText, setPipelineText] = useState("");
   const [viewMode, setViewMode] = useState<"llm" | "pipeline">("llm");
   const [isRecording, setIsRecording] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [isHumanizing, setIsHumanizing] = useState(false);
   const [dnaProfile, setDnaProfile] = useState<any>(null);
   const [credits, setCredits] = useState(0);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
@@ -114,7 +115,7 @@ export default function WriterPage() {
   };
 
   const handleExtractDNA = async () => {
-    setIsProcessing(true);
+    setIsExtracting(true);
     setErrorMsg("");
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -141,7 +142,7 @@ export default function WriterPage() {
       console.error(e);
       setErrorMsg("DNA extraction failed (Network Error). Please try again later.");
     } finally {
-      setIsProcessing(false);
+      setIsExtracting(false);
     }
   };
 
@@ -179,7 +180,7 @@ export default function WriterPage() {
   };
 
   const handleUploadVoice = async (blob: Blob) => {
-    setIsProcessing(true);
+    setIsExtracting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(`${resolveBackendUrl()}/api/ghost/dna/voice`, {
@@ -200,7 +201,7 @@ export default function WriterPage() {
     } catch (err) {
       console.error(err);
     } finally {
-      setIsProcessing(false);
+      setIsExtracting(false);
     }
   };
 
@@ -210,7 +211,7 @@ export default function WriterPage() {
       return;
     }
 
-    setIsProcessing(true);
+    setIsHumanizing(true);
     setDnaMatching(true);
     setErrorMsg("");
     
@@ -253,7 +254,7 @@ export default function WriterPage() {
       console.error(e);
       setErrorMsg("Transformation failed. Check your credits or network.");
     } finally {
-      setIsProcessing(false);
+      setIsHumanizing(false);
       setDnaMatching(false);
     }
   };
@@ -357,9 +358,9 @@ export default function WriterPage() {
                           type="button"
                           onClick={startVoiceRecording}
                           className="btn btn-primary bg-[#04204C] hover:bg-[#04204C]/90 px-8 disabled:opacity-50"
-                          disabled={isProcessing}
+                          disabled={isExtracting}
                         >
-                          {isProcessing ? 'ANALYZING VOICE...' : 'START RECORDING'}
+                          {isExtracting ? 'ANALYZING VOICE...' : 'START RECORDING'}
                         </button>
                         {voiceTranscribedText && (
                           <div className="mt-4 p-4 bg-white/50 rounded-xl border border-dashed border-[#04204C]/5 text-[10px] text-[#04204C]/40 italic max-w-sm">
@@ -374,10 +375,10 @@ export default function WriterPage() {
               <button 
                 type="button"
                 className="btn btn-primary w-full h-16 text-sm tracking-[0.2em] font-black"
-                disabled={!referenceText || isProcessing}
+                disabled={!referenceText || isExtracting}
                 onClick={handleExtractDNA}
               >
-                {isProcessing ? 'SCANNING LINGUISTIC SIGNATURE...' : 'ANALYZE WRITING DNA'}
+                {isExtracting ? 'SCANNING LINGUISTIC SIGNATURE...' : 'ANALYZE WRITING DNA'}
               </button>
             </div>
 
@@ -400,21 +401,9 @@ export default function WriterPage() {
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase text-[#04204C]/30 tracking-widest ml-1">Chaos Threshold</label>
-                    <div className="bg-[#F9F7F2] p-4 rounded-2xl border border-[#04204C]/5 flex items-center gap-4">
-                      <input 
-                        type="range" min="0" max="1" step="0.1" 
-                        value={chaosLevel} 
-                        onChange={(e) => setChaosLevel(parseFloat(e.target.value))}
-                        className="flex-1 accent-[#04204C]"
-                      />
-                      <span className="font-mono font-black text-[#04204C]">{Math.round(chaosLevel*100)}%</span>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
+                  <div className="space-y-4 md:col-span-2">
                     <label className="text-[10px] font-black uppercase text-[#04204C]/30 tracking-widest ml-1">
-                      Human Error Chaos
+                      Godly Chaos Level (Error Injection)
                       {humanErrorLevel > 0 && <span className="text-[#E2136E] ml-1">● ACTIVE</span>}
                     </label>
                     <div className={`bg-[#F9F7F2] p-4 rounded-2xl border flex items-center gap-4 transition-all ${
@@ -423,7 +412,11 @@ export default function WriterPage() {
                       <input 
                         type="range" min="0" max="100" step="5" 
                         value={humanErrorLevel} 
-                        onChange={(e) => setHumanErrorLevel(parseInt(e.target.value))}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          setHumanErrorLevel(val);
+                          setChaosLevel(val > 0 ? (val / 100) : 0.8);
+                        }}
                         className="flex-1 accent-[#E2136E]"
                       />
                       <span className={`font-mono font-black ${humanErrorLevel > 0 ? 'text-[#E2136E]' : 'text-[#04204C]'}`}>{humanErrorLevel}%</span>
@@ -434,49 +427,37 @@ export default function WriterPage() {
                       </p>
                     )}
                   </div>
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase text-[#04204C]/30 tracking-widest ml-1">Human Consortium DB</label>
-                    <button 
-                      type="button"
-                      onClick={() => setUseHumanConsortium(!useHumanConsortium)}
-                      className={`w-full py-4 rounded-2xl border font-black transition-all flex items-center justify-center gap-3 text-xs tracking-widest ${
-                        useHumanConsortium 
-                        ? "border-[#00B16A] bg-[#00B16A]/5 text-[#00B16A]" 
-                        : "border-[#04204C]/10 bg-[#F9F7F2] text-[#04204C]/30"
-                      }`}
-                    >
-                      {useHumanConsortium ? <Lock size={14}/> : <Globe size={14}/>}
-                      {useHumanConsortium ? 'CONSORTIUM_ACTIVE' : 'CONSORTIUM_OFF'}
-                    </button>
-                  </div>
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase text-[#04204C]/30 tracking-widest ml-1">Academic Mode</label>
+                  <div className="space-y-4 md:col-span-2">
+                    <label className="text-[10px] font-black uppercase text-[#04204C]/30 tracking-widest ml-1">Knowledge Source</label>
                     <button 
                       type="button"
                       onClick={() => {
                         const newVal = !isAcademic;
                         setIsAcademic(newVal);
-                        // Auto-suggest 35% human error when academic mode is toggled on
-                        if (newVal && humanErrorLevel === 0) setHumanErrorLevel(35);
+                        setUseHumanConsortium(newVal);
+                        if (newVal && humanErrorLevel === 0) {
+                           setHumanErrorLevel(35);
+                           setChaosLevel(0.35);
+                        }
                       }}
-                      className={`w-full py-4 rounded-2xl border font-black transition-all flex items-center justify-center gap-3 text-xs tracking-widest ${
+                      className={`w-full py-4 rounded-2xl border font-black transition-all flex h-[58px] items-center justify-center gap-3 text-xs tracking-widest ${
                         isAcademic 
                         ? "border-[#00B16A] bg-[#00B16A]/5 text-[#00B16A]" 
                         : "border-[#04204C]/10 bg-[#F9F7F2] text-[#04204C]/30"
                       }`}
                     >
-                      <ShieldCheck size={14}/>
-                      {isAcademic ? 'SCHOLARLY_ON' : 'SCHOLARLY_OFF'}
+                      {isAcademic ? <Lock size={14}/> : <Globe size={14}/>}
+                      {isAcademic ? 'SCHOLARLY CONSORTIUM (ON)' : 'SCHOLARLY CONSORTIUM (OFF)'}
                     </button>
                   </div>
                 </div>
 
                 <button 
                   className="btn btn-primary w-full h-16 text-sm tracking-[0.2em]"
-                  disabled={!aiText || !dnaProfile || isProcessing}
+                  disabled={!aiText || !dnaProfile || isHumanizing || isExtracting}
                   onClick={handleTransform}
                 >
-                  {isProcessing ? 'RECONSTRUCTING COGNITIVE BUBBLES...' : <><Sparkles size={18} className="mr-2"/> GENERATE GODLY OUTPUT</>}
+                  {isHumanizing ? 'RECONSTRUCTING COGNITIVE BUBBLES...' : <><Sparkles size={18} className="mr-2"/> GENERATE GODLY OUTPUT</>}
                 </button>
             </div>
           </div>
@@ -527,12 +508,28 @@ export default function WriterPage() {
                 </div>
 
                <div className="input-field min-h-[400px] !bg-[#F9F7F2] !border-[#04204C]/10 overflow-y-auto whitespace-pre-wrap leading-relaxed text-[#04204C]/80 relative">
-                  {!outputText && !pipelineText && (
+                  {!outputText && !pipelineText && !isHumanizing && (
                     <span className="text-[#04204C]/30 italic">Your humanized output will appear here after you run the engine.</span>
                   )}
-                  {viewMode === "llm" ? outputText : pipelineText}
                   
-                  {viewMode === "pipeline" && pipelineText && (
+                  {isHumanizing && (
+                    <div className="space-y-4 w-full opacity-50 animate-pulse">
+                      <div className="h-4 bg-[#04204C]/10 rounded w-3/4"></div>
+                      <div className="h-4 bg-[#04204C]/10 rounded w-full"></div>
+                      <div className="h-4 bg-[#04204C]/10 rounded w-5/6"></div>
+                      <div className="h-4 bg-[#04204C]/10 rounded w-full"></div>
+                      <div className="h-4 bg-[#04204C]/10 rounded w-2/3"></div>
+                      <div className="h-4 bg-[#04204C]/10 rounded w-1/2"></div>
+                      <div className="mt-8 flex items-center gap-2">
+                        <Activity className="animate-spin text-[#00B16A]" size={16}/>
+                        <span className="text-xs font-black text-[#04204C]/40 uppercase tracking-widest">Generating Human Output...</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {!isHumanizing && (viewMode === "llm" ? outputText : pipelineText)}
+                  
+                  {viewMode === "pipeline" && pipelineText && !isHumanizing && (
                     <div className="absolute top-4 right-4 bg-[#00B16A]/10 text-[#00B16A] text-[10px] font-black uppercase px-2 py-1 rounded border border-[#00B16A]/20">
                       100% Non-Generative
                     </div>
