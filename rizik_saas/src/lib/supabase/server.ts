@@ -1,6 +1,13 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+function resolveCookieDomain(): string | undefined {
+    const explicit = process.env.SUPABASE_COOKIE_DOMAIN?.trim();
+    if (explicit) return explicit;
+    // Avoid forcing localhost/custom domains. Let browser default to current host.
+    return undefined;
+}
+
 /**
  * Creates a Supabase client for Server Components and Server Actions.
  * Uses @supabase/ssr for proper cookie-based session management.
@@ -18,10 +25,11 @@ export async function createServerSupabaseClient() {
                 },
                 setAll(cookiesToSet) {
                     try {
+                        const domain = resolveCookieDomain();
                         cookiesToSet.forEach(({ name, value, options }) =>
                             cookieStore.set(name, value, {
                                 ...options,
-                                domain: process.env.NODE_ENV === 'production' ? '.rizikecosystem.com' : 'localhost',
+                                ...(domain ? { domain } : {}),
                             })
                         );
                     } catch {
@@ -50,10 +58,11 @@ export async function createAdminSupabaseClient() {
                 },
                 setAll(cookiesToSet) {
                     try {
+                        const domain = resolveCookieDomain();
                         cookiesToSet.forEach(({ name, value, options }) =>
                             cookieStore.set(name, value, {
                                 ...options,
-                                domain: process.env.NODE_ENV === 'production' ? '.rizikecosystem.com' : 'localhost',
+                                ...(domain ? { domain } : {}),
                             })
                         );
                     } catch {

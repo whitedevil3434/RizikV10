@@ -2,7 +2,7 @@
 
 import { useCartStore } from "@/lib/store/cart";
 import { placeOrderAction } from "@/lib/actions/order";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import { CheckCircleIcon, MapPinIcon, CreditCardIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 
@@ -13,12 +13,22 @@ export default function CheckoutPage() {
     const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
 
-    // Form state
+    // Form state — all hooks MUST be called before any early returns
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
     const [address, setAddress] = useState("");
     const [city, setCity] = useState("");
     const [district, setDistrict] = useState("");
+
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    if (!isMounted) {
+        return <div className="min-h-screen bg-[#F5F2EB]"></div>;
+    }
 
     function handlePlaceOrder() {
         setError(null);
@@ -31,6 +41,7 @@ export default function CheckoutPage() {
                 city,
                 district,
                 paymentMethod: "COD",
+                vatAmount: totalPrice() * 0.05,
             });
 
             if (result.error) {
@@ -193,10 +204,14 @@ export default function CheckoutPage() {
                                 <span className="text-[#0A2D6C]/60">Delivery</span>
                                 <span className="font-semibold text-[#00B16A]">Free</span>
                             </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-[#0A2D6C]/60">VAT (5%)</span>
+                                <span className="font-semibold text-[#031E49]">৳{(totalPrice() * 0.05).toLocaleString()}</span>
+                            </div>
                             <div className="h-px bg-[#031E49]/10" />
                             <div className="flex justify-between">
                                 <span className="font-bold text-[#031E49]">Total</span>
-                                <span className="text-xl font-bold text-[#031E49]">৳{totalPrice().toLocaleString()}</span>
+                                <span className="text-xl font-bold text-[#031E49]">৳{(totalPrice() * 1.05).toLocaleString()}</span>
                             </div>
                         </div>
 
@@ -204,8 +219,8 @@ export default function CheckoutPage() {
                             onClick={handlePlaceOrder}
                             disabled={isPending}
                             className={`w-full py-3.5 rounded-xl font-bold shadow-md transition-all ${isPending
-                                    ? "bg-[#031E49]/50 text-white/70 cursor-wait"
-                                    : "bg-[#00B16A] text-white hover:bg-emerald-600"
+                                ? "bg-[#031E49]/50 text-white/70 cursor-wait"
+                                : "bg-[#00B16A] text-white hover:bg-emerald-600"
                                 }`}
                         >
                             {isPending ? "Processing..." : "Place Order"}

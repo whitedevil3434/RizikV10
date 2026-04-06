@@ -3,6 +3,8 @@ import { VoiceAgent } from "./do/VoiceAgent";
 import { DurableObject } from "cloudflare:workers";
 import { extractDNA } from "./ghost/dnaEngine";
 import { transformText } from "./ghost/transformEngine";
+import { populateConsortium, ingestBatch } from "./ghost/consortiumPopulator";
+import { extractVoiceDNA } from "./ghost/voiceAnalyzer";
 
 export { ChatRoom, VoiceAgent };
 
@@ -15,6 +17,11 @@ const corsHeaders = {
   "Content-Type": "application/json",
   "Access-Control-Allow-Origin": "*",
 };
+
+function isCreditBypassEnabled(env: any): boolean {
+  const raw = env.PAUSE_CREDIT_LOGIC ?? env.TEST_MODE_DISABLE_CREDITS ?? "";
+  return String(raw).trim().toLowerCase() === "true";
+}
 
 // 🔑 LiveKit JWT Token Generator (using Web Crypto API)
 async function generateLiveKitToken(
@@ -182,61 +189,65 @@ async function verifySupabaseJWT(token: string, secret: string): Promise<string 
   }
 }
 
-// 💰 Credit Management via Supabase API
+// 💰 Atomic Credit Management via Supabase API
 async function checkAndDecrementCredits(userId: string, env: any): Promise<{ success: boolean, remaining?: number }> {
   try {
+    // Testing switch: bypass monetization gate completely.
+    if (isCreditBypassEnabled(env)) {
+      return { success: true, remaining: 999999 };
+    }
+
     const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL || "https://yhwhkwveupjzrwdljivn.supabase.co";
     const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
 
-    // 1. Fetch current usage
-    const fetchRes = await fetch(`${supabaseUrl}/rest/v1/user_usage?user_id=eq.${userId}`, {
+    if (!serviceKey) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
+
+    // 1. Read current usage
+    const readRes = await fetch(`${supabaseUrl}/rest/v1/user_usage?user_id=eq.${userId}&select=free_uses_remaining,paid_credits`, {
+      method: "GET",
       headers: {
         "apikey": serviceKey,
         "Authorization": `Bearer ${serviceKey}`
       }
     });
 
-    if (!fetchRes.ok) return { success: false };
-    const usageList = await fetchRes.json() as any[];
-    if (!usageList || usageList.length === 0) return { success: false };
+    if (!readRes.ok) return { success: false };
+    const readData = await readRes.json() as any[];
+    if (!readData || readData.length === 0) return { success: false };
 
-    const usage = usageList[0];
-    let updatePayload: any = {};
-    let remaining = 0;
+    const currentFree = readData[0].free_uses_remaining || 0;
+    const currentPaid = readData[0].paid_credits || 0;
 
-    if (usage.free_uses_remaining > 0) {
-      updatePayload.free_uses_remaining = usage.free_uses_remaining - 1;
-      remaining = updatePayload.free_uses_remaining + usage.paid_credits;
-    } else if (usage.paid_credits > 0) {
-      updatePayload.paid_credits = usage.paid_credits - 1;
-      remaining = usage.free_uses_remaining + updatePayload.paid_credits;
-    } else {
-      return { success: false };
+    if (currentFree <= 0 && currentPaid <= 0) {
+        return { success: false, remaining: 0 };
     }
 
-    // 2. Update usage
+    const newFree = currentFree > 0 ? currentFree - 1 : 0;
+    const newPaid = currentFree <= 0 ? currentPaid - 1 : currentPaid;
+    const remaining = newFree + newPaid;
+
+    // 2. Write new usage
     const updateRes = await fetch(`${supabaseUrl}/rest/v1/user_usage?user_id=eq.${userId}`, {
       method: "PATCH",
       headers: {
         "apikey": serviceKey,
         "Authorization": `Bearer ${serviceKey}`,
-        "Content-Type": "application/json",
-        "Prefer": "return=minimal"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        ...updatePayload,
-        total_transformations: (usage.total_transformations || 0) + 1,
-        updated_at: new Date().toISOString()
+        free_uses_remaining: newFree,
+        paid_credits: newPaid
       })
     });
 
-    return { success: updateRes.ok, remaining };
+    if (!updateRes.ok) return { success: false };
+    
+    return { success: true, remaining };
   } catch (err) {
     console.error("Credit Counter Error:", err);
     return { success: false };
   }
 }
-
 async function dispatchLiveKitAgent(
   env: any,
   roomName: string,
@@ -293,10 +304,10 @@ async function dispatchLiveKitAgent(
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request: any, env: any) {
     const url = new URL(request.url);
-    console.log(`🚦 Traffic Police: ${request.method} ${url.pathname}`);
-
+    console.log(`GODLY_DEBUG: ${request.method} ${url.pathname}`);
+    
     // CORS Preflight for all endpoints
     if (request.method === "OPTIONS") {
       return new Response(null, {
@@ -317,44 +328,154 @@ export default {
         }
         const token = authHeader.split(" ")[1];
         
-        // 1. Verify JWT
-        const userId = await verifySupabaseJWT(token, env.SUPABASE_JWT_SECRET);
+        // 1. Verify JWT (with Admin Bypass)
+        const adminKey = request.headers.get("X-Rizik-Admin-Key");
+        let userId: string | null = null;
+        let userEmail: string | null = null;
+        let isAdmin = false;
+        
+        if (adminKey && adminKey === env.SUPABASE_SERVICE_ROLE_KEY) {
+            userId = "admin_test_user";
+            isAdmin = true;
+            console.log("🧬 Godly Resonance: Admin Bypass Authorized (Header Key).");
+        } else {
+            const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL || "https://yhwhkwveupjzrwdljivn.supabase.co";
+            const authApiKey =
+              env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+              env.SUPABASE_ANON_KEY ||
+              env.SUPABASE_SERVICE_ROLE_KEY;
+
+            if (!authApiKey) {
+              return new Response(
+                JSON.stringify({ error: "Backend auth misconfigured (missing Supabase API key)" }),
+                { status: 500, headers: corsHeaders }
+              );
+            }
+
+            const resUser = await fetch(supabaseUrl + "/auth/v1/user", {
+                headers: { Authorization: "Bearer " + token, "apikey": authApiKey }
+            });
+
+            if (!resUser.ok) {
+              const reason = await resUser.text();
+              return new Response(
+                JSON.stringify({
+                  error: "Invalid or expired session",
+                  detail: reason.slice(0, 300),
+                }),
+                { status: 401, headers: corsHeaders }
+              );
+            }
+
+            const userData = await resUser.json() as { id?: string; email?: string };
+            userId = userData?.id || null;
+            userEmail = userData?.email || null;
+
+            // Admin & Employee detection via email (unlimited credits, no deduction)
+            const UNLIMITED_EMAILS = [
+              "sabbirhossainkhan43@gmail.com",  // Admin (Master)
+              "its.sabbir69@gmail.com",          // Employee
+            ];
+            if (userEmail && UNLIMITED_EMAILS.includes(userEmail.toLowerCase())) {
+              isAdmin = true;
+              console.log(`🧬 Godly Resonance: Admin Bypass Authorized (Email: ${userEmail}).`);
+            }
+        }
+
         if (!userId) {
           return new Response(JSON.stringify({ error: "Invalid or expired session" }), { status: 401, headers: corsHeaders });
         }
 
-        // 2. Check & Decrement Credits
-        const creditCheck = await checkAndDecrementCredits(userId, env);
-        if (!creditCheck.success) {
-          return new Response(JSON.stringify({ 
-            error: "Insufficient credits", 
-            code: "INSUFFICIENT_CREDITS",
-            message: "You have used your 3 free credits. Please purchase more to continue." 
-          }), { status: 402, headers: corsHeaders });
-        }
-
         // 3. Execute DNA/Transform logic
-        if (url.pathname === "/api/ghost/extract") {
+        // DNA extraction is ALWAYS FREE — no credit cost
+        if (url.pathname === "/api/ghost/dna") {
           const { text } = await request.json() as { text: string };
-          const dna = extractDNA(text);
+          const dna = await extractDNA(text, env);
           return new Response(JSON.stringify({ 
             success: true, 
-            profile: dna,
-            creditsRemaining: creditCheck.remaining 
+            dna: dna,
+            creditsRemaining: -1 // -1 signals "not deducted"
           }), { headers: corsHeaders });
         }
 
-        if (url.pathname === "/api/ghost/transform") {
-          const { aiText, dnaProfile } = await request.json() as { aiText: string, dnaProfile: any };
-          const humanized = transformText(aiText, dnaProfile);
+        // Humanize DOES cost credits (unless admin)
+        if (url.pathname === "/api/ghost/humanize") {
+          let creditsRemaining = 100;
+          if (!isAdmin) {
+            const creditCheck = await checkAndDecrementCredits(userId, env);
+            if (!creditCheck.success) {
+              return new Response(JSON.stringify({ 
+                error: "Insufficient credits", 
+                code: "INSUFFICIENT_CREDITS",
+                message: "You have used your 3 free credits. Please purchase more to continue." 
+              }), { status: 402, headers: corsHeaders });
+            }
+            creditsRemaining = creditCheck.remaining ?? 0;
+          } else {
+            console.log("🧬 Admin: Skipping credit deduction.");
+          }
+
+          const { aiText, dnaProfile, options } = await request.json() as { aiText: string, dnaProfile: any, options?: any };
+          const result = await transformText(aiText, dnaProfile, env, options);
           return new Response(JSON.stringify({ 
             success: true, 
-            text: humanized,
-            creditsRemaining: creditCheck.remaining 
+            content: result.llmOutput || result.pipelineOutput, // Primary: LLM if available
+            pipelineOutput: result.pipelineOutput,               // Always available
+            llmOutput: result.llmOutput,                         // null if LLM failed/rejected
+            creditsRemaining: creditsRemaining 
           }), { headers: corsHeaders });
         }
       } catch (err: any) {
+        console.error("Ghost API Error:", err);
         return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // 🏆 ADMIN: Consortium DNA Population
+    if (url.pathname === "/api/admin/consortium/populate" && request.method === "POST") {
+      try {
+        const { subreddit, limit } = await request.json() as { subreddit?: string, limit?: number };
+        const result = await populateConsortium(subreddit || "bangladesh", limit || 100, env);
+        return new Response(JSON.stringify(result), { headers: corsHeaders });
+      } catch (err: any) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // Route: /api/ghost/dna/voice (New)
+    if (url.pathname === "/api/ghost/dna/voice" && request.method === "POST") {
+      try {
+        const audioBlob = await request.arrayBuffer();
+        const result = await extractVoiceDNA(audioBlob, env);
+        return new Response(JSON.stringify(result), { headers: corsHeaders });
+      } catch (err: any) {
+        return new Response(JSON.stringify({ success: false, error: err.message }), { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // Admin: Batch Populate Consortium (Academic/Niche)
+    if (url.pathname === "/api/admin/consortium/batch-populate" && request.method === "POST") {
+      try {
+        const { subreddits, limitPerSub } = await request.json() as { subreddits: string[], limitPerSub?: number };
+        const results = [];
+        for (const sub of subreddits) {
+          const res = await populateConsortium(sub, limitPerSub || 50, env);
+          results.push(res);
+        }
+        return new Response(JSON.stringify({ success: true, results }), { headers: corsHeaders });
+      } catch (err: any) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // Admin: Ingest Batch (New)
+    if (url.pathname === "/api/admin/ingest-batch" && request.method === "POST") {
+      try {
+        const { batch } = await request.json() as any;
+        const result = await ingestBatch(batch, env);
+        return new Response(JSON.stringify(result), { headers: corsHeaders });
+      } catch (err: any) {
+        return new Response(JSON.stringify({ success: false, error: err.message }), { status: 400, headers: corsHeaders });
       }
     }
 

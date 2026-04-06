@@ -25,7 +25,7 @@ export class VoiceAgent extends DurableObject {
                 return new Response(JSON.stringify({ success: true, saved: true }), {
                     headers: { "Content-Type": "application/json" }
                 });
-            } catch (err) {
+            } catch (err: any) {
                 return new Response(JSON.stringify({ error: err.message }), { status: 500 });
             }
         }

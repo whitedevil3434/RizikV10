@@ -58,6 +58,9 @@ export default function WriterPage() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [voiceChunks, setVoiceChunks] = useState<Blob[]>([]);
   const [voiceTranscribedText, setVoiceTranscribedText] = useState("");
+  
+  // UI Error State (replaces browser alerts)
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     fetchUsage();
@@ -112,10 +115,11 @@ export default function WriterPage() {
 
   const handleExtractDNA = async () => {
     setIsProcessing(true);
+    setErrorMsg("");
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        alert("Session expired. Please sign in again.");
+        setErrorMsg("Session expired. Please sign in again.");
         return;
       }
 
@@ -131,11 +135,11 @@ export default function WriterPage() {
       if (res.ok && data.success) {
         setDnaProfile(data.dna);
       } else {
-        alert("DNA extraction failed: " + (data?.message || data?.error || "Please sign in again."));
+        setErrorMsg("DNA extraction failed: " + (data?.message || data?.error || "Please sign in again."));
       }
     } catch (e) {
       console.error(e);
-      alert("DNA extraction failed (Network Error). Please try again later.");
+      setErrorMsg("DNA extraction failed (Network Error). Please try again later.");
     } finally {
       setIsProcessing(false);
     }
@@ -208,11 +212,12 @@ export default function WriterPage() {
 
     setIsProcessing(true);
     setDnaMatching(true);
+    setErrorMsg("");
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        alert("Session expired. Please sign in again.");
+        setErrorMsg("Session expired. Please sign in again.");
         return;
       }
 
@@ -242,11 +247,11 @@ export default function WriterPage() {
         else setViewMode("llm");
         fetchUsage(); // Refresh credits
       } else {
-        alert(data?.message || data?.error || "Humanizer failed. Please try again.");
+        setErrorMsg(data?.message || data?.error || "Humanizer failed. Please try again.");
       }
     } catch (e) {
       console.error(e);
-      alert("Transformation failed. Check your credits or network.");
+      setErrorMsg("Transformation failed. Check your credits or network.");
     } finally {
       setIsProcessing(false);
       setDnaMatching(false);
@@ -272,11 +277,22 @@ export default function WriterPage() {
           >
             <div className="w-2.5 h-2.5 rounded-full bg-[#00B16A] animate-pulse"></div>
             <span className="text-sm font-black tracking-wider text-[#04204C]">{credits} CREDITS</span>
-            <button className="ml-2 text-[10px] bg-[#04204C] text-white px-2 py-0.5 rounded font-black uppercase">
+            <button type="button" className="ml-2 text-[10px] bg-[#04204C] text-white px-2 py-0.5 rounded font-black uppercase">
               Top Up
             </button>
           </div>
         </div>
+
+        {/* Global Error Banner */}
+        {errorMsg && (
+          <div className="mb-8 p-4 rounded-xl border border-red-500/20 bg-red-500/5 flex items-center justify-between text-red-500 animate-in fade-in slide-in-from-top-2">
+            <span className="text-sm font-bold flex items-center gap-2">
+              <ShieldAlert size={16} />
+              {errorMsg}
+            </span>
+            <button onClick={() => setErrorMsg("")} className="text-red-500/50 hover:text-red-500">×</button>
+          </div>
+        )}
 
         {/* DNA Matching Indicator */}
         {dnaMatching && (

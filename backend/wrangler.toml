@@ -1,14 +1,6 @@
-name = "rizik-backend"
+name = "rizik-backend-godly"
 main = "src/index.ts"
 compatibility_date = "2024-04-01"
-
-# Environment variables for AI models (change here, not in code!)
-[vars]
-AI_MODEL_NAME = "@cf/meta/llama-3.1-8b-instruct"     # Fast, no reasoning tags
-AI_MODEL_FALLBACK = "@cf/meta/llama-3.1-8b-instruct"  # Fallback model
-GROQ_API_KEY = ""
-LIVEKIT_URL = "wss://rizik-ai-femz194x.livekit.cloud"
-LIVEKIT_AGENT_NAME = "rizik-local-final"
 
 [durable_objects]
 bindings = [
@@ -19,6 +11,26 @@ bindings = [
 [ai]
 binding = "AI"
 
-# Match existing migration on rizik-backend
+[[vectorize]]
+binding = "CONSORTIUM_DB"
+index_name = "rizik_human_consortium"
+
+# R2 Buckets for Storage (Images, Proofs)
+[[r2_buckets]]
+binding = "RIZIK_STORAGE"
+bucket_name = "rizik-storage-v1"
+
 [[migrations]]
-tag = "v7"
+tag = "v1"
+new_sqlite_classes = ["ChatRoom", "VoiceAgent"]
+
+[vars]
+ENVIRONMENT = "production"
+CALLS_APP_ID = "1e976218463f682ebf0f56c0667a5482"
+LIVEKIT_URL = "wss://rizik-ai-femz194x.livekit.cloud"
+LIVEKIT_API_KEY = "APImSG78KpGRGdm"
+LIVEKIT_API_SECRET = "MdKvfAwLfivlzlQmgRfJ268XvW79vSyqidour2e1kQnC"
+# 🔒 Supabase Config for Monetization
+NEXT_PUBLIC_SUPABASE_URL = "https://yhwhkwveupjzrwdljivn.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlod2hrd3ZldXBqenJ3ZGxqaXZuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjIxMjg3OCwiZXhwIjoyMDg3Nzg4ODc4fQ.cOMxhnL4BjvllMx5K2UNkfHUuhC3rVhzWWSIIBLWCDg"
+SUPABASE_JWT_SECRET = "0HO8B/tYISvzMe4J4WTwJlp76lgxgOe/MjwCpOt5"

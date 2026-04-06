@@ -71,51 +71,85 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Philosophy / Value Prop Section */}
+      {/* Subsidiaries Section */}
       <section className="w-full py-24 bg-white border-t border-[#031E49]/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-[#031E49] mb-4">The Three Pillars of Rizik Global</h2>
-            <p className="text-[#0A2D6C]/75 max-w-2xl mx-auto">Our holding company operates across three core verticals with shared quality, compliance, and execution standards.</p>
+            <h2 className="text-3xl font-bold text-[#031E49] mb-4">Operations & Subsidiaries</h2>
+            <p className="text-[#0A2D6C]/75 max-w-2xl mx-auto">The Rizik Global ecosystem operates across five specialized units, unified by automated logistics and eco-tech compliance.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Card 1 */}
-            <div className="p-8 rounded-3xl bg-[#F5F2EB] border border-[#031E49]/10 hover:border-[#00B16A]/30 transition-all group hover:shadow-lg">
-              <div className="w-12 h-12 rounded-xl bg-[#031E49]/10 flex items-center justify-center mb-6 group-hover:bg-[#031E49]/20 transition-colors">
-                <svg className="w-6 h-6 text-[#031E49]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
+            {/* Rizik Textile (Hero) */}
+            <div className="p-8 rounded-3xl bg-[#F5F2EB] border border-[#00B16A]/20 shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4">
+                <span className="px-2 py-1 rounded bg-[#00B16A]/10 text-[#00B16A] text-[10px] font-bold uppercase tracking-wider">Flagship</span>
               </div>
-              <h3 className="text-xl font-bold text-[#031E49] mb-3">Rizik Bio Tech</h3>
-              <p className="text-[#0A2D6C]/75 leading-relaxed">
-                Next-generation biomaterial research and classified organic structural engineering. Operating in stealth to redefine what is organically possible.
+              <h3 className="text-xl font-bold text-[#031E49] mb-3">Rizik Textile</h3>
+              <p className="text-[#0A2D6C]/75 text-sm leading-relaxed mb-6">
+                Redefining woven tech. Home to the **Rizik Eco-Mat** series—biodegradable, high-durability surfaces engineered for community and prayer spaces.
+              </p>
+              <Link href="/store" className="text-sm font-bold text-[#00B16A] hover:underline">Explore Products →</Link>
+            </div>
+
+            {/* Rizik Bio-Tech */}
+            <div className="p-8 rounded-3xl bg-white border border-[#031E49]/10 hover:border-[#031E49]/20 transition-all">
+              <h3 className="text-xl font-bold text-[#031E49] mb-3">Rizik Bio-Tech</h3>
+              <p className="text-[#0A2D6C]/75 text-sm leading-relaxed">
+                Biomaterial research and organic structural integrity. Operating in stealth to develop next-gen alternatives to plastic and synthetic fibers. [Classified]
               </p>
             </div>
 
-            {/* Card 2 */}
-            <div className="p-8 rounded-3xl bg-[#F5F2EB] border border-[#031E49]/10 hover:border-[#00B16A]/30 transition-all group hover:shadow-lg">
-              <div className="w-12 h-12 rounded-xl bg-[#031E49]/10 flex items-center justify-center mb-6 group-hover:bg-[#031E49]/20 transition-colors">
-                <svg className="w-6 h-6 text-[#031E49]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            {/* Rizik Tech */}
+            <div className="p-8 rounded-3xl bg-white border border-[#031E49]/10 hover:border-[#031E49]/20 transition-all flex flex-col justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-[#031E49] mb-3">Rizik Tech</h3>
+                <p className="text-[#0A2D6C]/75 text-sm leading-relaxed mb-4">
+                  The digital nervous system of the ecosystem. Managed cloud logistics, Squad tracking engines, and automated order fulfillment systems.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-[#031E49] mb-3">Global B2B Logistics</h3>
-              <p className="text-[#0A2D6C]/75 leading-relaxed">
-                Direct distribution to mosques, corporate events, and agro-processors with centralized planning, fulfillment visibility, and delivery controls.
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-[#00B16A] uppercase tracking-widest">Active Product: </span>
+                <Link href="#rizik-writer" className="text-xs font-bold text-[#031E49] hover:text-[#00B16A] transition-colors">Rizik Writer ↓</Link>
+              </div>
+            </div>
+
+            {/* Rizik Cloud Kitchen (Upcoming) */}
+            <div className="p-8 rounded-3xl bg-white border border-[#031E49]/10 hover:border-[#031E49]/20 transition-all opacity-80 border-dashed">
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="text-xl font-bold text-[#031E49]">Rizik Cloud Kitchen</h3>
+                <span className="px-2 py-0.5 rounded bg-[#031E49]/5 text-[#031E49]/60 text-[8px] font-bold uppercase tracking-wider">Upcoming</span>
+              </div>
+              <p className="text-[#0A2D6C]/75 text-sm leading-relaxed">
+                Reinventing food safety through tech-integrated preparation and traceable supply chains. Initial deployment phase scheduled for Q4.
               </p>
             </div>
 
-            {/* Card 3 */}
-            <div className="p-8 rounded-3xl bg-[#F5F2EB] border border-[#031E49]/10 hover:border-[#00B16A]/30 transition-all group hover:shadow-lg">
-              <div className="w-12 h-12 rounded-xl bg-[#00B16A]/10 flex items-center justify-center mb-6 group-hover:bg-[#00B16A]/20 transition-colors">
-                <svg className="w-6 h-6 text-[#00B16A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-[#031E49] mb-3">Community Economics</h3>
-              <p className="text-[#0A2D6C]/75 leading-relaxed">
-                Empowering rural networks (Barishal base) by decentralizing production. From bespoke Mosque prints to Ramadan Glow-in-the-Dark series—engineered for localized mass scaling.
+            {/* Rizik Manufacturing */}
+            <div className="p-8 rounded-3xl bg-white border border-[#031E49]/10 hover:border-[#031E49]/20 transition-all">
+              <h3 className="text-xl font-bold text-[#031E49] mb-3">Rizik Manufacturing</h3>
+              <p className="text-[#0A2D6C]/75 text-sm leading-relaxed">
+                Decentralized production nodes empowering local labor through standardized assembly, high-precision tooling, and global quality control.
               </p>
+            </div>
+
+            {/* Rizik Writer (PRODUCT OF RIZIK TECH) */}
+            <div id="rizik-writer" className="p-8 rounded-3xl bg-[#031E49] border border-[#00B16A]/30 shadow-xl relative overflow-hidden group transition-all">
+              <div className="absolute top-0 right-0 p-4">
+                <span className="px-2 py-1 rounded bg-[#00B16A] text-white text-[10px] font-bold uppercase tracking-wider">New Launch</span>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3 flex flex-wrap items-center gap-2">
+                Rizik Writer
+                <span className="text-[9px] bg-white/10 px-2 py-1 rounded text-white/80 uppercase tracking-tighter">PRODUCT OF RIZIK TECH</span>
+              </h3>
+              <p className="text-white/70 text-sm leading-relaxed mb-6">
+                Advanced Voice DNA Humanizer. Stealing the "AI" fingerprint from text and injecting your unique linguistic signature. 100% Turnitin & GPTZero stealth.
+              </p>
+              <Link
+                href="/writer"
+                className="inline-flex items-center text-sm font-bold text-[#00B16A] hover:text-white transition-colors"
+              >
+                Launch DNA Engine →
+              </Link>
             </div>
           </div>
         </div>

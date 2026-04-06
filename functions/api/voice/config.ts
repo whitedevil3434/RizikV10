@@ -1,7 +1,7 @@
 // Cloudflare Worker: Remote Voice Config with Sec-MS-GEC Token
 // Implements Microsoft's anti-abuse token generation to bypass 403 errors.
 
-export async function onRequestGet(context) {
+export async function onRequestGet(context: any) {
   // Generate Sec-MS-GEC Token
   const secMsGec = await generateSecMsGec();
 

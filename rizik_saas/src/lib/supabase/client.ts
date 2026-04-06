@@ -3,11 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const cookieDomain = process.env.SUPABASE_COOKIE_DOMAIN?.trim() || undefined;
 
 // Initialize the Supabase client for client-side operations
 export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
     cookieOptions: {
-        domain: process.env.NODE_ENV === 'production' ? '.rizikecosystem.com' : 'localhost',
+        ...(cookieDomain ? { domain: cookieDomain } : {}),
         path: '/',
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',

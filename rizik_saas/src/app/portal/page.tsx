@@ -106,6 +106,7 @@ export default async function PortalPage() {
   // === FULL DASHBOARD (Managers, Admins, Support Agents, B2B Buyers) ===
   const dashboard = await getPortalDashboardData();
 
+  // Check if searchParams has report=success
   const kpis = [
     { label: "Assigned Tasks", value: String(dashboard.assigned_tasks), hint: `${dashboard.high_priority_tasks} near deadline` },
     { label: "Open Requests", value: String(dashboard.open_requests), hint: "Workflow queue" },
@@ -127,6 +128,31 @@ export default async function PortalPage() {
         { href: "/portal/checkin", label: "🕒 Check-In", tone: "primary" },
       ]}
     >
+      {/* Daily Report Banner */}
+      {!dashboard.has_daily_report && (
+        <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📝</span>
+            <div>
+              <p className="text-sm font-bold text-amber-900">আজকের রিপোর্ট জমা দেওয়া হয়নি</p>
+              <p className="text-xs text-amber-700">Daily reporting helps us track your progress.</p>
+            </div>
+          </div>
+          <Link href="/portal/report/daily" className="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition-all">
+            ফিলাপ করুন
+          </Link>
+        </div>
+      )}
+
+      {dashboard.has_daily_report && (
+        <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center gap-3">
+          <span className="text-2xl">✅</span>
+          <div>
+            <p className="text-sm font-bold text-emerald-900">আজকের রিপোর্ট জমা হয়েছে</p>
+            <p className="text-xs text-emerald-700">Thank you for keeping us updated!</p>
+          </div>
+        </div>
+      )}
       <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-7">
         {kpis.map((item) => (
           <article key={item.label} className="rounded-2xl border border-[#031E49]/10 bg-white p-5 shadow-sm">

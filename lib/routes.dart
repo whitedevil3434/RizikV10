@@ -20,6 +20,7 @@ import 'features/squad/presentation/screens/squad_dashboard_screen.dart';
 import 'features/source/inventory/presentation/screens/inventory_screen.dart';
 import 'features/gig/presentation/screens/gig_details_screen.dart';
 import 'features/alerts/presentation/unified_alerts_screen.dart';
+import 'features/sdui/presentation/sdui_test_screen.dart';
 
 // State Management (Auth State দেখার জন্য)
 import 'features/auth/logic/auth_controller.dart';
@@ -36,7 +37,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: navigatorKey,
     // GOD MODE: Hard-switch to Seeker Home (Bypassing Splash/Login)
     initialLocation:
-        const String.fromEnvironment('START_ROUTE', defaultValue: '/seeker'),
+        const String.fromEnvironment('START_ROUTE', defaultValue: '/sdui-test'),
     debugLogDiagnostics: true, // ডেভেলপমেন্টের সময় লগ দেখার জন্য
 
     // 🔄 Refresh Logic: যখনই লগইন/লগআউট হবে, রাউটার অটোমেটিক রিফ্রেশ হবে
@@ -139,6 +140,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/alerts',
         name: 'alerts',
         builder: (context, state) => const UnifiedAlertsScreen(),
+      ),
+      GoRoute(
+        path: '/sdui-test',
+        name: 'sdui_test',
+        builder: (context, state) => const SDUITestScreen(),
       ),
     ],
 

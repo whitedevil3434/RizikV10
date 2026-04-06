@@ -1,11 +1,13 @@
 'use client';
 
+export const runtime = 'edge';
+
 import { useState, useRef, useEffect } from 'react';
 import { Fingerprint, Mic, FileText, Upload, Sparkles, ShieldCheck, Settings, ArrowRight, Download, Activity, PlaySquare, FileCheck, Globe } from 'lucide-react';
 
 import { createBrowserClient } from '@supabase/ssr';
 
-const BACKEND_URL = 'https://rizik-backend.its-sabbir69.workers.dev';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rizik-backend.its-sabbir69.workers.dev';
 
 export default function Home() {
   const [activeStep, setActiveStep] = useState(1);
@@ -20,8 +22,8 @@ export default function Home() {
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
   const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yhwhkwveupjzrwdljivn.supabase.co',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlod2hrd3ZldXBqenJ3ZGxqaXZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyMTI4NzgsImV4cCI6MjA4Nzc4ODg3OH0.A5Aj5pSiDEljN0iCve3UlHgXwxCGR_jCpC0lnkIvt3A',
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookieOptions: {
         domain: typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'localhost' : '.rizikecosystem.com',
@@ -97,7 +99,7 @@ export default function Home() {
   const [aiText, setAiText] = useState('');
   const [outputText, setOutputText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  
+  const [isAcademic, setIsAcademic] = useState(false);
   const [detectScores, setDetectScores] = useState(null);
 
   // Speech Recognition Ref
@@ -148,7 +150,7 @@ export default function Home() {
     setIsProcessing(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${BACKEND_URL}/api/ghost/extract`, {
+      const res = await fetch(`${BACKEND_URL}/api/ghost/dna`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json' ,
@@ -158,7 +160,7 @@ export default function Home() {
       });
       const data = await res.json();
       if (data.success) {
-        setDnaProfile(data.profile);
+        setDnaProfile(data.dna);
         setActiveStep(2);
         fetchUsage(user.id);
       } else if (data.code === 'INSUFFICIENT_CREDITS') {
@@ -183,17 +185,21 @@ export default function Home() {
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${BACKEND_URL}/api/ghost/transform`, {
+      const res = await fetch(`${BACKEND_URL}/api/ghost/humanize`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({ aiText, dnaProfile })
+        body: JSON.stringify({ 
+          aiText, 
+          dnaProfile,
+          options: { academic: isAcademic }
+        })
       });
       const data = await res.json();
       if (data.success) {
-        setOutputText(data.text);
+        setOutputText(data.text || data.content);
         setDetectScores({
           turnitin: { score: Math.floor(Math.random() * 5), isHuman: true },
           gptZero: { score: Math.floor(Math.random() * 8), isHuman: true }
@@ -339,32 +345,32 @@ export default function Home() {
           </section>
 
           {/* STEP 2: AI TEXT */}
-          <section className="glass-panel" style={{ opacity: activeStep >= 2 ? 1 : 0.5, pointerEvents: activeStep >= 2 ? 'auto' : 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-              <div style={{ background: activeStep >= 2 ? '#00B16A' : 'var(--border)', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'white' }}>2</div>
-              <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#04204C' }}>Paste AI Text</h2>
-            </div>
-            
-            <p>Paste the ChatGPT generated text you want to humanize.</p>
-            <textarea 
-              className="input-field" 
-              placeholder="Paste your 100% AI generated assignment here..." 
-              style={{ height: '250px' }}
-              value={aiText}
-              onChange={(e) => setAiText(e.target.value)}
-            />
-            
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button 
-                className="btn btn-primary" 
-                onClick={handleTransform}
-                disabled={aiText.length < 10 || isProcessing}
-                style={{ width: '100%' }}
-              >
-                {isProcessing ? 'WRITING...' : <><Sparkles size={18} /> Apply DNA & Transform</>}
-              </button>
-            </div>
-          </section>
+            <section className="glass-panel" style={{ opacity: activeStep >= 2 ? 1 : 0.5, pointerEvents: activeStep >= 2 ? 'auto' : 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                <div style={{ background: activeStep >= 2 ? '#00B16A' : 'var(--border)', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'white' }}>2</div>
+                <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#04204C' }}>Paste AI Text</h2>
+              </div>
+              
+              <p>Paste the ChatGPT generated text you want to humanize.</p>
+              <textarea 
+                className="input-field" 
+                placeholder="Paste your 100% AI generated assignment here..." 
+                style={{ height: '250px' }}
+                value={aiText}
+                onChange={(e) => setAiText(e.target.value)}
+              />
+              
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={handleTransform}
+                  disabled={aiText.length < 10 || isProcessing}
+                  style={{ width: '100%' }}
+                >
+                  {isProcessing ? 'WRITING...' : <><Sparkles size={18} /> Apply DNA & Transform</>}
+                </button>
+              </div>
+            </section>
 
         </div>
 

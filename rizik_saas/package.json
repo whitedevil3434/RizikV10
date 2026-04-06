@@ -17,6 +17,9 @@
     "@supabase/supabase-js": "^2.98.0",
     "firebase": "^12.10.0",
     "framer-motion": "^12.34.3",
+    "lightningcss": "^1.32.0",
+    "lightningcss-darwin-arm64": "^1.32.0",
+    "lucide-react": "^1.7.0",
     "next": "15.1.0",
     "qrcode.react": "^4.2.0",
     "react": "19.0.0",
@@ -26,10 +29,12 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.0",
     "eslint": "^9",
     "eslint-config-next": "15.1.0",
     "tailwindcss": "^4",

@@ -46,6 +46,23 @@ export async function GET(request: Request) {
                         await supabase.from('user_profiles').upsert(profileData, { onConflict: "id" });
                     }
                 }
+
+                const usageData = {
+                    user_id: user.id,
+                    free_uses_remaining: 3,
+                    paid_credits: 0,
+                };
+                if (adminSupabase) {
+                    await adminSupabase.from('user_usage').upsert(usageData, { onConflict: "user_id", ignoreDuplicates: true });
+                } else {
+                    await supabase.from('user_usage').upsert(usageData, { onConflict: "user_id", ignoreDuplicates: true });
+                }
+            }
+
+            // Check if this is a password recovery callback
+            const type = searchParams.get('type');
+            if (type === 'recovery') {
+                return NextResponse.redirect(`${origin}/login/update-password`);
             }
 
             return NextResponse.redirect(`${origin}/store`);

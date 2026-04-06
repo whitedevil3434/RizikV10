@@ -1,6 +1,9 @@
 import OpsShell from "@/components/workspace/ops-shell";
 import { portalNavItems } from "@/lib/workspace/nav";
 import { getEmployeeTasks, type OpsTask } from "@/lib/ops/data";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/client";
+import { getRoleTeam } from "@/lib/auth/policy";
 
 function groupTasks(tasks: OpsTask[]) {
   const todo = tasks.filter((task) => task.status === "TODO");
@@ -10,7 +13,19 @@ function groupTasks(tasks: OpsTask[]) {
 }
 
 export default async function PortalTasksPage() {
-  const tasks = await getEmployeeTasks(100);
+  // Get user role
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let role = "GUEST";
+  if (user) {
+    const admin = createAdminClient();
+    const { data: profile } = await admin.from("user_profiles").select("role").eq("id", user.id).maybeSingle();
+    role = profile?.role || "CUSTOMER";
+  }
+
+  const team = getRoleTeam(role);
+  const tasks = await getEmployeeTasks(100, team);
   const grouped = groupTasks(tasks);
 
   return (

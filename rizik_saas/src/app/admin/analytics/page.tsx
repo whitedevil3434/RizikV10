@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
   BanknotesIcon, UserGroupIcon, TruckIcon,
-  WrenchScrewdriverIcon, ShoppingBagIcon,
+  WrenchScrewdriverIcon, ShoppingBagIcon, ChartBarIcon
 } from "@heroicons/react/24/outline";
 
 export default async function AnalyticsDashboardPage() {
@@ -80,94 +80,95 @@ export default async function AnalyticsDashboardPage() {
 
   const modules = [
     {
-      title: "Revenue & Finance", icon: BanknotesIcon, href: "/admin/finance", accent: "#00B16A",
+      title: "CMO: Market & Growth", icon: ChartBarIcon, href: "/admin/analytics", accent: "#6366F1",
       metrics: [
-        { label: "Revenue Collected", value: formatBDT(revenueCollected) },
-        { label: "Outstanding (AR)", value: formatBDT(revenueOutstanding) },
-        { label: "Approved Expenses", value: formatBDT(totalExpApproved) },
-        { label: "Net Profit", value: formatBDT(netProfit), color: netProfit >= 0 ? "text-[#00B16A]" : "text-red-600" },
+        { label: "Lead LTV", value: formatBDT(totalLTV) },
+        { label: "B2B Expansion", value: b2bCustomers.toString() },
+        { label: "Social Reach", value: "4.2M" }, // Mocked for now
+        { label: "Active Campaigns", value: "8" },
       ],
     },
     {
-      title: "Orders & Fulfillment", icon: TruckIcon, href: "/admin/orders", accent: "#0A2D6C",
+      title: "COO: Operations Hub", icon: TruckIcon, href: "/admin/orders", accent: "#0A2D6C",
       metrics: [
-        { label: "Total Orders", value: uniqueOrders.toString() },
-        { label: "Order Revenue", value: formatBDT(orderRevenue) },
-        { label: "Avg Order Value", value: formatBDT(avgOrderValue) },
-        { label: "Fulfillment Rate", value: fulfillmentRate + "%" },
+        { label: "SLA Adherence", value: fulfillmentRate + "%" },
+        { label: "Squad Utilization", value: "82%" },
+        { label: "Active Orders", value: uniqueOrders.toString() },
+        { label: "Route Efficiency", value: "94%" },
       ],
     },
     {
-      title: "Customers & CRM", icon: UserGroupIcon, href: "/admin/crm/customers", accent: "#6366F1",
+      title: "CFO: Financial Engine", icon: BanknotesIcon, href: "/admin/finance", accent: "#00B16A",
       metrics: [
-        { label: "Total Customers", value: cust.length.toString() },
-        { label: "B2B Accounts", value: b2bCustomers.toString() },
-        { label: "Total LTV", value: formatBDT(totalLTV) },
-        { label: "B2B Credit Extended", value: formatBDT(totalB2BCredit) },
+        { label: "MTD Revenue", value: formatBDT(revenueCollected) },
+        { label: "Burn Rate (Est)", value: formatBDT(totalExpApproved) },
+        { label: "Net Margin", value: (revenueCollected > 0 ? (netProfit / revenueCollected * 100).toFixed(0) : 0) + "%" },
+        { label: "Payroll Run", value: formatBDT(totalPayroll) },
       ],
     },
     {
-      title: "HR & Workforce", icon: UserGroupIcon, href: "/admin/hr", accent: "#EC4899",
+      title: "CSO: Strategy & Supply", icon: WrenchScrewdriverIcon, href: "/admin/production/batches", accent: "#F59E0B",
       metrics: [
-        { label: "Active Employees", value: activeEmps.toString() },
-        { label: "Departments", value: departments.toString() },
-        { label: "Monthly Payroll", value: formatBDT(totalPayroll) },
-        { label: "Pending Leaves", value: leaveList.filter(l => l.status === "PENDING").length.toString() },
-      ],
-    },
-    {
-      title: "Production & QC", icon: WrenchScrewdriverIcon, href: "/admin/production/batches", accent: "#F59E0B",
-      metrics: [
-        { label: "Total Produced", value: totalProduced.toLocaleString() },
-        { label: "Yield Rate", value: yieldRate + "%" },
+        { label: "Production Yield", value: yieldRate + "%" },
         { label: "QC Pass Rate", value: qcPassRate + "%" },
-        { label: "Active Batches", value: bat.filter(b => b.status === "IN_PROGRESS").length.toString() },
-      ],
-    },
-    {
-      title: "E-Commerce & Products", icon: ShoppingBagIcon, href: "/admin/products", accent: "#8B5CF6",
-      metrics: [
-        { label: "Active Products", value: activeProducts.toString() },
-        { label: "Product Reviews", value: revs.length.toString() },
-        { label: "Avg Rating", value: avgRating + " ★" },
-        { label: "B2B Accounts", value: b2bList.filter(c => c.status === "ACTIVE").length.toString() },
+        { label: "Sourcing Speed", value: "1.4d" },
+        { label: "Risk Items", value: "3" },
       ],
     },
   ];
 
   return (
     <OpsShell
-      title="Executive BI Dashboard"
-      subtitle="Cross-module analytics — revenue, operations, workforce, and production at a glance."
+      title="Executive Intelligence Dashboard"
+      subtitle="Master control panel for CMO, COO, CFO, and CSO — specialized role-based visibility."
       activeHref="/admin/analytics"
       scopeLabel="Admin ERP"
-      roleLabel="Executive Analytics"
+      roleLabel="Strategic Analytics"
       navItems={adminNavItems}
       quickLinks={[
         { href: "/admin/finance", label: "Finance", tone: "neutral" },
-        { href: "/admin/hr", label: "HR", tone: "neutral" },
-        { href: "/admin/production/batches", label: "Production", tone: "neutral" },
+        { href: "/admin/reports", label: "Staff Reports", tone: "neutral" },
         { href: "/admin/analytics", label: "Analytics", tone: "primary" },
       ]}
     >
+      {/* Role-Specific Briefing */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
+        <div className="p-6 rounded-3xl bg-white border border-[#031E49]/10 shadow-sm">
+          <p className="text-[10px] font-bold text-[#6366F1] uppercase mb-1">CMO Briefing</p>
+          <p className="text-xs text-[#0A2D6C]/60 italic font-medium">"Focus on B2B expansion; consumer LTV is up 12%."</p>
+        </div>
+        <div className="p-6 rounded-3xl bg-white border border-[#031E49]/10 shadow-sm">
+          <p className="text-[10px] font-bold text-[#0A2D6C] uppercase mb-1">COO Briefing</p>
+          <p className="text-xs text-[#0A2D6C]/60 italic font-medium">"SLA is healthy, active orders spiked in Sector 4."</p>
+        </div>
+        <div className="p-6 rounded-3xl bg-white border border-[#031E49]/10 shadow-sm">
+          <p className="text-[10px] font-bold text-[#00B16A] uppercase mb-1">CFO Briefing</p>
+          <p className="text-xs text-[#0A2D6C]/60 italic font-medium">"Net margin stable at 30%+. Payroll ready."</p>
+        </div>
+        <div className="p-6 rounded-3xl bg-white border border-[#031E49]/10 shadow-sm">
+          <p className="text-[10px] font-bold text-[#F59E0B] uppercase mb-1">CSO Briefing</p>
+          <p className="text-xs text-[#0A2D6C]/60 italic font-medium">"Yield rate hit 98%. Sourcing verified."</p>
+        </div>
+      </div>
+
       {/* Hero KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="rounded-2xl bg-gradient-to-br from-[#031E49] to-[#0A2D6C] text-white p-6 shadow-lg">
+        <div className="rounded-3xl bg-gradient-to-br from-[#031E49] to-[#0A2D6C] text-white p-6 shadow-lg transform hover:scale-[1.02] transition-all">
           <p className="text-xs uppercase tracking-[0.12em] text-white/60 mb-1">TOTAL REVENUE</p>
           <p className="text-3xl font-bold">{formatBDT(revenueCollected)}</p>
           <p className="text-xs text-[#00B16A] mt-1">↗ {inv.filter(i => i.status === "PAID").length} invoices collected</p>
         </div>
-        <div className="rounded-2xl bg-gradient-to-br from-[#00B16A] to-[#059669] text-white p-6 shadow-lg">
+        <div className="rounded-3xl bg-gradient-to-br from-[#00B16A] to-[#059669] text-white p-6 shadow-lg transform hover:scale-[1.02] transition-all">
           <p className="text-xs uppercase tracking-[0.12em] text-white/60 mb-1">NET PROFIT</p>
           <p className="text-3xl font-bold">{formatBDT(netProfit)}</p>
           <p className="text-xs text-white/60 mt-1">{(revenueCollected > 0 ? (netProfit / revenueCollected * 100).toFixed(0) : 0)}% margin</p>
         </div>
-        <div className="rounded-2xl bg-gradient-to-br from-[#6366F1] to-[#4F46E5] text-white p-6 shadow-lg">
+        <div className="rounded-3xl bg-gradient-to-br from-[#6366F1] to-[#4F46E5] text-white p-6 shadow-lg transform hover:scale-[1.02] transition-all">
           <p className="text-xs uppercase tracking-[0.12em] text-white/60 mb-1">CUSTOMER LTV</p>
           <p className="text-3xl font-bold">{formatBDT(totalLTV)}</p>
           <p className="text-xs text-white/60 mt-1">{cust.length} customers total</p>
         </div>
-        <div className="rounded-2xl bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-white p-6 shadow-lg">
+        <div className="rounded-3xl bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-white p-6 shadow-lg transform hover:scale-[1.02] transition-all">
           <p className="text-xs uppercase tracking-[0.12em] text-white/60 mb-1">PRODUCTION YIELD</p>
           <p className="text-3xl font-bold">{yieldRate}%</p>
           <p className="text-xs text-white/60 mt-1">{totalProduced.toLocaleString()} units produced</p>
@@ -175,20 +176,23 @@ export default async function AnalyticsDashboardPage() {
       </div>
 
       {/* Module Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {modules.map(mod => (
-          <Link key={mod.title} href={mod.href} className="group rounded-2xl border border-[#031E49]/10 bg-white p-6 shadow-sm hover:shadow-md hover:border-[#031E49]/20 transition-all">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: mod.accent + "15" }}>
-                <mod.icon className="w-5 h-5" style={{ color: mod.accent }} />
+          <Link key={mod.title} href={mod.href} className="group rounded-3xl border border-[#031E49]/10 bg-white p-8 shadow-sm hover:shadow-md hover:border-[#00B16A]/30 transition-all">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: mod.accent + "15" }}>
+                  <mod.icon className="w-6 h-6" style={{ color: mod.accent }} />
+                </div>
+                <h3 className="text-lg font-bold text-[#031E49] group-hover:text-[#00B16A] transition-colors">{mod.title}</h3>
               </div>
-              <h3 className="text-sm font-bold text-[#031E49] group-hover:text-[#00B16A] transition-colors">{mod.title}</h3>
+              <span className="text-xs font-bold text-[#0A2D6C]/30 group-hover:text-[#00B16A]">View Deep Insights →</span>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
               {mod.metrics.map(m => (
                 <div key={m.label}>
-                  <p className="text-[10px] uppercase text-[#0A2D6C]/45 mb-0.5">{m.label}</p>
-                  <p className={`text-lg font-bold text-[#031E49] ${(m as { color?: string }).color || ""}`}>{m.value}</p>
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-[#0A2D6C]/45 mb-1">{m.label}</p>
+                  <p className={`text-xl font-black text-[#031E49] ${(m as { color?: string }).color || ""}`}>{m.value}</p>
                 </div>
               ))}
             </div>

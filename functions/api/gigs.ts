@@ -1,7 +1,7 @@
 // Cloudflare Worker: Gig Pricing Engine
 // Calculates dynamic pricing based on category, urgency, and user Trust Score.
 
-export async function onRequestPost(context) {
+export async function onRequestPost(context: any) {
   try {
     const { request, env } = context;
     const body = await request.json();
@@ -22,8 +22,8 @@ export async function onRequestPost(context) {
       'SCRIBE': 100   // Letter writing min
     };
 
-    if (category in minimums && recommendedPrice < minimums[category]) {
-      recommendedPrice = minimums[category];
+    if (category in minimums && recommendedPrice < minimums[category as keyof typeof minimums]) {
+      recommendedPrice = minimums[category as keyof typeof minimums];
     }
 
     return new Response(JSON.stringify({
@@ -34,7 +34,7 @@ export async function onRequestPost(context) {
       headers: { "Content-Type": "application/json" }
     });
 
-  } catch (err) {
+  } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
 }

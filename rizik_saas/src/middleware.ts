@@ -13,13 +13,22 @@ function normalizeHost(hostname: string): string {
 }
 
 export function middleware(request: NextRequest) {
+    const currentHost = normalizeHost(request.headers.get("host") || "");
+    const hostnameOnly = currentHost.split(":")[0];
+    
+    // Redirect ghost subdomain to the integrated writer route
+    if (hostnameOnly.startsWith("ghost.")) {
+        const writerUrl = request.nextUrl.clone();
+        writerUrl.pathname = "/writer";
+        return NextResponse.redirect(writerUrl);
+    }
+
     const pathname = request.nextUrl.pathname;
     const search = request.nextUrl.search;
     const isControlPlane = isControlPlanePath(pathname);
 
     const opsHost = process.env.OPS_HOSTNAME ? normalizeHost(process.env.OPS_HOSTNAME) : "";
-    const currentHost = normalizeHost(request.headers.get("host") || "");
-    const isOpsHost = Boolean(opsHost) && currentHost.split(":")[0] === opsHost.split(":")[0];
+    const isOpsHost = Boolean(opsHost) && hostnameOnly === opsHost.split(":")[0];
 
     // Optional host-level split: keep admin/portal under a dedicated ops hostname.
     if (isControlPlane && opsHost && !isOpsHost) {
@@ -36,8 +45,9 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(adminUrl);
     }
 
-    // Early auth gate for admin/portal paths. Role checks are handled in route layouts.
-    if (isControlPlane && !hasSupabaseAuthCookie(request)) {
+    // Early auth gate for admin/portal paths and writer. Role checks are handled in route layouts.
+    const isWriterPath = pathname.startsWith("/writer");
+    if ((isControlPlane || isWriterPath) && !hasSupabaseAuthCookie(request)) {
         const loginUrl = request.nextUrl.clone();
         loginUrl.pathname = "/login";
         loginUrl.search = `?next=${encodeURIComponent(`${pathname}${search}`)}`;

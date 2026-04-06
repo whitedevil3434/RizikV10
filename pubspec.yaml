@@ -11,7 +11,12 @@ dependencies:
     sdk: flutter
   
   # State Management
-  provider: ^6.1.1
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+  
+  # Data Models & JSON
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
   
   # RealtimeKit (Official SDK)
   realtimekit_core: ^0.1.4
@@ -53,7 +58,6 @@ dependencies:
   lottie: ^3.3.2
   shimmer: ^3.0.0
   google_fonts: ^6.3.2
-  flutter_riverpod: ^2.6.1
   get_it: ^9.1.0
   dio: ^5.9.0
   # WebRTC (Required for RealtimeKit)
@@ -88,16 +92,22 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
-  test: ^1.24.0
   faker: ^2.1.0
   hive_generator: ^2.0.1
   build_runner: ^2.4.13
+  
+  # Generation
+  riverpod_generator: ^2.4.0
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
 
 dependency_overrides:
   permission_handler: ^12.0.1
+
+
   web: ^1.0.0
   record_linux: ^1.2.0 # Force update to fix Android build conflict
+
 
 flutter:
   uses-material-design: true

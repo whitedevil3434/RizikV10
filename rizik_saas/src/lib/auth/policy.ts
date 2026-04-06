@@ -27,3 +27,18 @@ export function isControlPlanePath(pathname: string): boolean {
 export function isAuthSurfacePath(pathname: string): boolean {
   return AUTH_SURFACE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
+
+/** Maps a user role to an operational team for task filtering */
+export function getRoleTeam(role: string): string | undefined {
+  const mapping: Record<string, string> = {
+    SUPER_ADMIN: "Operations",
+    PRODUCTION_MANAGER: "Production",
+    LOGISTICS_MANAGER: "Logistics",
+    SUPPORT_AGENT: "Support",
+    DELIVERY_AGENT: "Logistics",
+    FACTORY_WORKER: "Production",
+    GENERAL_STAFF: "Operations",
+    B2B_BUYER: "Sales",
+  };
+  return mapping[role];
+}

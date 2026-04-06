@@ -1,11 +1,11 @@
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getCurrentUserContext } from "@/lib/auth/session";
 import { canAccessAdminRole } from "@/lib/auth/policy";
 
 export default async function BioShieldPage() {
     const { role } = await getCurrentUserContext();
     if (!canAccessAdminRole(role)) {
-        redirect("/");
+        notFound();
     }
 
     return (

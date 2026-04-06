@@ -1,11 +1,21 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCartStore } from "@/lib/store/cart";
 import { TrashIcon, MinusIcon, PlusIcon, ShoppingBagIcon } from "@heroicons/react/24/outline";
 
 export default function CartPage() {
     const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCartStore();
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    if (!isMounted) {
+        return <div className="min-h-screen bg-[#F5F2EB]"></div>;
+    }
 
     if (items.length === 0) {
         return (

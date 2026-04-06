@@ -48,15 +48,15 @@ export default function B2BPage() {
             Share required volume, timeline, and compliance requirements. Our enterprise team will return a proposal.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <a
-              href="mailto:b2b@rizik.global?subject=Enterprise%20Inquiry%20-%20Rizik"
-              className="rounded-full bg-[#F5F2EB] px-6 py-3 text-sm font-bold text-[#031E49] transition-colors hover:bg-white"
+            <Link
+              href="/b2b/inquiry"
+              className="rounded-full bg-[#F5F2EB] px-8 py-4 text-sm font-bold text-[#031E49] transition-all hover:bg-white active:scale-95 flex items-center gap-2 shadow-lg"
             >
-              Submit Inquiry
-            </a>
+              Start Commercial Inquiry
+            </Link>
             <Link
               href="/subsidiaries"
-              className="rounded-full border border-[#F5F2EB]/30 px-6 py-3 text-sm font-bold text-[#F5F2EB] transition-colors hover:bg-white/10"
+              className="rounded-full border border-[#F5F2EB]/30 px-6 py-4 text-sm font-bold text-[#F5F2EB] transition-colors hover:bg-white/10"
             >
               View Ecosystem
             </Link>

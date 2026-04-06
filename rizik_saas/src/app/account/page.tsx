@@ -4,6 +4,8 @@ import { updateAccountProfileAction } from "@/lib/actions/account";
 import { createAdminClient } from "@/lib/supabase/client";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { UserCircleIcon, BellIcon, ShieldCheckIcon, ArrowRightStartOnRectangleIcon, ClipboardDocumentListIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import { getRoleTeam } from "@/lib/auth/policy";
 
 const errorMessages: Record<string, string> = {
     invalid_name: "Full name must be between 2 and 120 characters.",
@@ -71,6 +73,59 @@ async function OrderHistorySection({ customerName }: { customerName: string }) {
                     ))}
                 </div>
             )}
+        </div>
+    );
+}
+
+const taskStatusColors: Record<string, string> = {
+    TODO: "bg-gray-100 text-gray-700",
+    IN_PROGRESS: "bg-blue-100 text-blue-700 font-bold",
+    DONE: "bg-emerald-100 text-emerald-700",
+};
+
+async function EmployeeTasksSection({ team }: { team: string }) {
+    let tasks: Array<{ title: string; status: string; due_at: string | null }> = [];
+    try {
+        const admin = createAdminClient();
+        const { data } = await admin
+            .from("rizik_employee_tasks")
+            .select("title, status, due_at")
+            .eq("owner_team", team)
+            .neq("status", "DONE")
+            .order("due_at", { ascending: true })
+            .limit(5);
+        tasks = (data || []) as typeof tasks;
+    } catch { /* empty */ }
+
+    if (tasks.length === 0) return null;
+
+    return (
+        <div className="bg-white rounded-2xl border border-[#031E49]/10 p-8 shadow-sm mb-6 bg-gradient-to-br from-white to-[#F5F2EB]/30">
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                    <ClipboardDocumentListIcon className="w-5 h-5 text-[#031E49]" />
+                    <h2 className="text-lg font-bold text-[#031E49]">Your Team Tasks ({team})</h2>
+                </div>
+                <Link href="/portal/tasks" className="text-xs font-bold text-[#031E49] hover:underline">View All →</Link>
+            </div>
+
+            <div className="space-y-3">
+                {tasks.map((task, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-4 rounded-xl border border-[#031E49]/5 bg-white shadow-sm">
+                        <div className="min-w-0">
+                            <p className="text-sm font-bold text-[#031E49] truncate">{task.title}</p>
+                            {task.due_at && (
+                                <p className="text-[10px] text-[#0A2D6C]/40 mt-0.5">
+                                    Due: {new Date(task.due_at).toLocaleString("en-GB", { day: "2-digit", month: "short" })}
+                                </p>
+                            )}
+                        </div>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${taskStatusColors[task.status] || "bg-gray-100 text-gray-700"}`}>
+                            {task.status.replace("_", " ")}
+                        </span>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
@@ -224,6 +279,11 @@ export default async function AccountPage({
                         <p className="text-xs text-[#0A2D6C]/40">Use account recovery in login screen for secure reset</p>
                     </button>
                 </div>
+
+                {/* Employee Tasks */}
+                {getRoleTeam(resolvedRole) && (
+                    <EmployeeTasksSection team={getRoleTeam(resolvedRole)!} />
+                )}
 
                 {/* Order History */}
                 <OrderHistorySection customerName={resolvedName} />

@@ -1,7 +1,5 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { VoiceAgentV2 } from '../agent/voice_agent';
-export { VoiceAgentV2 }; // Export for Cloudflare Workers runtime
 
 // Define the environment bindings
 type Bindings = {

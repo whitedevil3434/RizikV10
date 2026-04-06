@@ -20,8 +20,8 @@ const subsidiaries = [
   {
     name: "Rizik Tech",
     endorsed: "by Rizik Global",
-    focus: "Ecosystem software, AI workforce integration, and enterprise infrastructure.",
-    href: "#",
+    focus: "Ecosystem software, AI workforce integration, and enterprise infrastructure. Flagship product: Rizik Writer.",
+    href: "/writer",
     stage: "Scaling",
     color: "from-[#111111] to-[#333333]",
   },

@@ -20,6 +20,7 @@
     "body-parser": "^2.2.2",
     "express": "^5.2.1",
     "hono": "^4.0.0",
+    "jsonwebtoken": "^9.0.3",
     "puppeteer": "^24.36.1",
     "puter": "^1.0.0",
     "ws": "^8.19.0"
