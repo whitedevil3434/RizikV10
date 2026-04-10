@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from "react";
 import { 
   Mic, FileText, Sparkles, ShieldCheck, ArrowRight, Activity, 
-  Fingerprint, Download, ShieldAlert, Zap, Globe, Lock
+  Fingerprint, Download, ShieldAlert, Zap, Globe, Lock, ChevronDown, Check
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import { canAccessAdminRole } from "@/lib/auth/policy";
 import "./writer.css";
 
 function resolveBackendUrl(): string {
@@ -17,6 +18,20 @@ function resolveBackendUrl(): string {
 
 function generateDigitalOrderCode(): string {
   return `RZK-DIG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+}
+
+const CREDIT_PACKAGES = [
+  { credits: 7, priceBdt: 45 },
+  { credits: 3, priceBdt: 20 },
+  { credits: 1, priceBdt: 7 },
+] as const;
+const CHAOS_BOOST_MULTIPLIER = 2.0;
+const HUMAN_ERROR_BOOST_MULTIPLIER = 1.75;
+
+function isExpiredSessionResponse(res: Response, body: any): boolean {
+  if (res.status !== 401) return false;
+  const message = String(body?.error || body?.message || body?.detail || "").toLowerCase();
+  return message.includes("expired") || message.includes("invalid");
 }
 
 async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number): Promise<Response> {
@@ -35,18 +50,19 @@ export default function WriterPage() {
   const [aiText, setAiText] = useState("");
   const [outputText, setOutputText] = useState("");
   const [pipelineText, setPipelineText] = useState("");
-  const [viewMode, setViewMode] = useState<"llm" | "pipeline">("llm");
+  const [viewMode, setViewMode] = useState<"llm" | "pipeline">("pipeline");
   const [isRecording, setIsRecording] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [isHumanizing, setIsHumanizing] = useState(false);
   const [dnaProfile, setDnaProfile] = useState<any>(null);
   const [credits, setCredits] = useState(0);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
-  const [creditAmount, setCreditAmount] = useState(10);
+  const [selectedCreditPackage, setSelectedCreditPackage] = useState<number>(CREDIT_PACKAGES[0].credits);
   const [trxId, setTrxId] = useState("");
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Godly Chaos Engine State
+  // Chaos Engine State
   const [useHumanConsortium, setUseHumanConsortium] = useState(true);
   const [chaosLevel, setChaosLevel] = useState(0.8);
   const [isAcademic, setIsAcademic] = useState(false);
@@ -62,6 +78,33 @@ export default function WriterPage() {
   
   // UI Error State (replaces browser alerts)
   const [errorMsg, setErrorMsg] = useState("");
+  const [showDnaDetails, setShowDnaDetails] = useState(false);
+  const [copyDone, setCopyDone] = useState(false);
+  const [isExportingDocx, setIsExportingDocx] = useState(false);
+  const [exportDone, setExportDone] = useState(false);
+  const [packageUnits, setPackageUnits] = useState<Record<number, number>>(
+    Object.fromEntries(CREDIT_PACKAGES.map((pkg) => [pkg.credits, 1])),
+  );
+  const selectedPackage = CREDIT_PACKAGES.find((p) => p.credits === selectedCreditPackage) || CREDIT_PACKAGES[0];
+  const selectedUnits = packageUnits[selectedPackage.credits] || 1;
+  const selectedTotalCredits = selectedPackage.credits * selectedUnits;
+  const selectedTotalPrice = selectedPackage.priceBdt * selectedUnits;
+  const effectiveChaosLevel = Math.min(1, chaosLevel * CHAOS_BOOST_MULTIPLIER);
+  const effectiveHumanErrorLevel = Math.min(100, Math.round(humanErrorLevel * HUMAN_ERROR_BOOST_MULTIPLIER));
+
+  const adjustPackageUnits = (packageCredits: number, delta: number) => {
+    setPackageUnits((prev) => {
+      const current = prev[packageCredits] || 1;
+      const next = Math.max(1, current + delta);
+      return {
+        ...prev,
+        [packageCredits]: next,
+      };
+    });
+  };
+
+  const hasDnaProfile = Boolean(dnaProfile);
+  const hasOutput = Boolean(outputText.trim() || pipelineText.trim());
 
   useEffect(() => {
     fetchUsage();
@@ -71,17 +114,67 @@ export default function WriterPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     
+    // Fetch profile for role check
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+    
+    if (profile && canAccessAdminRole(profile.role)) {
+      setIsAdmin(true);
+    }
+
     const { data } = await supabase
       .from('user_usage')
       .select('free_uses_remaining, paid_credits')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
     
     if (data) {
       const freeUses = Number((data as any).free_uses_remaining || 0);
       const paid = Number((data as any).paid_credits || 0);
       setCredits(freeUses + paid);
     }
+  };
+
+  const getFreshAccessToken = async (): Promise<string | null> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) return session.access_token;
+
+    const { data: refreshData } = await supabase.auth.refreshSession();
+    return refreshData.session?.access_token || null;
+  };
+
+  const ghostFetch = async (
+    path: string,
+    init: RequestInit,
+    timeoutMs: number
+  ): Promise<Response | null> => {
+    const firstToken = await getFreshAccessToken();
+    if (!firstToken) {
+      setErrorMsg("Session expired. Please sign in again.");
+      return null;
+    }
+
+    const run = async (token: string) =>
+      fetchWithTimeout(`${resolveBackendUrl()}${path}`, {
+        ...init,
+        headers: {
+          ...(init.headers || {}),
+          Authorization: `Bearer ${token}`,
+        },
+      }, timeoutMs);
+
+    let res = await run(firstToken);
+    if (res.status !== 401) return res;
+
+    const body = await res.clone().json().catch(() => null);
+    if (!isExpiredSessionResponse(res, body)) return res;
+
+    const refreshedToken = await getFreshAccessToken();
+    if (!refreshedToken || refreshedToken === firstToken) return res;
+    return run(refreshedToken);
   };
 
   const handleManualOrder = async () => {
@@ -96,8 +189,8 @@ export default function WriterPage() {
         customer_name: user.email || "Writer User",
         channel: "DIGITAL",
         product_sku: "WRITER_CREDITS",
-        quantity: creditAmount,
-        unit_price_bdt: 7,
+        quantity: selectedTotalCredits,
+        unit_price_bdt: Number((selectedTotalPrice / selectedTotalCredits).toFixed(2)),
         trxid: trxId,
         status: "PENDING",
         sla_state: "ON_TRACK",
@@ -118,20 +211,14 @@ export default function WriterPage() {
     setIsExtracting(true);
     setErrorMsg("");
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        setErrorMsg("Session expired. Please sign in again.");
-        return;
-      }
-
-      const res = await fetchWithTimeout(`${resolveBackendUrl()}/api/ghost/dna`, {
+      const res = await ghostFetch("/api/ghost/dna", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({ text: referenceText }),
       }, 25000);
+      if (!res) return;
       const data = await res.json();
       if (res.ok && data.success) {
         setDnaProfile(data.dna);
@@ -181,13 +268,14 @@ export default function WriterPage() {
 
   const handleUploadVoice = async (blob: Blob) => {
     setIsExtracting(true);
+    setErrorMsg("");
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${resolveBackendUrl()}/api/ghost/dna/voice`, {
+      const res = await ghostFetch("/api/ghost/dna/voice", {
         method: "POST",
-        headers: { "Authorization": `Bearer ${session?.access_token}` },
+        headers: {},
         body: blob
-      });
+      }, 60000);
+      if (!res) return;
 
       const data = await res.json();
       if (res.ok && data.success) {
@@ -206,7 +294,7 @@ export default function WriterPage() {
   };
 
   const handleTransform = async () => {
-    if (credits <= 0) {
+    if (!isAdmin && credits <= 0) {
       setIsBuyModalOpen(true);
       return;
     }
@@ -216,46 +304,156 @@ export default function WriterPage() {
     setErrorMsg("");
     
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        setErrorMsg("Session expired. Please sign in again.");
-        return;
-      }
-
-      const res = await fetchWithTimeout(`${resolveBackendUrl()}/api/ghost/humanize`, {
+      const res = await ghostFetch("/api/ghost/humanize", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({ 
           aiText: aiText, 
           dnaProfile: dnaProfile,
           options: { 
             academic: isAcademic,
-            chaosLevel: chaosLevel,
+            chaosLevel: effectiveChaosLevel,
             useConsortium: useHumanConsortium,
-            humanErrorThreshold: humanErrorLevel
+            humanErrorThreshold: effectiveHumanErrorLevel
           }
         }),
-      }, 45000);
+      }, 120000);
+      if (!res) return;
       const data = await res.json();
       if (res.ok && data.success) {
         setOutputText(data.content || "");
         setPipelineText(data.pipelineOutput || "");
-        // If LLM failed/rejected, default to pipeline view
-        if (!data.llmOutput) setViewMode("pipeline");
-        else setViewMode("llm");
+        // Default render target is always pipeline output.
+        setViewMode("pipeline");
         fetchUsage(); // Refresh credits
       } else {
         setErrorMsg(data?.message || data?.error || "Humanizer failed. Please try again.");
       }
     } catch (e) {
       console.error(e);
-      setErrorMsg("Transformation failed. Check your credits or network.");
+      if (e instanceof DOMException && e.name === "AbortError") {
+        setErrorMsg("Humanize process took longer than expected. Please retry. No credit is deducted unless output is successfully generated.");
+      } else {
+        setErrorMsg("Transformation failed. Check your network and retry. No credit is deducted unless output is successfully generated.");
+      }
     } finally {
       setIsHumanizing(false);
       setDnaMatching(false);
+    }
+  };
+
+  const getCurrentOutput = (): string => {
+    return (viewMode === "llm" ? outputText : pipelineText).trim();
+  };
+
+  const handleCopyText = async () => {
+    const textToCopy = getCurrentOutput();
+    if (!textToCopy) {
+      setErrorMsg("No output available to copy yet. Generate output first.");
+      return;
+    }
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(textToCopy);
+        setCopyDone(true);
+        setTimeout(() => setCopyDone(false), 1800);
+        return;
+      }
+    } catch (err) {
+      console.warn("Clipboard API failed, falling back to manual copy:", err);
+    }
+
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = textToCopy;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(textarea);
+
+      if (!ok) {
+        throw new Error("copy command failed");
+      }
+      setCopyDone(true);
+      setTimeout(() => setCopyDone(false), 1800);
+    } catch (err) {
+      console.error(err);
+      setErrorMsg("Copy failed in this browser context. Please copy manually.");
+    }
+  };
+
+  const handleExportDocx = async () => {
+    const textToExport = getCurrentOutput();
+    if (!textToExport) {
+      setErrorMsg("No output available to export yet. Generate output first.");
+      return;
+    }
+
+    try {
+      setIsExportingDocx(true);
+      setExportDone(false);
+      const [{ Document, Packer, Paragraph, TextRun }, fileSaverModule] = await Promise.all([
+        import("docx"),
+        import("file-saver"),
+      ]);
+
+      const lines = textToExport.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+      const paragraphs = lines.map(
+        (line) =>
+          new Paragraph({
+            children: [new TextRun({ text: line })],
+            spacing: { after: 220 },
+          }),
+      );
+
+      const doc = new Document({
+        sections: [
+          {
+            children: paragraphs.length > 0 ? paragraphs : [new Paragraph(textToExport)],
+          },
+        ],
+      });
+
+      const blob = await Packer.toBlob(doc);
+      const stamp = new Date().toISOString().slice(0, 10);
+      const filename = `rizik-writer-output-${stamp}.docx`;
+
+      const maybeSaveAs =
+        (fileSaverModule as { saveAs?: ((blob: Blob, name: string) => void); default?: unknown }).saveAs ||
+        (typeof (fileSaverModule as { default?: unknown }).default === "function"
+          ? (fileSaverModule as { default: (blob: Blob, name: string) => void }).default
+          : undefined) ||
+        (fileSaverModule as { default?: { saveAs?: (blob: Blob, name: string) => void } }).default?.saveAs;
+
+      if (typeof maybeSaveAs === "function") {
+        maybeSaveAs(blob, filename);
+        setExportDone(true);
+        setTimeout(() => setExportDone(false), 2200);
+        return;
+      }
+
+      // Browser-native fallback in case bundler/module interop shape changes.
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setExportDone(true);
+      setTimeout(() => setExportDone(false), 2200);
+    } catch (err) {
+      console.error(err);
+      setErrorMsg("DOCX export failed. Please try again.");
+    } finally {
+      setIsExportingDocx(false);
     }
   };
 
@@ -269,7 +467,7 @@ export default function WriterPage() {
             <h1 className="text-4xl font-extrabold tracking-tight mb-2 text-[#04204C]">
               RIZIK <span className="text-[#00B16A]">WRITER</span>
             </h1>
-            <p className="text-[#04204C]/50 font-bold uppercase tracking-widest text-xs italic">Godly Chaos Engine v1.0 • High Stealth Mode</p>
+            <p className="text-[#04204C]/50 font-bold uppercase tracking-widest text-xs italic">Chaos Engine v3.3</p>
           </div>
 
           <div 
@@ -277,7 +475,9 @@ export default function WriterPage() {
             onClick={() => setIsBuyModalOpen(true)}
           >
             <div className="w-2.5 h-2.5 rounded-full bg-[#00B16A] animate-pulse"></div>
-            <span className="text-sm font-black tracking-wider text-[#04204C]">{credits} CREDITS</span>
+            <span className={`text-sm font-black tracking-wider ${isAdmin ? "text-[#00B16A]" : "text-[#04204C]"}`}>
+              {isAdmin ? "∞ UNLIMITED" : `${credits} CREDITS`}
+            </span>
             <button type="button" className="ml-2 text-[10px] bg-[#04204C] text-white px-2 py-0.5 rounded font-black uppercase">
               Top Up
             </button>
@@ -380,6 +580,56 @@ export default function WriterPage() {
               >
                 {isExtracting ? 'SCANNING LINGUISTIC SIGNATURE...' : 'ANALYZE WRITING DNA'}
               </button>
+
+              {hasDnaProfile && (
+                <div className="rounded-2xl border border-[#04204C]/10 bg-[#F9F7F2] overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowDnaDetails((prev) => !prev)}
+                    className="w-full px-4 py-3 flex items-center justify-between text-left"
+                    aria-expanded={showDnaDetails}
+                  >
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-widest text-[#04204C]/70">DNA Extraction Details</p>
+                      <p className="text-[11px] text-[#04204C]/45">Click to view what was extracted from your input.</p>
+                    </div>
+                    <ChevronDown
+                      size={16}
+                      className={`text-[#04204C]/60 transition-transform ${showDnaDetails ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {showDnaDetails && (
+                    <div className="border-t border-[#04204C]/10 px-4 py-3 space-y-2 text-xs text-[#04204C]/80">
+                      <div>
+                        <span className="font-black text-[#04204C]">Top words:</span>{" "}
+                        {(dnaProfile?.lexical?.topWords || []).slice(0, 5).join(", ") || "N/A"}
+                      </div>
+                      <div>
+                        <span className="font-black text-[#04204C]">Avg sentence length:</span>{" "}
+                        {Number(dnaProfile?.syntactic?.avgLength || 0).toFixed(1)} words
+                      </div>
+                      <div>
+                        <span className="font-black text-[#04204C]">Writing flow:</span>{" "}
+                        {dnaProfile?.rhythmic?.flow || "N/A"} | Burstiness {Number(dnaProfile?.rhythmic?.burstiness || 0).toFixed(2)}
+                      </div>
+                      <div>
+                        <span className="font-black text-[#04204C]">Punctuation profile:</span>{" "}
+                        commas {Number(dnaProfile?.punctuation?.commas || 0).toFixed(3)}, dashes {Number(dnaProfile?.punctuation?.dashes || 0)}
+                      </div>
+                      <div>
+                        <span className="font-black text-[#04204C]">Detected error tendency:</span>{" "}
+                        factor {Number(dnaProfile?.errorFingerprint?.error_factor || 0).toFixed(2)}
+                      </div>
+                      <div>
+                        <span className="font-black text-[#04204C]">Structure:</span>{" "}
+                        {Number(dnaProfile?.structural?.paraCount || 0)} paragraphs,{" "}
+                        {Number(dnaProfile?.structural?.sentPerPara || 0).toFixed(1)} sentences/paragraph
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="glass-panel space-y-8 animate-in fade-in zoom-in-95 duration-500 !bg-white">
@@ -400,10 +650,21 @@ export default function WriterPage() {
                   onChange={(e) => setAiText(e.target.value)}
                 />
 
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setAiText("")}
+                    className="btn btn-secondary !h-10 !px-4 text-[11px] tracking-widest font-black"
+                    disabled={!aiText}
+                  >
+                    DELETE PASTED TEXT
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="space-y-4 md:col-span-2">
                     <label className="text-[10px] font-black uppercase text-[#04204C]/30 tracking-widest ml-1">
-                      Godly Chaos Level (Error Injection)
+                      Chaos Level
                       {humanErrorLevel > 0 && <span className="text-[#E2136E] ml-1">● ACTIVE</span>}
                     </label>
                     <div className={`bg-[#F9F7F2] p-4 rounded-2xl border flex items-center gap-4 transition-all ${
@@ -421,11 +682,6 @@ export default function WriterPage() {
                       />
                       <span className={`font-mono font-black ${humanErrorLevel > 0 ? 'text-[#E2136E]' : 'text-[#04204C]'}`}>{humanErrorLevel}%</span>
                     </div>
-                    {humanErrorLevel > 0 && (
-                      <p className="text-[9px] text-[#E2136E]/60 font-medium ml-1">
-                        Injects {humanErrorLevel < 40 ? 'subtle' : humanErrorLevel < 70 ? 'medium' : 'heavy'} non-native human errors (tense, articles, spelling)
-                      </p>
-                    )}
                   </div>
                   <div className="space-y-4 md:col-span-2">
                     <label className="text-[10px] font-black uppercase text-[#04204C]/30 tracking-widest ml-1">Knowledge Source</label>
@@ -457,7 +713,7 @@ export default function WriterPage() {
                   disabled={!aiText || !dnaProfile || isHumanizing || isExtracting}
                   onClick={handleTransform}
                 >
-                  {isHumanizing ? 'RECONSTRUCTING COGNITIVE BUBBLES...' : <><Sparkles size={18} className="mr-2"/> GENERATE GODLY OUTPUT</>}
+                  {isHumanizing ? 'RECONSTRUCTING COGNITIVE BUBBLES...' : <><Sparkles size={18} className="mr-2"/> GENERATE OUTPUT</>}
                 </button>
             </div>
           </div>
@@ -466,11 +722,17 @@ export default function WriterPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-2xl font-black mb-1 text-[#04204C]">Humanized Result</h2>
-                    <p className="text-[#04204C]/40 text-sm font-medium italic">Successfully bypassed 99.9% of AI detectors.</p>
+                    <p className="text-[#04204C]/40 text-sm font-medium italic">
+                      {hasOutput
+                        ? "Generated from your extracted DNA profile and current chaos settings."
+                        : hasDnaProfile
+                          ? "DNA extracted. Generate output to view final result signals."
+                          : "Extract writing DNA first. No detector or match claims are shown before extraction."}
+                    </p>
                   </div>
                   
                   {/* View Mode Toggle */}
-                  {(outputText || pipelineText) && (
+                  {hasOutput && (
                     <div className="flex bg-[#F9F7F2] p-1 rounded-xl border border-[#04204C]/5">
                       <button 
                         onClick={() => setViewMode("llm")}
@@ -499,11 +761,15 @@ export default function WriterPage() {
                 <div className="flex gap-2">
                   <div className="glass-card !p-2 px-4 flex flex-col items-center !bg-[#04204C]/5 border-none">
                     <span className="text-[10px] text-[#04204C]/40 font-black">TURNITIN</span>
-                    <span className="text-sm font-black text-[#00B16A]">0% AI</span>
+                    <span className={`text-sm font-black ${hasOutput ? "text-[#00B16A]" : "text-[#04204C]/45"}`}>
+                      {hasOutput ? "LOW AI SIGNAL" : "PENDING"}
+                    </span>
                   </div>
                   <div className="glass-card !p-2 px-4 flex flex-col items-center !bg-[#04204C]/5 border-none">
                     <span className="text-[10px] text-[#04204C]/40 font-black">DNA MATCH</span>
-                    <span className="text-sm font-black text-[#04204C]">99.2%</span>
+                    <span className={`text-sm font-black ${hasDnaProfile ? "text-[#04204C]" : "text-[#04204C]/45"}`}>
+                      {hasDnaProfile ? (hasOutput ? "APPLIED" : "LOADED") : "NOT EXTRACTED"}
+                    </span>
                   </div>
                 </div>
 
@@ -539,12 +805,31 @@ export default function WriterPage() {
                <div className="flex gap-4">
                   <button 
                     className="btn btn-secondary flex-1 font-black"
-                    onClick={() => navigator.clipboard.writeText(viewMode === "llm" ? outputText : pipelineText)}
+                    onClick={handleCopyText}
                   >
-                    COPY TEXT
+                    {copyDone ? (
+                      <span className="inline-flex items-center justify-center gap-2">
+                        <Check size={18} /> COPIED
+                      </span>
+                    ) : (
+                      "COPY TEXT"
+                    )}
                   </button>
-                  <button className="btn btn-primary flex-1">
-                    <Download size={18} className="mr-2"/> EXPORT DOCX
+                  <button
+                    className="btn btn-primary flex-1"
+                    onClick={handleExportDocx}
+                    disabled={isExportingDocx}
+                  >
+                    {exportDone ? (
+                      <span className="inline-flex items-center justify-center gap-2">
+                        <Check size={18} /> DOWNLOADED
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center gap-2">
+                        <Download size={18} />
+                        {isExportingDocx ? "PREPARING..." : "EXPORT DOCX"}
+                      </span>
+                    )}
                   </button>
                </div>
           </div>
@@ -574,14 +859,61 @@ export default function WriterPage() {
             <div className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[10px] uppercase font-black tracking-widest text-[#04204C]/30 ml-1">Buy Credits</label>
-                <div className="flex items-center gap-4">
-                   <input 
-                    type="number" 
-                    className="input-field flex-1 text-center font-black text-xl !bg-[#F9F7F2]" 
-                    value={creditAmount}
-                    onChange={e => setCreditAmount(parseInt(e.target.value) || 1)}
-                   />
-                   <div className="text-2xl font-black text-[#00B16A] whitespace-nowrap">{creditAmount * 7} BDT</div>
+                <div className="space-y-3">
+                  {CREDIT_PACKAGES.map((pkg) => {
+                    const isSelected = selectedPackage.credits === pkg.credits;
+                    const units = packageUnits[pkg.credits] || 1;
+                    const packageTotalCredits = pkg.credits * units;
+                    const packageTotalPrice = pkg.priceBdt * units;
+                    return (
+                      <div
+                        key={pkg.credits}
+                        className={`input-field w-full !bg-[#F9F7F2] flex items-center justify-between text-left transition-all ${isSelected ? "!border-[#00B16A] shadow-[0_0_0_2px_rgba(0,177,106,0.12)]" : ""}`}
+                        onClick={() => setSelectedCreditPackage(pkg.credits)}
+                      >
+                        <div className="flex-1">
+                          <div className="font-black text-xl text-[#04204C]">
+                            {packageTotalCredits} Credit{packageTotalCredits > 1 ? "s" : ""}
+                          </div>
+                          <div className="text-[11px] font-semibold text-[#04204C]/45">
+                            Base: {pkg.credits} Credit / {pkg.priceBdt} BDT
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-2xl font-black text-[#00B16A] whitespace-nowrap">{packageTotalPrice} BDT</div>
+                            <div className="text-[10px] uppercase font-black tracking-wider text-[#04204C]/35">{units}x pack</div>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <button
+                              type="button"
+                              className="h-6 w-6 rounded-md border border-[#04204C]/15 text-[#04204C] text-[11px] font-black leading-none hover:bg-white"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                adjustPackageUnits(pkg.credits, 1);
+                                setSelectedCreditPackage(pkg.credits);
+                              }}
+                              aria-label={`Increase ${pkg.credits} credit package`}
+                            >
+                              ▲
+                            </button>
+                            <button
+                              type="button"
+                              className="h-6 w-6 rounded-md border border-[#04204C]/15 text-[#04204C] text-[11px] font-black leading-none hover:bg-white"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                adjustPackageUnits(pkg.credits, -1);
+                                setSelectedCreditPackage(pkg.credits);
+                              }}
+                              aria-label={`Decrease ${pkg.credits} credit package`}
+                            >
+                              ▼
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
