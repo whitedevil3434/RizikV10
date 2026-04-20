@@ -1,0 +1,30 @@
+{
+  "startedAt": "2026-04-05T15:12:00.352Z",
+  "finishedAt": "2026-04-05T15:12:17.652Z",
+  "baseUrl": "https://rizikecosystem.com",
+  "backendUrl": "https://rizik-backend-godly.its-sabbir69.workers.dev",
+  "email": "verify.pipeline.1775401920352@example.com",
+  "result": "PASS",
+  "api": {
+    "dnaStatus": 200,
+    "humanizeStatus": 200,
+    "outputPreview": "artificial intelligence systems can support productivity,. i think, people still prefer writing that sounds grounded."
+  },
+  "ui": {
+    "dnaLoaded": true,
+    "outputPreview": "this draft sounds generic. i think, needs to be rewritten with human variation.",
+    "ghostResponses": [
+      {
+        "url": "https://rizik-backend-godly.its-sabbir69.workers.dev/api/ghost/dna",
+        "status": 200,
+        "body": "{\"success\":true,\"dna\":{\"id\":\"dna_v3_xs5zs44wh\",\"timestamp\":\"2026-04-05T15:12:09.908Z\",\"lexical\":{\"topWords\":[\"my\",\"own\",\"real\",\"writing\",\"style\",\"has\",\"mixed\",\"length\",\"pauses\",\"and\"],\"contractionRate\":0,\"slangDensity\":0"
+      },
+      {
+        "url": "https://rizik-backend-godly.its-sabbir69.workers.dev/api/ghost/humanize",
+        "status": 200,
+        "body": "{\"success\":true,\"content\":\"this draft sounds generic. i think, needs to be rewritten with human variation.\",\"creditsRemaining\":999999}"
+      }
+    ],
+    "screenshot": "/Users/sabbir/Downloads/RizikV10/rizik_saas/tmp/verify-writer-pipeline/writer-ui-proof.png"
+  }
+}

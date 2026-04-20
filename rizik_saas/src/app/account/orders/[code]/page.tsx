@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 
 export default async function OrderTrackingPage({

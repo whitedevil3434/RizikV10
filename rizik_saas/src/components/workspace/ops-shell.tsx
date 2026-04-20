@@ -87,6 +87,8 @@ export default function OpsShell({
   children,
 }: OpsShellProps) {
   const [isNavOpen, setIsNavOpen] = useState(false);
+  const publicSiteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "").trim().replace(/\/+$/, "");
+  const customerSurfaceHref = publicSiteUrl ? `${publicSiteUrl}/store` : "/store";
 
   const mobileQuickLinks = useMemo(() => {
     if (quickLinks.length > 0) return quickLinks.slice(0, 3);
@@ -110,7 +112,7 @@ export default function OpsShell({
         >
           <div className="h-full flex flex-col">
             <div className="px-5 py-6 border-b border-white/10">
-              <Link href="/" className="inline-flex items-center gap-3">
+              <Link href={customerSurfaceHref} className="inline-flex items-center gap-3">
                 <RizikLogo tone="light" className="h-8 w-auto" />
                 <span className="text-[11px] uppercase tracking-[0.14em] font-semibold text-[#00B16A]">{scopeLabel}</span>
               </Link>

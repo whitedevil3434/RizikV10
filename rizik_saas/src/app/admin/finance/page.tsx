@@ -1,6 +1,6 @@
 import OpsShell from "@/components/workspace/ops-shell";
 import { adminNavItems } from "@/lib/workspace/nav";
-import { createAdminClient } from "@/lib/supabase/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 import { BanknotesIcon, DocumentTextIcon, ArrowTrendingUpIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 

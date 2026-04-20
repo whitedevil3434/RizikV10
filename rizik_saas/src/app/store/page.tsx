@@ -2,6 +2,7 @@ export const runtime = "edge";
 
 import Link from "next/link";
 import { getStoreProducts } from "@/lib/ops/data";
+import { getMatAvailabilityLabel, isEcoMat } from "@/lib/store/mat-status";
 
 const categoryLabel: Record<string, string> = {
   ECO_MAT: "Eco-Mat",
@@ -36,7 +37,11 @@ export default async function StorePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {products.map((product) => (
+            {products.map((product) => {
+              const ecoMat = isEcoMat(product);
+              const matAvailabilityLabel = getMatAvailabilityLabel(product);
+
+              return (
               <article
                 key={product.sku}
                 className="bg-white rounded-2xl border border-[#031E49]/10 overflow-hidden shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 group"
@@ -74,7 +79,11 @@ export default async function StorePage() {
 
                   <div className="flex items-end justify-between">
                     <div>
-                      <span className="text-2xl font-bold text-[#031E49]">৳{Math.round(product.base_price_bdt)}</span>
+                      {ecoMat ? (
+                        <span className="text-2xl font-bold text-[#031E49]">{matAvailabilityLabel}</span>
+                      ) : (
+                        <span className="text-2xl font-bold text-[#031E49]">৳{Math.round(product.base_price_bdt)}</span>
+                      )}
                       {product.minimum_order_quantity > 1 ? (
                         <span className="text-xs text-[#0A2D6C]/40 block mt-1">
                           Min. order: {product.minimum_order_quantity} units
@@ -90,7 +99,8 @@ export default async function StorePage() {
                   </div>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

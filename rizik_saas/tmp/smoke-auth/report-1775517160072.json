@@ -1,0 +1,64 @@
+{
+  "startedAt": "2026-04-06T23:12:40.072801Z",
+  "baseUrl": "https://0981f5b5.rizik-saas-v10.pages.dev",
+  "users": {
+    "customer": "smoke.customer.1775517160072@gmail.com",
+    "admin": "smoke.admin.1775517160072@gmail.com"
+  },
+  "steps": [
+    {
+      "name": "provision_customer",
+      "ok": true,
+      "status": 200
+    },
+    {
+      "name": "provision_admin",
+      "ok": true,
+      "status": 200
+    },
+    {
+      "name": "seed_profiles_usage",
+      "ok": true
+    },
+    {
+      "name": "customer_login_to_writer",
+      "ok": false,
+      "url": "https://rizikecosystem.com/login?next=%2Fwriter",
+      "error": ""
+    },
+    {
+      "name": "customer_writer_to_account_persist",
+      "ok": false,
+      "url": "https://rizikecosystem.com/login?next=%2Faccount"
+    },
+    {
+      "name": "admin_login",
+      "ok": false,
+      "url": "https://0981f5b5.rizik-saas-v10.pages.dev/login?next=%2Fadmin",
+      "error": ""
+    },
+    {
+      "name": "admin_logo_to_store",
+      "ok": true,
+      "url": "https://0981f5b5.rizik-saas-v10.pages.dev/store",
+      "viaLogo": false
+    },
+    {
+      "name": "admin_store_to_account_persist",
+      "ok": false,
+      "url": "https://rizikecosystem.com/login?next=%2Faccount"
+    },
+    {
+      "name": "unauth_writer_blocked",
+      "ok": true,
+      "url": "https://rizikecosystem.com/login?next=%2Fwriter"
+    },
+    {
+      "name": "unauth_account_blocked",
+      "ok": true,
+      "url": "https://rizikecosystem.com/login?next=%2Faccount"
+    }
+  ],
+  "success": false,
+  "finishedAt": "2026-04-06T23:12:57.113325Z"
+}

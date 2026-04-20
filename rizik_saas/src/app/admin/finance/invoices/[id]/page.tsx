@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createAdminClient } from "@/lib/supabase/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { BanknotesIcon, DocumentTextIcon, CalendarDaysIcon, UserIcon } from "@heroicons/react/24/outline";
 
 export default async function InvoiceDetailPage({

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createAdminClient } from "@/lib/supabase/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { UserCircleIcon, ShoppingBagIcon, PhoneIcon, EnvelopeIcon, BuildingStorefrontIcon, TagIcon } from "@heroicons/react/24/outline";
 
 export default async function CustomerDetailPage({

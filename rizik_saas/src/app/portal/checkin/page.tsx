@@ -1,5 +1,5 @@
 import { getCurrentUserContext } from "@/lib/auth/session";
-import { createAdminClient } from "@/lib/supabase/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getFilteredNavItems, portalNavItems } from "@/lib/workspace/nav";
 import CheckInClient from "./CheckInClient";
 

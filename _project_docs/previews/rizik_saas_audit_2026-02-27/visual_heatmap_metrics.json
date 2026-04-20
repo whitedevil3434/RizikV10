@@ -1,0 +1,554 @@
+[
+  {
+    "file": "desktop_admin.png",
+    "focus_ratio": 3.084,
+    "edge_density": 0.043,
+    "contrast_std": 0.39,
+    "hotspots": [
+      {
+        "x": 0.508,
+        "y": 0.621,
+        "score": 1.0
+      },
+      {
+        "x": 0.506,
+        "y": 0.63,
+        "score": 0.997
+      },
+      {
+        "x": 0.583,
+        "y": 0.621,
+        "score": 0.99
+      }
+    ]
+  },
+  {
+    "file": "desktop_admin_analytics.png",
+    "focus_ratio": 3.174,
+    "edge_density": 0.041,
+    "contrast_std": 0.392,
+    "hotspots": [
+      {
+        "x": 0.42,
+        "y": 0.465,
+        "score": 1.0
+      },
+      {
+        "x": 0.259,
+        "y": 0.451,
+        "score": 0.987
+      },
+      {
+        "x": 0.383,
+        "y": 0.463,
+        "score": 0.985
+      }
+    ]
+  },
+  {
+    "file": "desktop_admin_orders.png",
+    "focus_ratio": 3.346,
+    "edge_density": 0.047,
+    "contrast_std": 0.392,
+    "hotspots": [
+      {
+        "x": 0.549,
+        "y": 0.485,
+        "score": 1.0
+      },
+      {
+        "x": 0.549,
+        "y": 0.406,
+        "score": 0.997
+      },
+      {
+        "x": 0.613,
+        "y": 0.406,
+        "score": 0.993
+      }
+    ]
+  },
+  {
+    "file": "desktop_admin_products.png",
+    "focus_ratio": 3.364,
+    "edge_density": 0.046,
+    "contrast_std": 0.391,
+    "hotspots": [
+      {
+        "x": 0.487,
+        "y": 0.505,
+        "score": 1.0
+      },
+      {
+        "x": 0.487,
+        "y": 0.425,
+        "score": 0.997
+      },
+      {
+        "x": 0.487,
+        "y": 0.585,
+        "score": 0.996
+      }
+    ]
+  },
+  {
+    "file": "desktop_bio-shield.png",
+    "focus_ratio": 4.101,
+    "edge_density": 0.04,
+    "contrast_std": 0.266,
+    "hotspots": [
+      {
+        "x": 0.545,
+        "y": 0.657,
+        "score": 1.0
+      },
+      {
+        "x": 0.616,
+        "y": 0.658,
+        "score": 0.982
+      },
+      {
+        "x": 0.526,
+        "y": 0.474,
+        "score": 0.979
+      }
+    ]
+  },
+  {
+    "file": "desktop_cart.png",
+    "focus_ratio": 3.639,
+    "edge_density": 0.015,
+    "contrast_std": 0.291,
+    "hotspots": [
+      {
+        "x": 0.469,
+        "y": 0.458,
+        "score": 1.0
+      },
+      {
+        "x": 0.571,
+        "y": 0.479,
+        "score": 0.994
+      },
+      {
+        "x": 0.427,
+        "y": 0.462,
+        "score": 0.989
+      }
+    ]
+  },
+  {
+    "file": "desktop_checkout.png",
+    "focus_ratio": 3.52,
+    "edge_density": 0.012,
+    "contrast_std": 0.286,
+    "hotspots": [
+      {
+        "x": 0.523,
+        "y": 0.454,
+        "score": 1.0
+      },
+      {
+        "x": 0.491,
+        "y": 0.456,
+        "score": 0.998
+      },
+      {
+        "x": 0.498,
+        "y": 0.459,
+        "score": 0.996
+      }
+    ]
+  },
+  {
+    "file": "desktop_home.png",
+    "focus_ratio": 5.316,
+    "edge_density": 0.05,
+    "contrast_std": 0.261,
+    "hotspots": [
+      {
+        "x": 0.536,
+        "y": 0.375,
+        "score": 1.0
+      },
+      {
+        "x": 0.33,
+        "y": 0.552,
+        "score": 0.987
+      },
+      {
+        "x": 0.671,
+        "y": 0.375,
+        "score": 0.987
+      }
+    ]
+  },
+  {
+    "file": "desktop_login.png",
+    "focus_ratio": 4.338,
+    "edge_density": 0.026,
+    "contrast_std": 0.303,
+    "hotspots": [
+      {
+        "x": 0.352,
+        "y": 0.468,
+        "score": 1.0
+      },
+      {
+        "x": 0.397,
+        "y": 0.472,
+        "score": 0.995
+      },
+      {
+        "x": 0.352,
+        "y": 0.368,
+        "score": 0.991
+      }
+    ]
+  },
+  {
+    "file": "desktop_mats.png",
+    "focus_ratio": 3.777,
+    "edge_density": 0.042,
+    "contrast_std": 0.388,
+    "hotspots": [
+      {
+        "x": 0.398,
+        "y": 0.481,
+        "score": 1.0
+      },
+      {
+        "x": 0.402,
+        "y": 0.484,
+        "score": 0.996
+      },
+      {
+        "x": 0.541,
+        "y": 0.484,
+        "score": 0.996
+      }
+    ]
+  },
+  {
+    "file": "desktop_portal.png",
+    "focus_ratio": 3.104,
+    "edge_density": 0.047,
+    "contrast_std": 0.389,
+    "hotspots": [
+      {
+        "x": 0.539,
+        "y": 0.713,
+        "score": 1.0
+      },
+      {
+        "x": 0.54,
+        "y": 0.664,
+        "score": 0.997
+      },
+      {
+        "x": 0.589,
+        "y": 0.655,
+        "score": 0.996
+      }
+    ]
+  },
+  {
+    "file": "desktop_store.png",
+    "focus_ratio": 3.986,
+    "edge_density": 0.036,
+    "contrast_std": 0.354,
+    "hotspots": [
+      {
+        "x": 0.5,
+        "y": 0.637,
+        "score": 1.0
+      },
+      {
+        "x": 0.511,
+        "y": 0.375,
+        "score": 1.0
+      },
+      {
+        "x": 0.49,
+        "y": 0.641,
+        "score": 0.999
+      }
+    ]
+  },
+  {
+    "file": "mobile_admin.png",
+    "focus_ratio": 1.442,
+    "edge_density": 0.02,
+    "contrast_std": 0.406,
+    "hotspots": [
+      {
+        "x": 0.847,
+        "y": 0.469,
+        "score": 1.0
+      },
+      {
+        "x": 0.809,
+        "y": 0.452,
+        "score": 0.998
+      },
+      {
+        "x": 0.806,
+        "y": 0.626,
+        "score": 0.984
+      }
+    ]
+  },
+  {
+    "file": "mobile_admin_analytics.png",
+    "focus_ratio": 1.496,
+    "edge_density": 0.023,
+    "contrast_std": 0.405,
+    "hotspots": [
+      {
+        "x": 0.79,
+        "y": 0.448,
+        "score": 1.0
+      },
+      {
+        "x": 0.838,
+        "y": 0.447,
+        "score": 0.977
+      },
+      {
+        "x": 0.795,
+        "y": 0.443,
+        "score": 0.97
+      }
+    ]
+  },
+  {
+    "file": "mobile_admin_orders.png",
+    "focus_ratio": 1.443,
+    "edge_density": 0.019,
+    "contrast_std": 0.407,
+    "hotspots": [
+      {
+        "x": 0.799,
+        "y": 0.498,
+        "score": 1.0
+      },
+      {
+        "x": 0.803,
+        "y": 0.512,
+        "score": 0.999
+      },
+      {
+        "x": 0.803,
+        "y": 0.415,
+        "score": 0.996
+      }
+    ]
+  },
+  {
+    "file": "mobile_admin_products.png",
+    "focus_ratio": 1.446,
+    "edge_density": 0.019,
+    "contrast_std": 0.407,
+    "hotspots": [
+      {
+        "x": 0.902,
+        "y": 0.163,
+        "score": 1.0
+      },
+      {
+        "x": 0.837,
+        "y": 0.165,
+        "score": 0.986
+      },
+      {
+        "x": 0.742,
+        "y": 0.129,
+        "score": 0.978
+      }
+    ]
+  },
+  {
+    "file": "mobile_bio-shield.png",
+    "focus_ratio": 3.924,
+    "edge_density": 0.027,
+    "contrast_std": 0.239,
+    "hotspots": [
+      {
+        "x": 0.347,
+        "y": 0.684,
+        "score": 1.0
+      },
+      {
+        "x": 0.365,
+        "y": 0.686,
+        "score": 0.998
+      },
+      {
+        "x": 0.411,
+        "y": 0.539,
+        "score": 0.985
+      }
+    ]
+  },
+  {
+    "file": "mobile_cart.png",
+    "focus_ratio": 3.91,
+    "edge_density": 0.011,
+    "contrast_std": 0.298,
+    "hotspots": [
+      {
+        "x": 0.52,
+        "y": 0.455,
+        "score": 1.0
+      },
+      {
+        "x": 0.489,
+        "y": 0.456,
+        "score": 0.984
+      },
+      {
+        "x": 0.524,
+        "y": 0.454,
+        "score": 0.975
+      }
+    ]
+  },
+  {
+    "file": "mobile_checkout.png",
+    "focus_ratio": 3.637,
+    "edge_density": 0.008,
+    "contrast_std": 0.285,
+    "hotspots": [
+      {
+        "x": 0.471,
+        "y": 0.452,
+        "score": 1.0
+      },
+      {
+        "x": 0.467,
+        "y": 0.455,
+        "score": 0.994
+      },
+      {
+        "x": 0.568,
+        "y": 0.451,
+        "score": 0.982
+      }
+    ]
+  },
+  {
+    "file": "mobile_home.png",
+    "focus_ratio": 4.721,
+    "edge_density": 0.033,
+    "contrast_std": 0.249,
+    "hotspots": [
+      {
+        "x": 0.594,
+        "y": 0.411,
+        "score": 1.0
+      },
+      {
+        "x": 0.509,
+        "y": 0.411,
+        "score": 0.997
+      },
+      {
+        "x": 0.486,
+        "y": 0.533,
+        "score": 0.993
+      }
+    ]
+  },
+  {
+    "file": "mobile_login.png",
+    "focus_ratio": 4.348,
+    "edge_density": 0.022,
+    "contrast_std": 0.323,
+    "hotspots": [
+      {
+        "x": 0.369,
+        "y": 0.67,
+        "score": 1.0
+      },
+      {
+        "x": 0.445,
+        "y": 0.669,
+        "score": 1.0
+      },
+      {
+        "x": 0.274,
+        "y": 0.463,
+        "score": 0.993
+      }
+    ]
+  },
+  {
+    "file": "mobile_mats.png",
+    "focus_ratio": 3.926,
+    "edge_density": 0.029,
+    "contrast_std": 0.354,
+    "hotspots": [
+      {
+        "x": 0.427,
+        "y": 0.534,
+        "score": 1.0
+      },
+      {
+        "x": 0.573,
+        "y": 0.534,
+        "score": 0.993
+      },
+      {
+        "x": 0.446,
+        "y": 0.426,
+        "score": 0.989
+      }
+    ]
+  },
+  {
+    "file": "mobile_portal.png",
+    "focus_ratio": 1.448,
+    "edge_density": 0.021,
+    "contrast_std": 0.405,
+    "hotspots": [
+      {
+        "x": 0.817,
+        "y": 0.618,
+        "score": 1.0
+      },
+      {
+        "x": 0.8,
+        "y": 0.631,
+        "score": 0.989
+      },
+      {
+        "x": 0.767,
+        "y": 0.617,
+        "score": 0.988
+      }
+    ]
+  },
+  {
+    "file": "mobile_store.png",
+    "focus_ratio": 4.117,
+    "edge_density": 0.021,
+    "contrast_std": 0.285,
+    "hotspots": [
+      {
+        "x": 0.473,
+        "y": 0.564,
+        "score": 1.0
+      },
+      {
+        "x": 0.473,
+        "y": 0.689,
+        "score": 0.98
+      },
+      {
+        "x": 0.502,
+        "y": 0.562,
+        "score": 0.968
+      }
+    ]
+  }
+]

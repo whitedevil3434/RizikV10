@@ -1,0 +1,186 @@
+/* 
+  Original Ghost-Writer Design System
+  Primary: #F5F2EB (Antique Paper)
+  Accent: #04204C (Deep Navy)
+  Success: #00B16A (Rizik Green)
+*/
+
+.writer-page {
+  --wr-background: #F5F2EB;
+  --wr-surface: #FFFFFF;
+  --wr-surface-hover: #F9F7F2;
+  --wr-border: rgba(4, 32, 76, 0.1);
+  --wr-text-primary: #04204C;
+  --wr-text-secondary: #0A2D6C;
+  --wr-text-muted: rgba(10, 45, 108, 0.6);
+  --wr-accent-primary: #04204C;
+  --wr-accent-green: #00B16A;
+  --wr-accent-gradient: linear-gradient(135deg, #04204C, #031E49);
+  --wr-error: #D32F2F;
+  --wr-success: #00B16A;
+  --wr-radius-sm: 12px;
+  --wr-radius-md: 16px;
+  --wr-radius-lg: 24px;
+  --wr-shadow-soft: 0 4px 20px rgba(4, 32, 76, 0.05);
+  
+  background-color: var(--wr-background);
+  color: var(--wr-text-primary);
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+/* Glassmorphism Panels (Light) */
+.writer-page .glass-panel {
+  background: var(--wr-surface);
+  border: 1px solid var(--wr-border);
+  box-shadow: var(--wr-shadow-soft);
+  border-radius: var(--wr-radius-md);
+  padding: 32px;
+  transition: all 0.3s ease;
+}
+
+.writer-page .glass-card {
+  background: var(--wr-surface-hover);
+  border: 1px solid var(--wr-border);
+  border-radius: var(--wr-radius-sm);
+  padding: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.writer-page .glass-card:hover {
+  background: var(--wr-surface);
+  transform: translateY(-2px);
+  box-shadow: var(--wr-shadow-soft);
+}
+
+/* Premium Button System (Restored) */
+.writer-page .btn {
+  height: 48px;
+  padding: 0 24px;
+  border-radius: var(--wr-radius-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.writer-page .btn:active {
+  transform: scale(0.98);
+}
+
+.writer-page .btn-primary {
+  background: var(--wr-accent-gradient);
+  color: white;
+}
+
+.writer-page .btn-primary:hover {
+  background: var(--wr-success);
+  box-shadow: 0 8px 30px rgba(0, 177, 106, 0.2);
+}
+
+.writer-page .btn-secondary {
+  background: transparent;
+  color: var(--wr-text-primary);
+  border: 1px solid var(--wr-border);
+}
+
+.writer-page .btn-secondary:hover {
+  background: white;
+  border-color: var(--wr-accent-primary);
+}
+
+/* Inputs (Light) */
+.writer-page .input-field {
+  width: 100%;
+  padding: 16px;
+  background: #FFFFFF;
+  border: 1px solid var(--wr-border);
+  border-radius: var(--wr-radius-sm);
+  color: var(--wr-text-primary);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.writer-page .input-field:focus {
+  outline: none;
+  border-color: var(--wr-success);
+  box-shadow: 0 0 0 4px rgba(0, 177, 106, 0.1);
+}
+
+/* Step Tabs (Restored) */
+.writer-page .step-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.writer-page .step-tab {
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-weight: 600;
+  color: var(--wr-text-secondary);
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.writer-page .step-tab.active {
+  color: white;
+  background: var(--wr-accent-primary);
+  box-shadow: 0 4px 12px rgba(4, 32, 76, 0.2);
+}
+
+/* Chaos Pulse Animation (Green) */
+@keyframes chaosGlowGreen {
+  0% { box-shadow: 0 0 0 0 rgba(0, 177, 106, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(0, 177, 106, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 177, 106, 0); }
+}
+
+.writer-page .chaos-processing {
+  animation: chaosGlowGreen 2s infinite;
+  color: var(--wr-success);
+}
+
+/* Status Pill */
+.writer-page .status-pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(0, 245, 155, 0.15);
+  color: var(--wr-accent-primary);
+  border: 1px solid var(--wr-border);
+}
+
+/* Credits Badge */
+.writer-page .credit-pill {
+  position: sticky;
+  top: 96px; /* 8 * 12 */
+  margin-left: auto;
+  background: var(--wr-surface-solid);
+  border: 1px solid var(--wr-border);
+  padding: 8px 16px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--wr-shadow-glow);
+}
+
+/* Grid Layout */
+.writer-page .wr-container {
+  max-width: 1280px; /* 8 * 160 */
+  margin: 0 auto;
+  padding: 0 32px; /* 8 * 4 */
+}
+
+@media (max-width: 768px) {
+  .writer-page .wr-container {
+    padding: 0 16px;
+  }
+}

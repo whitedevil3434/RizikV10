@@ -3,6 +3,7 @@ export const runtime = "edge";
 import Link from "next/link";
 import AddToCartButton from "@/components/store/add-to-cart-button";
 import { getStoreProductBySlug } from "@/lib/ops/data";
+import { getMatAvailability, getMatAvailabilityLabel, isEcoMat } from "@/lib/store/mat-status";
 
 const categoryLabel: Record<string, string> = {
   ECO_MAT: "Eco-Mat",
@@ -42,6 +43,9 @@ export default async function ProductDetailPage({
   }
 
   const category = categoryLabel[product.category] || product.category;
+  const ecoMat = isEcoMat(product);
+  const matAvailability = getMatAvailability(product);
+  const matAvailabilityLabel = getMatAvailabilityLabel(product);
 
   return (
     <div className="min-h-screen bg-[#F5F2EB] py-12">
@@ -92,14 +96,18 @@ export default async function ProductDetailPage({
 
             <div className="flex items-end gap-4 mt-auto">
               <div>
-                <span className="text-sm text-[#0A2D6C]/40">Price</span>
-                <p className="text-4xl font-bold text-[#031E49]">৳{Math.round(product.base_price_bdt)}</p>
+                <span className="text-sm text-[#0A2D6C]/40">{ecoMat ? "Availability" : "Price"}</span>
+                <p className="text-4xl font-bold text-[#031E49]">
+                  {ecoMat ? matAvailabilityLabel : `৳${Math.round(product.base_price_bdt)}`}
+                </p>
               </div>
               <AddToCartButton
                 sku={product.sku}
                 name={product.name}
                 price={product.base_price_bdt}
                 category={product.category}
+                label={ecoMat ? (matAvailability === "COMING_UP" ? "Coming Up" : "Pre Order") : "Add to Cart"}
+                disabled={ecoMat && matAvailability === "COMING_UP"}
               />
             </div>
 

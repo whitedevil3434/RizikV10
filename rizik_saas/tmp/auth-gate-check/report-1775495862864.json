@@ -1,0 +1,35 @@
+{
+  "startedAt": "2026-04-06T17:17:42.864011Z",
+  "baseUrl": "https://rizikecosystem.com",
+  "user": {
+    "email": "auth.gate.1775495862864@example.com",
+    "fullName": "Auth Gate 1775495862864"
+  },
+  "steps": [
+    {
+      "name": "signup_via_ui",
+      "ok": false,
+      "afterSignupUrl": "https://rizikecosystem.com/login",
+      "signupError": "Email address \"auth.gate.1775495862864@example.com\" is invalid"
+    },
+    {
+      "name": "sign_in_with_new_account",
+      "ok": false,
+      "postLoginUrl": "https://rizikecosystem.com/login?next=%2Fwriter"
+    },
+    {
+      "name": "writer_access_with_session",
+      "ok": true,
+      "writerUrl": "https://rizikecosystem.com/writer",
+      "writerTitleVisible": true
+    },
+    {
+      "name": "writer_blocked_without_session",
+      "ok": true,
+      "unauthUrl": "https://rizikecosystem.com/login?next=%2Fwriter",
+      "loginHeadingVisible": true
+    }
+  ],
+  "success": false,
+  "finishedAt": "2026-04-06T17:17:53.388235Z"
+}

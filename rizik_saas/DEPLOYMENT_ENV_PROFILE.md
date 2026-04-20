@@ -11,6 +11,11 @@
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` (server only)
+- `NEXT_PUBLIC_SITE_URL`
+- `SUPABASE_COOKIE_DOMAIN`
+  - Required when using multiple first-party hosts (example: `ops.rizikecosystem.com` + `rizikecosystem.com`).
+  - Example value: `.rizikecosystem.com`
+  - Prevents cross-host session drops when navigating between control-plane and customer surfaces.
 
 ### Access Segmentation
 - `OPS_HOSTNAME`
@@ -43,8 +48,37 @@ Expected behavior:
 - Without key: `403 forbidden`
 - With valid key: setup/seed response
 
+## Auth Smoke Test (Release Gate)
+
+Run after each production deploy:
+
+```bash
+cd rizik_saas
+python3 scripts/smoke_auth_persistence.py
+```
+
+Or via npm script:
+
+```bash
+npm run smoke:auth
+```
+
+The smoke test provisions temporary users and verifies:
+- customer login -> writer -> account session continuity
+- admin login -> logo click -> store -> account continuity
+- unauthenticated access is blocked for writer/account
+
+Optional for deterministic CI (recommended):
+- `SMOKE_CUSTOMER_EMAIL`
+- `SMOKE_CUSTOMER_PASSWORD`
+- `SMOKE_ADMIN_EMAIL`
+- `SMOKE_ADMIN_PASSWORD`
+
+If these are set, the smoke test uses existing users instead of creating fresh users each run.
+
 ## CTO Release Controls
 - Never deploy with missing `SUPABASE_SERVICE_ROLE_KEY`.
 - Never expose service key in client bundle.
 - Set `OPS_HOSTNAME` before production cutover for cleaner control-plane isolation.
+- If `OPS_HOSTNAME` is set, also set `NEXT_PUBLIC_SITE_URL` and `SUPABASE_COOKIE_DOMAIN`.
 - Rotate `SETUP_DB_KEY` after bootstrap tasks.

@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 interface BaseProfile {
   id: string;

@@ -1,0 +1,56 @@
+{
+  "startedAt": "2026-04-06T23:23:14.629994Z",
+  "baseUrl": "https://rizikecosystem.com",
+  "backendUrl": "https://rizik-backend-godly.its-sabbir69.workers.dev",
+  "users": {
+    "customer": "stress.customer.1775517794629@gmail.com",
+    "admin": "stress.admin.1775517794629@gmail.com"
+  },
+  "metrics": {
+    "provision_customer": {
+      "ok": true,
+      "status": 200
+    },
+    "provision_admin": {
+      "ok": true,
+      "status": 200
+    },
+    "customer_token": {
+      "ok": true,
+      "status": 200
+    },
+    "api_dna_load": {
+      "total": 60,
+      "workers": 12,
+      "success": 0,
+      "failure": 60,
+      "durationSec": 1.5,
+      "rps": 40.05,
+      "statusBreakdown": {
+        "403": 60
+      }
+    },
+    "customer_ui_login": {
+      "ok": true,
+      "url": "https://rizikecosystem.com/writer"
+    },
+    "admin_path": {
+      "loginOk": true,
+      "afterLoginUrl": "https://rizikecosystem.com/store",
+      "logoClickTried": true
+    },
+    "ui_churn": {
+      "cycles": 80,
+      "failures": 0,
+      "pass": true
+    },
+    "unauth_guard_repeated": {
+      "checks": 20,
+      "failures": 0,
+      "pass": true
+    }
+  },
+  "errors": [],
+  "success": false,
+  "finishedAt": "2026-04-06T23:24:17.867366Z"
+}

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { signOutAction } from "@/lib/actions/auth";
 import { updateAccountProfileAction } from "@/lib/actions/account";
-import { createAdminClient } from "@/lib/supabase/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { UserCircleIcon, BellIcon, ShieldCheckIcon, ArrowRightStartOnRectangleIcon, ClipboardDocumentListIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";

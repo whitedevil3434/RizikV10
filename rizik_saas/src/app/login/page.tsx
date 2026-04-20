@@ -1,31 +1,107 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { signInAction, signUpAction, syncFirebaseUserAndSignInAction, forgotPasswordAction } from "@/lib/actions/auth";
 import { auth, googleProvider, isFirebaseConfigured } from "@/lib/firebase/config";
-import { signInWithPopup } from "firebase/auth";
+import { RecaptchaVerifier, signInWithPhoneNumber, signInWithPopup, signInWithRedirect, signOut, type AuthError, type ConfirmationResult } from "firebase/auth";
 import { EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon, UserIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import RizikLogo from "@/components/brand/rizik-logo";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
 type PageMode = "signIn" | "signUp" | "forgotPassword";
 
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
+    const [isCanonicalizingHost, setIsCanonicalizingHost] = useState(true);
+
+    useEffect(() => {
+        // Domain Safety: Always force production domain for auth to ensure cookie persistence
+        // This prevents the "Session Timed Out" error caused by logging in on .pages.dev 
+        // while trying to use rizikecosystem.com
+        if (typeof window !== "undefined") {
+            const host = window.location.hostname;
+            if (host.endsWith(".pages.dev") && !host.includes("localhost")) {
+                const prodUrl = new URL(window.location.href);
+                const configuredSite = process.env.NEXT_PUBLIC_SITE_URL || "https://rizikecosystem.com";
+                const configuredHost = new URL(configuredSite).hostname;
+                prodUrl.hostname = configuredHost;
+                window.location.replace(prodUrl.toString());
+                return;
+            }
+        }
+        setIsCanonicalizingHost(false);
+    }, []);
     const [mode, setMode] = useState<PageMode>("signIn");
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [loginFailed, setLoginFailed] = useState(false);
+    const [phoneNumber, setPhoneNumber] = useState("");
+    const [otpCode, setOtpCode] = useState("");
+    const [otpSent, setOtpSent] = useState(false);
+    const [otpLoading, setOtpLoading] = useState(false);
+    const [phoneVerified, setPhoneVerified] = useState(false);
+    const [verifiedPhone, setVerifiedPhone] = useState("");
+    const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
+    const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+    const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
     const router = useRouter();
     const searchParams = useSearchParams();
     const rawNext = searchParams.get("next") || "";
     const nextPath = rawNext;
 
+    useEffect(() => {
+        if (searchParams.get("created") === "1") {
+            setSuccessMessage("Account created successfully. Please sign in to continue.");
+            setMode("signIn");
+        }
+    }, [searchParams]);
+
+    function resetPhoneVerificationState() {
+        setOtpCode("");
+        setOtpSent(false);
+        setPhoneVerified(false);
+        setVerifiedPhone("");
+        setPhoneVerificationToken("");
+        setConfirmationResult(null);
+        if (recaptchaRef.current) {
+            recaptchaRef.current.clear();
+            recaptchaRef.current = null;
+        }
+    }
+
+    function normalizePhoneInput(raw: string): string | null {
+        const input = (raw || "").trim().replace(/[\s\-()]/g, "");
+        if (!input) return null;
+        if (input.startsWith("+")) {
+            return /^\+[1-9]\d{7,14}$/.test(input) ? input : null;
+        }
+        if (input.startsWith("880")) return /^\d{10,14}$/.test(input) ? `+${input}` : null;
+        if (input.startsWith("0")) return /^\d{10,11}$/.test(input) ? `+88${input}` : null;
+        return null;
+    }
+
     async function handleSubmit(formData: FormData): Promise<void> {
         setLoading(true);
         setError(null);
         setSuccessMessage(null);
+
+        if (mode === "signUp") {
+            const normalizedPhone = normalizePhoneInput(phoneNumber);
+            if (!normalizedPhone) {
+                setError("Please provide a valid mobile number first.");
+                setLoading(false);
+                return;
+            }
+            if (!phoneVerified || !phoneVerificationToken || verifiedPhone !== normalizedPhone) {
+                setError("Please complete mobile number OTP verification before account creation.");
+                setLoading(false);
+                return;
+            }
+            formData.set("phone", normalizedPhone);
+            formData.set("phoneVerificationToken", phoneVerificationToken);
+        }
 
         const result = mode === "signUp"
             ? await signUpAction(formData)
@@ -37,6 +113,102 @@ export default function LoginPage() {
             setLoading(false);
         } else if (result && 'redirectTo' in result && result.redirectTo) {
             window.location.href = result.redirectTo;
+        }
+    }
+
+    async function handleSendPhoneOtp() {
+        if (!isFirebaseConfigured || !auth) {
+            setError("Firebase phone verification is not configured.");
+            return;
+        }
+        if (isCanonicalizingHost) {
+            setError("Preparing secure login domain. Please wait a moment and try again.");
+            return;
+        }
+
+        const normalizedPhone = normalizePhoneInput(phoneNumber);
+        if (!normalizedPhone) {
+            setError("Enter a valid mobile number (e.g., +8801XXXXXXXXX).");
+            return;
+        }
+
+        setOtpLoading(true);
+        setError(null);
+        setSuccessMessage(null);
+        try {
+            if (!recaptchaRef.current) {
+                recaptchaRef.current = new RecaptchaVerifier(auth, "phone-recaptcha-container", {
+                    size: "invisible",
+                });
+            }
+
+            const result = await signInWithPhoneNumber(auth, normalizedPhone, recaptchaRef.current);
+            setConfirmationResult(result);
+            setOtpSent(true);
+            setPhoneVerified(false);
+            setVerifiedPhone("");
+            setPhoneVerificationToken("");
+            setSuccessMessage("OTP sent successfully. Enter the 6-digit code.");
+        } catch (err: unknown) {
+            const authErr = err as AuthError | undefined;
+            const code = authErr?.code || "";
+            if (code === "auth/too-many-requests") {
+                setError("Too many OTP attempts. Please wait and try again.");
+            } else if (code === "auth/invalid-phone-number") {
+                setError("Invalid phone number format.");
+            } else {
+                setError(authErr?.message || "Failed to send OTP.");
+            }
+            if (recaptchaRef.current) {
+                recaptchaRef.current.clear();
+                recaptchaRef.current = null;
+            }
+        } finally {
+            setOtpLoading(false);
+        }
+    }
+
+    async function handleVerifyPhoneOtp() {
+        if (!confirmationResult || !auth) {
+            setError("Please request OTP first.");
+            return;
+        }
+        if (!otpCode || otpCode.trim().length < 6) {
+            setError("Enter the 6-digit OTP code.");
+            return;
+        }
+        const normalizedPhone = normalizePhoneInput(phoneNumber);
+        if (!normalizedPhone) {
+            setError("Invalid phone number.");
+            return;
+        }
+
+        setOtpLoading(true);
+        setError(null);
+        try {
+            const cred = await confirmationResult.confirm(otpCode.trim());
+            const token = await cred.user.getIdToken(true);
+            const confirmedPhone = cred.user.phoneNumber || normalizedPhone;
+
+            setPhoneVerified(true);
+            setVerifiedPhone(confirmedPhone);
+            setPhoneVerificationToken(token);
+            setSuccessMessage("Mobile number verified. You can now create your account.");
+
+            await signOut(auth).catch(() => undefined);
+        } catch (err: unknown) {
+            const authErr = err as AuthError | undefined;
+            setPhoneVerified(false);
+            setPhoneVerificationToken("");
+            if (authErr?.code === "auth/invalid-verification-code") {
+                setError("Invalid OTP code. Please try again.");
+            } else if (authErr?.code === "auth/code-expired") {
+                setError("OTP expired. Please request a new code.");
+            } else {
+                setError(authErr?.message || "OTP verification failed.");
+            }
+        } finally {
+            setOtpLoading(false);
         }
     }
 
@@ -59,10 +231,15 @@ export default function LoginPage() {
             setError("Google Sign-In is not configured. Please use email and password.");
             return;
         }
+        if (isCanonicalizingHost) {
+            setError("Preparing secure login domain. Please wait a moment and try again.");
+            return;
+        }
 
         setLoading(true);
         setError(null);
         try {
+            googleProvider.setCustomParameters({ prompt: "select_account" });
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
 
@@ -81,8 +258,28 @@ export default function LoginPage() {
             }
         } catch (err: unknown) {
             console.error(err);
-            const message = err instanceof Error ? err.message : "Failed to authenticate with Google.";
-            setError(message);
+            const authErr = err as AuthError | undefined;
+            const code = authErr?.code || "";
+
+            if (code === "auth/popup-closed-by-user" || code === "auth/popup-blocked") {
+                try {
+                    await signInWithRedirect(auth, googleProvider);
+                    return;
+                } catch (redirectErr: unknown) {
+                    console.error("Google redirect fallback failed:", redirectErr);
+                }
+            }
+
+            if (code === "auth/cancelled-popup-request") {
+                setError("Another sign-in popup was already open. Please try once again.");
+            } else if (code === "auth/unauthorized-domain") {
+                setError("This domain is not authorized in Firebase Google Auth settings.");
+            } else if (code === "auth/popup-closed-by-user") {
+                setError("Google popup was closed before completion. Please complete the Google window.");
+            } else {
+                const message = err instanceof Error ? err.message : "Failed to authenticate with Google.";
+                setError(message);
+            }
             setLoading(false);
         }
     }
@@ -160,6 +357,12 @@ export default function LoginPage() {
                             {/* ===== SIGN IN / SIGN UP FORM ===== */}
                             <form className="space-y-5" action={handleSubmit}>
                                 <input type="hidden" name="next" value={nextPath} />
+                                {mode === "signUp" && (
+                                    <>
+                                        <input type="hidden" name="phone" value={normalizePhoneInput(phoneNumber) || ""} />
+                                        <input type="hidden" name="phoneVerificationToken" value={phoneVerificationToken} />
+                                    </>
+                                )}
 
                                 {/* Full Name (signup only) */}
                                 {mode === "signUp" && (
@@ -193,6 +396,64 @@ export default function LoginPage() {
                                     </div>
                                 </div>
 
+                                {mode === "signUp" && (
+                                    <div className="space-y-3 rounded-xl border border-[#031E49]/10 bg-[#F5F2EB]/40 p-4">
+                                        <label className="block text-sm font-bold text-[#031E49]">Mobile Number (OTP verification required)</label>
+                                        <input
+                                            name="phone_visible"
+                                            type="tel"
+                                            required
+                                            value={phoneNumber}
+                                            onChange={(e) => {
+                                                const nextValue = e.target.value;
+                                                setPhoneNumber(nextValue);
+                                                const normalized = normalizePhoneInput(nextValue);
+                                                if (!normalized || normalized !== verifiedPhone) {
+                                                    setPhoneVerified(false);
+                                                    setPhoneVerificationToken("");
+                                                }
+                                            }}
+                                            placeholder="+8801XXXXXXXXX"
+                                            className="w-full px-4 py-3 rounded-xl border border-[#031E49]/20 bg-white focus:outline-none focus:ring-2 focus:ring-[#031E49] text-sm text-[#031E49]"
+                                        />
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={handleSendPhoneOtp}
+                                                disabled={otpLoading}
+                                                className="flex-1 border border-[#031E49]/20 rounded-xl py-2.5 text-sm font-semibold text-[#031E49] hover:bg-white disabled:opacity-50"
+                                            >
+                                                {otpLoading ? "Sending..." : "Send OTP"}
+                                            </button>
+                                            {otpSent && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleVerifyPhoneOtp}
+                                                    disabled={otpLoading}
+                                                    className="flex-1 bg-[#031E49] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0A2D6C] disabled:opacity-50"
+                                                >
+                                                    {otpLoading ? "Verifying..." : "Verify OTP"}
+                                                </button>
+                                            )}
+                                        </div>
+                                        {otpSent && (
+                                            <input
+                                                type="text"
+                                                inputMode="numeric"
+                                                maxLength={6}
+                                                value={otpCode}
+                                                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                                                placeholder="Enter 6-digit OTP"
+                                                className="w-full px-4 py-3 rounded-xl border border-[#031E49]/20 bg-white focus:outline-none focus:ring-2 focus:ring-[#031E49] text-sm text-[#031E49]"
+                                            />
+                                        )}
+                                        <div className={`text-xs font-semibold ${phoneVerified ? "text-emerald-700" : "text-[#0A2D6C]/60"}`}>
+                                            {phoneVerified ? `Verified: ${verifiedPhone}` : "Phone not verified yet"}
+                                        </div>
+                                        <div id="phone-recaptcha-container" />
+                                    </div>
+                                )}
+
                                 {/* Password */}
                                 <div>
                                     <div className="flex items-center justify-between mb-1.5">
@@ -213,7 +474,7 @@ export default function LoginPage() {
                                             name="password"
                                             type={showPassword ? "text" : "password"}
                                             required
-                                            minLength={6}
+                                            minLength={8}
                                             placeholder="••••••••"
                                             className="w-full pl-10 pr-12 py-3 rounded-xl border border-[#031E49]/20 bg-[#F5F2EB]/50 focus:outline-none focus:ring-2 focus:ring-[#031E49] text-sm text-[#031E49]"
                                         />
@@ -230,7 +491,7 @@ export default function LoginPage() {
                                 {/* Submit */}
                                 <button
                                     type="submit"
-                                    disabled={loading}
+                                    disabled={loading || (mode === "signUp" && !phoneVerified)}
                                     className="w-full bg-[#031E49] hover:bg-[#0A2D6C] text-white py-3.5 rounded-xl font-bold shadow-md transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {loading ? "Processing..." : mode === "signUp" ? "Create Account" : "Sign In"}
@@ -249,7 +510,7 @@ export default function LoginPage() {
                                 <button
                                     type="button"
                                     onClick={handleFirebaseGoogleSignIn}
-                                    disabled={loading}
+                                    disabled={loading || isCanonicalizingHost}
                                     className="w-full flex items-center justify-center gap-3 border-2 border-[#031E49]/10 rounded-xl py-3 text-sm font-semibold text-[#031E49] hover:bg-[#F5F2EB]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -274,7 +535,14 @@ export default function LoginPage() {
                     <p className="text-center text-sm text-[#0A2D6C]/50 mt-6">
                         {mode === "signUp" ? "Already have an account? " : "Don't have an account? "}
                         <button
-                            onClick={() => { setMode(mode === "signUp" ? "signIn" : "signUp"); setError(null); setSuccessMessage(null); setLoginFailed(false); }}
+                            onClick={() => {
+                                setMode(mode === "signUp" ? "signIn" : "signUp");
+                                setError(null);
+                                setSuccessMessage(null);
+                                setLoginFailed(false);
+                                resetPhoneVerificationState();
+                                setPhoneNumber("");
+                            }}
                             className="text-[#00B16A] font-bold hover:text-emerald-700"
                         >
                             {mode === "signUp" ? "Sign In" : "Create Account"}

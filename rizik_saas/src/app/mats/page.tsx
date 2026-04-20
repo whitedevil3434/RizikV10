@@ -14,7 +14,7 @@ export default function MatsPage() {
                         Barishal <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00B16A] to-emerald-600">Eco-Mats</span>
                     </h1>
                     <p className="text-lg md:text-xl text-[#0A2D6C]/60 max-w-2xl mx-auto leading-relaxed">
-                        100% biodegradable, non-woven prayer mats designed for reliable quality, local production, and accessible pricing.
+                        100% biodegradable, non-woven prayer mats designed for reliable quality, local production, and pre-order availability.
                     </p>
                 </div>
             </section>
@@ -26,9 +26,9 @@ export default function MatsPage() {
 
                         {/* Feature 1 */}
                         <div className="p-6 rounded-3xl bg-white border border-[#031E49]/10 flex flex-col h-full hover:-translate-y-1 transition-transform duration-300 hover:shadow-lg">
-                            <div className="w-10 h-10 rounded-full bg-[#031E49]/5 flex items-center justify-center mb-4 text-lg">💰</div>
-                            <h3 className="text-lg font-bold text-[#031E49] mb-2">Accessible Pricing</h3>
-                            <p className="text-sm text-[#0A2D6C]/60">Priced between 50-150 BDT to support broad affordability for institutional and community buyers.</p>
+                            <div className="w-10 h-10 rounded-full bg-[#031E49]/5 flex items-center justify-center mb-4 text-lg">🛍️</div>
+                            <h3 className="text-lg font-bold text-[#031E49] mb-2">Pre-Order Access</h3>
+                            <p className="text-sm text-[#0A2D6C]/60">Retail mats are currently listed as Pre Order, while selected variants are marked as Coming Up.</p>
                         </div>
 
                         {/* Feature 2 */}

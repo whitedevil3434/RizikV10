@@ -18,6 +18,51 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
 };
 
+function parseCommaSeparated(raw: string | undefined): string[] {
+  return String(raw || "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+async function isUnlimitedUser(userId: string, userEmail: string | null, env: any): Promise<boolean> {
+  const staticUnlimited = new Set<string>([
+    "sabbirhossainkhan43@gmail.com",
+    "its.sabbir69@gmail.com",
+    ...parseCommaSeparated(env.ADMIN_UNLIMITED_EMAILS),
+  ]);
+
+  if (userEmail && staticUnlimited.has(userEmail.toLowerCase())) {
+    return true;
+  }
+
+  // Role-based bypass from user_profiles for robustness (works even if email changes).
+  try {
+    const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL || "https://yhwhkwveupjzrwdljivn.supabase.co";
+    const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey) return false;
+
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/user_profiles?id=eq.${encodeURIComponent(userId)}&select=role&limit=1`,
+      {
+        method: "GET",
+        headers: {
+          "apikey": serviceKey,
+          "Authorization": `Bearer ${serviceKey}`,
+        },
+      }
+    );
+    if (!res.ok) return false;
+    const rows = await res.json() as Array<{ role?: string }>;
+    const role = (rows?.[0]?.role || "").toUpperCase();
+    const unlimitedRoles = new Set(["SUPER_ADMIN", "ADMIN", "OWNER", "FOUNDER", "ROOT"]);
+    return unlimitedRoles.has(role);
+  } catch (err) {
+    console.warn("Unlimited role-check failed:", err);
+    return false;
+  }
+}
+
 function isCreditBypassEnabled(env: any): boolean {
   const raw = env.PAUSE_CREDIT_LOGIC ?? env.TEST_MODE_DISABLE_CREDITS ?? "";
   return String(raw).trim().toLowerCase() === "true";
@@ -248,6 +293,32 @@ async function checkAndDecrementCredits(userId: string, env: any): Promise<{ suc
     return { success: false };
   }
 }
+
+async function getAvailableCredits(userId: string, env: any): Promise<number | null> {
+  try {
+    if (isCreditBypassEnabled(env)) return 999999;
+    const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL || "https://yhwhkwveupjzrwdljivn.supabase.co";
+    const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
+
+    const readRes = await fetch(`${supabaseUrl}/rest/v1/user_usage?user_id=eq.${userId}&select=free_uses_remaining,paid_credits&limit=1`, {
+      method: "GET",
+      headers: {
+        "apikey": serviceKey,
+        "Authorization": `Bearer ${serviceKey}`
+      }
+    });
+    if (!readRes.ok) return null;
+    const rows = await readRes.json() as Array<{ free_uses_remaining?: number; paid_credits?: number }>;
+    if (!rows || rows.length === 0) return 0;
+    const free = rows[0].free_uses_remaining || 0;
+    const paid = rows[0].paid_credits || 0;
+    return free + paid;
+  } catch (err) {
+    console.error("Credit Availability Error:", err);
+    return null;
+  }
+}
 async function dispatchLiveKitAgent(
   env: any,
   roomName: string,
@@ -345,40 +416,54 @@ export default {
               env.SUPABASE_ANON_KEY ||
               env.SUPABASE_SERVICE_ROLE_KEY;
 
-            if (!authApiKey) {
+            if (!authApiKey && !env.SUPABASE_JWT_SECRET) {
               return new Response(
-                JSON.stringify({ error: "Backend auth misconfigured (missing Supabase API key)" }),
+                JSON.stringify({ error: "Backend auth misconfigured (missing Supabase API key / JWT secret)" }),
                 { status: 500, headers: corsHeaders }
               );
             }
 
-            const resUser = await fetch(supabaseUrl + "/auth/v1/user", {
-                headers: { Authorization: "Bearer " + token, "apikey": authApiKey }
-            });
-
-            if (!resUser.ok) {
-              const reason = await resUser.text();
-              return new Response(
-                JSON.stringify({
-                  error: "Invalid or expired session",
-                  detail: reason.slice(0, 300),
-                }),
-                { status: 401, headers: corsHeaders }
-              );
+            // Primary: local JWT verification (avoids auth API rate-limit false negatives).
+            if (env.SUPABASE_JWT_SECRET) {
+              userId = await verifySupabaseJWT(token, env.SUPABASE_JWT_SECRET);
             }
 
-            const userData = await resUser.json() as { id?: string; email?: string };
-            userId = userData?.id || null;
-            userEmail = userData?.email || null;
+            // Secondary: enrich with /auth/v1/user when available (email lookup, stronger validation).
+            if (authApiKey) {
+              try {
+                const resUser = await fetch(supabaseUrl + "/auth/v1/user", {
+                    headers: { Authorization: "Bearer " + token, "apikey": authApiKey }
+                });
+                if (resUser.ok) {
+                  const userData = await resUser.json() as { id?: string; email?: string };
+                  userId = userData?.id || userId;
+                  userEmail = userData?.email || null;
+                } else if (!userId) {
+                  const reason = await resUser.text();
+                  return new Response(
+                    JSON.stringify({
+                      error: "Invalid or expired session",
+                      detail: reason.slice(0, 300),
+                    }),
+                    { status: 401, headers: corsHeaders }
+                  );
+                } else {
+                  console.warn("Auth API unavailable/rate-limited; proceeding via local JWT verification.");
+                }
+              } catch (authErr) {
+                if (!userId) {
+                  return new Response(
+                    JSON.stringify({ error: "Invalid or expired session", detail: "Auth lookup failed" }),
+                    { status: 401, headers: corsHeaders }
+                  );
+                }
+                console.warn("Auth API lookup failed; local JWT verification passed:", authErr);
+              }
+            }
 
-            // Admin & Employee detection via email (unlimited credits, no deduction)
-            const UNLIMITED_EMAILS = [
-              "sabbirhossainkhan43@gmail.com",  // Admin (Master)
-              "its.sabbir69@gmail.com",          // Employee
-            ];
-            if (userEmail && UNLIMITED_EMAILS.includes(userEmail.toLowerCase())) {
+            if (userId && await isUnlimitedUser(userId, userEmail, env)) {
               isAdmin = true;
-              console.log(`🧬 Godly Resonance: Admin Bypass Authorized (Email: ${userEmail}).`);
+              console.log(`🧬 Godly Resonance: Admin Bypass Authorized (Role/Email: ${userEmail || userId}).`);
             }
         }
 
@@ -400,26 +485,52 @@ export default {
 
         // Humanize DOES cost credits (unless admin)
         if (url.pathname === "/api/ghost/humanize") {
-          let creditsRemaining = 100;
+          let creditsRemaining = isAdmin ? 999999 : 0;
           if (!isAdmin) {
-            const creditCheck = await checkAndDecrementCredits(userId, env);
-            if (!creditCheck.success) {
+            // Pre-check only (do not decrement before successful output generation).
+            const available = await getAvailableCredits(userId, env);
+            if (available === null) {
+              return new Response(JSON.stringify({
+                error: "Credit check temporarily unavailable. Please retry in a moment."
+              }), { status: 503, headers: corsHeaders });
+            }
+            if (available <= 0) {
               return new Response(JSON.stringify({ 
                 error: "Insufficient credits", 
                 code: "INSUFFICIENT_CREDITS",
                 message: "You have used your 3 free credits. Please purchase more to continue." 
               }), { status: 402, headers: corsHeaders });
             }
-            creditsRemaining = creditCheck.remaining ?? 0;
-          } else {
-            console.log("🧬 Admin: Skipping credit deduction.");
+            creditsRemaining = available;
           }
 
           const { aiText, dnaProfile, options } = await request.json() as { aiText: string, dnaProfile: any, options?: any };
           const result = await transformText(aiText, dnaProfile, env, options);
+          const content = result.llmOutput || result.pipelineOutput;
+
+          // Don't charge when transform did not produce usable content.
+          if (!content || !String(content).trim()) {
+            return new Response(JSON.stringify({
+              error: "Humanizer failed to generate output. No credit deducted."
+            }), { status: 500, headers: corsHeaders });
+          }
+
+          if (!isAdmin) {
+            // Debit only after successful output creation.
+            const debit = await checkAndDecrementCredits(userId, env);
+            if (debit.success) {
+              creditsRemaining = debit.remaining ?? creditsRemaining;
+            } else {
+              // Keep output available even if billing write fails; avoid charging on failed write path.
+              console.warn(`⚠️ Credit debit failed after success for user=${userId}. Output returned without deduction.`);
+            }
+          } else {
+            console.log("🧬 Admin: Skipping credit deduction.");
+          }
+
           return new Response(JSON.stringify({ 
             success: true, 
-            content: result.llmOutput || result.pipelineOutput, // Primary: LLM if available
+            content,                                            // Primary: LLM if available
             pipelineOutput: result.pipelineOutput,               // Always available
             llmOutput: result.llmOutput,                         // null if LLM failed/rejected
             creditsRemaining: creditsRemaining 
@@ -431,9 +542,22 @@ export default {
       }
     }
 
-    // 🏆 ADMIN: Consortium DNA Population
+    // 🏆 ADMIN: Consortium DNA Population (v3.3: Auth Required)
     if (url.pathname === "/api/admin/consortium/populate" && request.method === "POST") {
       try {
+        // Admin auth gate
+        const adminAuth = request.headers.get("Authorization");
+        const adminKey = request.headers.get("X-Rizik-Admin-Key");
+        if (!adminKey || adminKey !== env.SUPABASE_SERVICE_ROLE_KEY) {
+          if (!adminAuth?.startsWith("Bearer ")) {
+            return new Response(JSON.stringify({ error: "Admin authentication required" }), { status: 401, headers: corsHeaders });
+          }
+          const adminToken = adminAuth.split(" ")[1];
+          const adminUserId = env.SUPABASE_JWT_SECRET ? await verifySupabaseJWT(adminToken, env.SUPABASE_JWT_SECRET) : null;
+          if (!adminUserId || !(await isUnlimitedUser(adminUserId, null, env))) {
+            return new Response(JSON.stringify({ error: "Admin access denied" }), { status: 403, headers: corsHeaders });
+          }
+        }
         const { subreddit, limit } = await request.json() as { subreddit?: string, limit?: number };
         const result = await populateConsortium(subreddit || "bangladesh", limit || 100, env);
         return new Response(JSON.stringify(result), { headers: corsHeaders });
@@ -453,9 +577,21 @@ export default {
       }
     }
 
-    // Admin: Batch Populate Consortium (Academic/Niche)
+    // Admin: Batch Populate Consortium (Academic/Niche) (v3.3: Auth Required)
     if (url.pathname === "/api/admin/consortium/batch-populate" && request.method === "POST") {
       try {
+        const batchAdminAuth = request.headers.get("Authorization");
+        const batchAdminKey = request.headers.get("X-Rizik-Admin-Key");
+        if (!batchAdminKey || batchAdminKey !== env.SUPABASE_SERVICE_ROLE_KEY) {
+          if (!batchAdminAuth?.startsWith("Bearer ")) {
+            return new Response(JSON.stringify({ error: "Admin authentication required" }), { status: 401, headers: corsHeaders });
+          }
+          const bToken = batchAdminAuth.split(" ")[1];
+          const bUserId = env.SUPABASE_JWT_SECRET ? await verifySupabaseJWT(bToken, env.SUPABASE_JWT_SECRET) : null;
+          if (!bUserId || !(await isUnlimitedUser(bUserId, null, env))) {
+            return new Response(JSON.stringify({ error: "Admin access denied" }), { status: 403, headers: corsHeaders });
+          }
+        }
         const { subreddits, limitPerSub } = await request.json() as { subreddits: string[], limitPerSub?: number };
         const results = [];
         for (const sub of subreddits) {
@@ -468,9 +604,21 @@ export default {
       }
     }
 
-    // Admin: Ingest Batch (New)
+    // Admin: Ingest Batch (v3.3: Auth Required)
     if (url.pathname === "/api/admin/ingest-batch" && request.method === "POST") {
       try {
+        const ingestAdminAuth = request.headers.get("Authorization");
+        const ingestAdminKey = request.headers.get("X-Rizik-Admin-Key");
+        if (!ingestAdminKey || ingestAdminKey !== env.SUPABASE_SERVICE_ROLE_KEY) {
+          if (!ingestAdminAuth?.startsWith("Bearer ")) {
+            return new Response(JSON.stringify({ error: "Admin authentication required" }), { status: 401, headers: corsHeaders });
+          }
+          const iToken = ingestAdminAuth.split(" ")[1];
+          const iUserId = env.SUPABASE_JWT_SECRET ? await verifySupabaseJWT(iToken, env.SUPABASE_JWT_SECRET) : null;
+          if (!iUserId || !(await isUnlimitedUser(iUserId, null, env))) {
+            return new Response(JSON.stringify({ error: "Admin access denied" }), { status: 403, headers: corsHeaders });
+          }
+        }
         const { batch } = await request.json() as any;
         const result = await ingestBatch(batch, env);
         return new Response(JSON.stringify(result), { headers: corsHeaders });

@@ -1,0 +1,48 @@
+{
+  "startedAt": "2026-04-05T09:02:32.255Z",
+  "baseUrl": "https://rizikecosystem.com",
+  "usageBefore": {
+    "user_id": "1e499a55-d271-466b-9a4f-fe90f97e6f4d",
+    "free_uses_remaining": 0,
+    "paid_credits": 0,
+    "total_transformations": 0
+  },
+  "extractAttemptsUntilModal": 1,
+  "modalOpened": true,
+  "usageAfterExtractLoop": {
+    "user_id": "1e499a55-d271-466b-9a4f-fe90f97e6f4d",
+    "free_uses_remaining": 0,
+    "paid_credits": 0,
+    "total_transformations": 0
+  },
+  "order": {
+    "id": "72b2e238-f542-4e8b-af53-7c3bf49ce40c",
+    "order_code": "RW-28797",
+    "status": "PENDING",
+    "channel": "DIGITAL",
+    "quantity": 5,
+    "trxid": "E2E1775379761793",
+    "user_id": "1e499a55-d271-466b-9a4f-fe90f97e6f4d"
+  },
+  "orderAfterApprove": {
+    "id": "72b2e238-f542-4e8b-af53-7c3bf49ce40c",
+    "order_code": "RW-28797",
+    "status": "COMPLETED",
+    "channel": "DIGITAL",
+    "quantity": 5,
+    "trxid": "E2E1775379761793"
+  },
+  "usageAfterApproveBeforeExtract": {
+    "user_id": "1e499a55-d271-466b-9a4f-fe90f97e6f4d",
+    "free_uses_remaining": 0,
+    "paid_credits": 5,
+    "total_transformations": 0
+  },
+  "usageAfterPaidExtract": {
+    "user_id": "1e499a55-d271-466b-9a4f-fe90f97e6f4d",
+    "free_uses_remaining": 0,
+    "paid_credits": 4,
+    "total_transformations": 0
+  },
+  "finishedAt": "2026-04-05T09:02:58.532Z"
+}

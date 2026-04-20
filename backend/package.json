@@ -1,0 +1,22 @@
+{
+  "name": "rizik-backend-godly",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "build": "tsc -p tsconfig.json",
+    "test:quality": "npx tsc src/ghost/transformEngine.ts src/ghost/fidelityEngine.ts src/ghost/qualityEngine.ts --outDir dist-test --module commonjs --target ES2020 --moduleResolution node --skipLibCheck && node scripts/test_humanizer_policy.mjs",
+    "test:integration": "node scripts/test_humanize_integration.mjs"
+  },
+  "dependencies": {
+    "hono": "^4.0.0",
+    "@supabase/supabase-js": "^2.39.3",
+    "jsonwebtoken": "^9.0.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240208.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.28.1"
+  }
+}

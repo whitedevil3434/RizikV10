@@ -1,0 +1,33 @@
+name = "rizik-backend"
+main = "src/index.ts"
+compatibility_date = "2024-04-01"
+
+[durable_objects]
+bindings = [
+  { name = "CHAT_ROOM", class_name = "ChatRoom" },
+  { name = "VOICE_AGENT", class_name = "VoiceAgent" }
+]
+
+[ai]
+binding = "AI"
+
+[[vectorize]]
+binding = "CONSORTIUM_DB"
+index_name = "rizik_human_consortium"
+
+[[r2_buckets]]
+binding = "RIZIK_STORAGE"
+bucket_name = "rizik-storage-v1"
+
+[vars]
+ENVIRONMENT = "production"
+CALLS_APP_ID = "1e976218463f682ebf0f56c0667a5482"
+LIVEKIT_URL = "wss://rizik-ai-femz194x.livekit.cloud"
+LIVEKIT_API_KEY = "APImSG78KpGRGdm"
+LIVEKIT_API_SECRET = "MdKvfAwLfivlzlQmgRfJ268XvW79vSyqidour2e1kQnC"
+NEXT_PUBLIC_SUPABASE_URL = "https://yhwhkwveupjzrwdljivn.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlod2hrd3ZldXBqenJ3ZGxqaXZuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjIxMjg3OCwiZXhwIjoyMDg3Nzg4ODc4fQ.cOMxhnL4BjvllMx5K2UNkfHUuhC3rVhzWWSIIBLWCDg"
+SUPABASE_JWT_SECRET = "0HO8B/tYISvzMe4J4WTwJlp76lgxgOe/MjwCpOt5"
+
+[[migrations]]
+tag = "v7"

@@ -1,10 +1,23 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { getCurrentUserContext } from "@/lib/auth/session";
+import { canAccessAdminRole } from "@/lib/auth/policy";
+
+async function requireAdminAccess(): Promise<{ ok: true } | { ok: false; error: string }> {
+    const { user, role } = await getCurrentUserContext();
+    if (!user || !canAccessAdminRole(role)) {
+        return { ok: false, error: "Unauthorized." };
+    }
+    return { ok: true };
+}
 
 // ── Create Product ──
 export async function createProductAction(formData: FormData) {
+    const access = await requireAdminAccess();
+    if (!access.ok) return { error: access.error };
+
     const sku = (formData.get("sku") as string || "").trim();
     const name = (formData.get("name") as string || "").trim();
     const category = (formData.get("category") as string || "ECO_MAT").trim();
@@ -46,6 +59,9 @@ export async function createProductAction(formData: FormData) {
 
 // ── Update Product ──
 export async function updateProductAction(formData: FormData) {
+    const access = await requireAdminAccess();
+    if (!access.ok) return { error: access.error };
+
     const productId = (formData.get("product_id") as string || "").trim();
     const name = (formData.get("name") as string || "").trim();
     const description = (formData.get("description") as string || "").trim();
@@ -88,6 +104,9 @@ export async function updateProductAction(formData: FormData) {
 
 // ── Toggle Product Active Status ──
 export async function toggleProductAction(productId: string, isActive: boolean) {
+    const access = await requireAdminAccess();
+    if (!access.ok) return { error: access.error };
+
     const admin = createAdminClient();
     const { error } = await admin
         .from("empire_products")
@@ -106,6 +125,9 @@ export async function toggleProductAction(productId: string, isActive: boolean) 
 
 // ── Delete Product (Hard Delete) ──
 export async function deleteProductAction(productId: string) {
+    const access = await requireAdminAccess();
+    if (!access.ok) return { error: access.error };
+
     const admin = createAdminClient();
     const { error } = await admin
         .from("empire_products")

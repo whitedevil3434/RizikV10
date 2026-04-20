@@ -1,0 +1,37 @@
+{
+  "startedAt": "2026-04-05T08:52:11.850Z",
+  "customer": {
+    "email": "e2e.rizik.customer.1775378837104@gmail.com",
+    "id": "1e499a55-d271-466b-9a4f-fe90f97e6f4d"
+  },
+  "admin": {
+    "email": "e2e.rizik.admin.final.1775379029@gmail.com"
+  },
+  "usageSnapshots": [
+    {
+      "stage": "before_login",
+      "usage": {
+        "user_id": "1e499a55-d271-466b-9a4f-fe90f97e6f4d",
+        "free_uses_remaining": 3,
+        "paid_credits": 0,
+        "total_transformations": 0,
+        "updated_at": "2026-04-05T08:47:18.537522+00:00"
+      }
+    },
+    {
+      "stage": "after_extract_1",
+      "usage": {
+        "user_id": "1e499a55-d271-466b-9a4f-fe90f97e6f4d",
+        "free_uses_remaining": 3,
+        "paid_credits": 0,
+        "total_transformations": 0,
+        "updated_at": "2026-04-05T08:47:18.537522+00:00"
+      }
+    }
+  ],
+  "dialogs": [],
+  "notes": [],
+  "finishedAt": "2026-04-05T08:52:51.910Z",
+  "success": false,
+  "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /Paste Text/i })\u001b[22m\n\u001b[2m    - locator resolved to <button class=\"step-tab active\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"modal-overlay\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"modal-overlay\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is not stable\u001b[22m\n\u001b[2m  56 × retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m       - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <div class=\"modal-overlay\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 500ms\u001b[22m\n\n    at doExtract (/Users/sabbir/Downloads/RizikV10/rizik_saas/tmp_e2e_flow.js:55:59)\n    at main (/Users/sabbir/Downloads/RizikV10/rizik_saas/tmp_e2e_flow.js:91:13)"
+}

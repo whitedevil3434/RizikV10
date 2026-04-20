@@ -389,13 +389,1063 @@ const CAUSAL_SWAPS: Record<string, string[]> = {
   "so": ["because", "therefore", "thus"],
 };
 
-// ─── Core Error Application Engine ──────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// TIER 1-7: NEW ERROR GROUP IMPLEMENTATIONS (v3.3)
+// 58 new error types across 7 tiers
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─── TIER 1: Punctuation & Structure Chaos ───────────────────────────────────
+
+function applyCommaSplice(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+  if (sentences.length < 3) return text;
+  const result: string[] = [];
+  let spliced = false;
+  for (let i = 0; i < sentences.length; i++) {
+    s = simpleHash(s.toString() + i);
+    if (!spliced && i < sentences.length - 1 && seededRandom(s) < prob &&
+        sentences[i].length > 20 && sentences[i+1].length > 15) {
+      const first = sentences[i].replace(/[.!?]$/, "");
+      const second = sentences[i+1].charAt(0).toLowerCase() + sentences[i+1].slice(1);
+      const merged = `${first}, ${second}`;
+      result.push(merged);
+      log.push({ type: "comma_splice", original: sentences[i] + " " + sentences[i+1], mutated: merged, position: -1 });
+      spliced = true;
+      i++; continue;
+    }
+    result.push(sentences[i]);
+  }
+  return result.join(" ");
+}
+
+function applyMissingExtraComma(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  let output = text;
+  // Missing comma after intro phrases
+  const introPatterns = ["However,", "Furthermore,", "Moreover,", "Nevertheless,", "Therefore,", "Consequently,", "Additionally,", "Similarly,"];
+  for (const pattern of introPatterns) {
+    s = simpleHash(s.toString() + pattern);
+    if (seededRandom(s) > prob) continue;
+    const noComma = pattern.replace(",", "");
+    if (output.includes(pattern)) {
+      output = output.replace(pattern, noComma);
+      log.push({ type: "missing_comma", original: pattern, mutated: noComma, position: -1 });
+      break;
+    }
+  }
+  return output;
+}
+
+function applySemicolonMisuse(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "semi");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // Replace a comma before a conjunction with semicolon
+  const replaced = output.replace(/,\s+(and|but|or)\s/i, (match) => {
+    log.push({ type: "semicolon_misuse", original: match, mutated: match.replace(",", ";"), position: -1 });
+    return match.replace(",", ";");
+  });
+  return replaced;
+}
+
+function applySentenceFragment(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "frag");
+  if (seededRandom(s) > prob) return text;
+  // Find a "because/although" clause and make it a fragment
+  const match = text.match(/\.\s+(Because|Although|Since|While|If)\s+([^.]{15,60})\./i);
+  if (match && match.index !== undefined) {
+    const fragment = match[0];
+    const newFrag = fragment.replace(/\.\s*$/, ".");
+    log.push({ type: "sentence_fragment", original: "", mutated: "fragment created", position: match.index });
+  }
+  return text;
+}
+
+function applyPeriodBoundaryChaos(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "periodbnd");
+  if (seededRandom(s) > prob) return text;
+  // Insert a period mid-sentence occasionally
+  const words = text.split(/\s+/);
+  if (words.length < 30) return text;
+  const midPoint = Math.floor(words.length / 2);
+  // Find a good spot near middle
+  for (let i = midPoint - 3; i < midPoint + 3 && i < words.length; i++) {
+    if (words[i].endsWith(",")) {
+      const original = words[i];
+      words[i] = words[i].replace(",", ".");
+      if (i + 1 < words.length) {
+        words[i + 1] = words[i + 1].charAt(0).toUpperCase() + words[i + 1].slice(1);
+      }
+      log.push({ type: "period_boundary", original, mutated: words[i], position: i });
+      break;
+    }
+  }
+  return words.join(" ");
+}
+
+// ─── TIER 2: South Asian L1 Structural Bleed ─────────────────────────────────
+
+function applyDoubleSubject(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  let output = text;
+  // "This research requires" → "This research, it requires"
+  const patterns: [RegExp, string][] = [
+    [/\b(This (?:research|study|approach|method|analysis))\s+(requires|shows|indicates|suggests|demonstrates)/gi, "$1, it $2"],
+    [/\b(The (?:result|finding|data|evidence|report))\s+(shows|indicates|suggests|reveals)/gi, "$1, it $2"],
+  ];
+  for (const [regex, replacement] of patterns) {
+    s = simpleHash(s.toString() + regex.source);
+    if (seededRandom(s) > prob) continue;
+    if (regex.test(output)) {
+      let replaced = false;
+      output = output.replace(regex, (match, ...args) => {
+        if (replaced) return match;
+        replaced = true;
+        const result = match.replace(regex, replacement);
+        log.push({ type: "double_subject", original: match, mutated: result, position: -1 });
+        return result;
+      });
+    }
+  }
+  return output;
+}
+
+function applyMissingCopula(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  let output = text;
+  // "The results are very significant" → "The results very significant"
+  const copulaPatterns: [RegExp, string][] = [
+    [/\b(results?|findings?|data|evidence|approach)\s+(is|are|was|were)\s+(very|quite|highly|extremely|particularly)/gi, "$1 $3"],
+    [/\b(it|this|that)\s+(is|was)\s+(important|necessary|clear|evident|obvious)/gi, "$1 $3"],
+  ];
+  for (const [regex, replacement] of copulaPatterns) {
+    s = simpleHash(s.toString() + "copula" + regex.source.slice(0, 10));
+    if (seededRandom(s) > prob) continue;
+    if (regex.test(output)) {
+      let replaced = false;
+      output = output.replace(regex, (match) => {
+        if (replaced) return match;
+        replaced = true;
+        const result = match.replace(regex, replacement);
+        log.push({ type: "missing_copula", original: match, mutated: result, position: -1 });
+        return result;
+      });
+    }
+  }
+  return output;
+}
+
+function applyExistentialError(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "exist");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // "There are many" → "There is many" / "There are several" → "There is several"
+  let replaced = false;
+  output = output.replace(/\bThere\s+are\s+(many|several|numerous|various|multiple)\b/gi, (match, adj) => {
+    if (replaced) return match;
+    replaced = true;
+    const mutated = `There is ${adj}`;
+    log.push({ type: "existential_error", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applyGerundInfinitiveConfusion(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  let output = text;
+  // Verbs that take gerund but get infinitive
+  const gerundVerbs: Record<string, string> = {
+    "avoid doing": "avoid to do", "enjoy reading": "enjoy to read",
+    "consider using": "consider to use", "suggest using": "suggest to use",
+    "recommend using": "recommend to use", "involves using": "involves to use",
+    "avoid making": "avoid to make", "enjoy learning": "enjoy to learn",
+    "finished writing": "finished to write", "keep working": "keep to work",
+  };
+  for (const [correct, wrong] of Object.entries(gerundVerbs)) {
+    s = simpleHash(s.toString() + correct);
+    if (seededRandom(s) > prob) continue;
+    const regex = new RegExp(`\\b${escapeRegex(correct)}\\b`, "gi");
+    if (regex.test(output)) {
+      output = output.replace(regex, (match) => {
+        log.push({ type: "gerund_infinitive", original: match, mutated: wrong, position: -1 });
+        return wrong;
+      });
+      break;
+    }
+  }
+  return output;
+}
+
+function applyWordOrderBleed(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "wordord");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // Adjective order: swap two-adjective sequences: "a big red" → "a red big"
+  let replaced = false;
+  output = output.replace(/\b(a|an|the)\s+(\w{3,8})\s+(\w{3,8})\s+(problem|issue|factor|challenge|result|study)\b/gi, (match, det, adj1, adj2, noun) => {
+    if (replaced) return match;
+    replaced = true;
+    const mutated = `${det} ${adj2} ${adj1} ${noun}`;
+    log.push({ type: "word_order_bleed", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applyMissingAuxiliary(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  let output = text;
+  // "She has been working" → "She have been working" / "He is not going" → "He not going"
+  const auxPatterns: [RegExp, string][] = [
+    [/\b(he|she|it)\s+has\s+been\b/gi, "$1 have been"],
+    [/\b(he|she|it)\s+does\s+not\b/gi, "$1 do not"],
+    [/\b(he|she|it)\s+is\s+not\s+(going|working|doing|making|trying)/gi, "$1 not $2"],
+  ];
+  for (const [regex, replacement] of auxPatterns) {
+    s = simpleHash(s.toString() + "auxpat" + regex.source.slice(0, 10));
+    if (seededRandom(s) > prob) continue;
+    if (regex.test(output)) {
+      let replaced = false;
+      output = output.replace(regex, (match) => {
+        if (replaced) return match;
+        replaced = true;
+        const result = match.replace(regex, replacement);
+        log.push({ type: "missing_auxiliary", original: match, mutated: result, position: -1 });
+        return result;
+      });
+      break;
+    }
+  }
+  return output;
+}
+
+// ─── TIER 3: Academic-Specific Chaos ─────────────────────────────────────────
+
+function applyRedundancyPleonasm(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  let output = text;
+  const redundancies: Record<string, string> = {
+    "return": "return back", "repeat": "repeat again", "revert": "revert back",
+    "advance": "advance forward", "combine": "combine together",
+    "collaborate": "collaborate together", "merge": "merge together",
+    "history": "past history", "plan": "future plan",
+  };
+  for (const [word, redundant] of Object.entries(redundancies)) {
+    s = simpleHash(s.toString() + word);
+    if (seededRandom(s) > prob) continue;
+    const regex = new RegExp(`\\b${escapeRegex(word)}\\b`, "gi");
+    if (regex.test(output)) {
+      let replaced = false;
+      output = output.replace(regex, (match) => {
+        if (replaced) return match;
+        replaced = true;
+        log.push({ type: "redundancy", original: match, mutated: redundant, position: -1 });
+        return redundant;
+      });
+      break;
+    }
+  }
+  return output;
+}
+
+function applyHedgingOverload(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "hedge");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  const hedges = ["it can be somewhat argued that", "it is perhaps possible that", "one might tentatively suggest that"];
+  // Find "it is" or "this is" or "the results" and prepend hedge
+  let replaced = false;
+  output = output.replace(/\b(The results|This study|The findings|The evidence)\s+(show|indicate|suggest|reveal)/i, (match, subj, verb) => {
+    if (replaced) return match;
+    replaced = true;
+    const hedge = hedges[Math.floor(seededRandom(s + 1) * hedges.length)];
+    const mutated = `${hedge} ${subj.toLowerCase()} ${verb}`;
+    log.push({ type: "hedging_overload", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applyPassiveVoiceInjection(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "passive");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // "We analyzed the data" → "The data was analyzed by us"
+  const activeToPassive: [RegExp, string][] = [
+    [/\bWe\s+analyzed\s+(the\s+\w+)/gi, "$1 was analyzed by us"],
+    [/\bWe\s+collected\s+(the\s+\w+)/gi, "$1 was collected by us"],
+    [/\bWe\s+examined\s+(the\s+\w+)/gi, "$1 was examined by us"],
+    [/\bWe\s+observed\s+(the\s+\w+)/gi, "$1 was observed by us"],
+    [/\bWe\s+conducted\s+(the\s+\w+)/gi, "$1 was conducted by us"],
+  ];
+  for (const [regex, replacement] of activeToPassive) {
+    if (regex.test(output)) {
+      let replaced = false;
+      output = output.replace(regex, (match) => {
+        if (replaced) return match;
+        replaced = true;
+        const result = match.replace(regex, replacement);
+        log.push({ type: "passive_injection", original: match, mutated: result, position: -1 });
+        return result;
+      });
+      break;
+    }
+  }
+  return output;
+}
+
+function applyConjunctionChain(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "conjchain");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // Add "And" at beginning of a sentence
+  const sentences = output.split(/(?<=[.!?])\s+/);
+  if (sentences.length > 3) {
+    const targetIdx = Math.floor(seededRandom(s + 1) * (sentences.length - 2)) + 1;
+    if (!/^(And|But|So)\s/i.test(sentences[targetIdx])) {
+      const original = sentences[targetIdx];
+      sentences[targetIdx] = "And " + sentences[targetIdx].charAt(0).toLowerCase() + sentences[targetIdx].slice(1);
+      log.push({ type: "conjunction_chain", original, mutated: sentences[targetIdx], position: -1 });
+      output = sentences.join(" ");
+    }
+  }
+  return output;
+}
+
+function applyTautologicalPhrases(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  let output = text;
+  const tautologies: Record<string, string> = {
+    "in my opinion": "in my personal opinion",
+    "the reason": "the reason is because",
+    "each": "each and every",
+    "cooperate": "mutually cooperate",
+    "basic": "basic fundamentals",
+    "consensus": "general consensus",
+    "end result": "final end result",
+  };
+  for (const [word, taut] of Object.entries(tautologies)) {
+    s = simpleHash(s.toString() + word);
+    if (seededRandom(s) > prob) continue;
+    const regex = new RegExp(`\\b${escapeRegex(word)}\\b`, "gi");
+    if (regex.test(output)) {
+      let replaced = false;
+      output = output.replace(regex, (match) => {
+        if (replaced) return match;
+        replaced = true;
+        log.push({ type: "tautology", original: match, mutated: taut, position: -1 });
+        return taut;
+      });
+      break;
+    }
+  }
+  return output;
+}
+
+// ─── TIER 4: Pronoun & Agreement Deep Chaos ──────────────────────────────────
+
+function applyWrongRelativePronoun(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  let output = text;
+  // "the study that" → "the study who" / "the person who" → "the person which"
+  const swaps: [RegExp, string][] = [
+    [/\b(the\s+(?:study|research|method|approach|report|paper))\s+that\b/gi, "$1 who"],
+    [/\b(the\s+(?:person|author|researcher|student|participant))\s+who\b/gi, "$1 which"],
+  ];
+  for (const [regex, replacement] of swaps) {
+    s = simpleHash(s.toString() + "relpron");
+    if (seededRandom(s) > prob) continue;
+    if (regex.test(output)) {
+      let replaced = false;
+      output = output.replace(regex, (match) => {
+        if (replaced) return match;
+        replaced = true;
+        const result = match.replace(regex, replacement);
+        log.push({ type: "wrong_relative_pronoun", original: match, mutated: result, position: -1 });
+        return result;
+      });
+      break;
+    }
+  }
+  return output;
+}
+
+function applyDeterminerOmission(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "determ");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // "The student must" → "Student must" / "a researcher should" → "researcher should"
+  let replaced = false;
+  output = output.replace(/\b(The|A|An)\s+(student|researcher|teacher|participant|author|reader)\s+(must|should|can|will|has|needs)/gi, (match, det, noun, verb) => {
+    if (replaced) return match;
+    replaced = true;
+    const mutated = `${noun.charAt(0).toUpperCase() + noun.slice(1)} ${verb}`;
+    log.push({ type: "determiner_omission", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+// ─── TIER 5: Anti-AI Fingerprint GOLDEN SIGNALS ──────────────────────────────
+
+function applyCouldOfError(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  let output = text;
+  const haveToOf: Record<string, string> = {
+    "could have": "could of", "would have": "would of", "should have": "should of",
+    "might have": "might of", "must have": "must of",
+  };
+  for (const [correct, wrong] of Object.entries(haveToOf)) {
+    s = simpleHash(s.toString() + correct);
+    if (seededRandom(s) > prob) continue;
+    const regex = new RegExp(`\\b${escapeRegex(correct)}\\b`, "gi");
+    if (regex.test(output)) {
+      let replaced = false;
+      output = output.replace(regex, (match) => {
+        if (replaced) return match;
+        replaced = true;
+        log.push({ type: "could_of", original: match, mutated: wrong, position: -1 });
+        return wrong;
+      });
+      break;
+    }
+  }
+  return output;
+}
+
+function applyConditionalMoodError(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "condmood");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // "If I had known" → "If I would have known"
+  let replaced = false;
+  output = output.replace(/\bIf\s+(\w+)\s+had\s+(\w+ed|known|been|gone|done|seen|taken)/gi, (match, subj, verb) => {
+    if (replaced) return match;
+    replaced = true;
+    const mutated = `If ${subj} would have ${verb}`;
+    log.push({ type: "conditional_mood", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applySubjunctiveAvoidance(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "subjunctive");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // "if it were" → "if it was" / "I wish I were" → "I wish I was"
+  output = output.replace(/\b(if\s+(?:it|he|she|this|that))\s+were\b/gi, (match, prefix) => {
+    log.push({ type: "subjunctive_avoid", original: match, mutated: `${prefix} was`, position: -1 });
+    return `${prefix} was`;
+  });
+  output = output.replace(/\b(wish\s+\w+)\s+were\b/gi, (match, prefix) => {
+    log.push({ type: "subjunctive_avoid", original: match, mutated: `${prefix} was`, position: -1 });
+    return `${prefix} was`;
+  });
+  return output;
+}
+
+function applyHypercorrectionI(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "hyperI");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // "between ... and me" → "between ... and I"
+  let replaced = false;
+  output = output.replace(/\b(between\s+\w+\s+and)\s+me\b/gi, (match, prefix) => {
+    if (replaced) return match;
+    replaced = true;
+    const mutated = `${prefix} I`;
+    log.push({ type: "hypercorrection_I", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  // "give it to ... and me" → "give it to ... and I"
+  output = output.replace(/\b((?:to|for|with)\s+\w+\s+and)\s+me\b/gi, (match, prefix) => {
+    if (replaced) return match;
+    replaced = true;
+    const mutated = `${prefix} I`;
+    log.push({ type: "hypercorrection_I", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applyCommaBeforeThat(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  let output = text;
+  let count = 0;
+  const maxChanges = 2;
+  output = output.replace(/\b(\w+)\s+that\s/g, (match, word, offset) => {
+    if (count >= maxChanges) return match;
+    s = simpleHash(s.toString() + offset);
+    if (seededRandom(s) > prob) return match;
+    count++;
+    const mutated = `${word}, that `;
+    log.push({ type: "comma_before_that", original: match.trim(), mutated: mutated.trim(), position: offset });
+    return mutated;
+  });
+  return output;
+}
+
+function applyParallelismBreak(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "parallel");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // "running, swimming, and hiking" → "running, swimming, and to hike"
+  let replaced = false;
+  output = output.replace(/(\w+ing),\s+(\w+ing),?\s+and\s+(\w+ing)\b/gi, (match, v1, v2, v3) => {
+    if (replaced) return match;
+    replaced = true;
+    const stem = v3.replace(/ing$/, "");
+    const mutated = `${v1}, ${v2}, and to ${stem}`;
+    log.push({ type: "parallelism_break", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applyWhichWithoutComma(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  let output = text;
+  // "the study, which shows" → "the study which shows" (remove comma)
+  // OR "the study that shows" → "the study which shows" (use which instead of that)
+  s = simpleHash(s.toString() + "whichcomma");
+  if (seededRandom(s) > prob) return text;
+  let replaced = false;
+  output = output.replace(/,\s+which\s/gi, (match) => {
+    if (replaced) return match;
+    replaced = true;
+    log.push({ type: "which_no_comma", original: match.trim(), mutated: " which ", position: -1 });
+    return " which ";
+  });
+  return output;
+}
+
+// ─── TIER 6: Eastern L1 Deep Structural Interference ─────────────────────────
+
+function applyStativeProgressive(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  let output = text;
+  // "I understand" → "I am understanding" / "she knows" → "she is knowing"
+  const stativeVerbs: Record<string, string> = {
+    "understand": "am understanding", "understands": "is understanding",
+    "know": "am knowing", "knows": "is knowing",
+    "believe": "am believing", "believes": "is believing",
+    "want": "am wanting", "wants": "is wanting",
+    "need": "am needing", "needs": "is needing",
+    "like": "am liking", "likes": "is liking",
+    "prefer": "am preferring", "prefers": "is preferring",
+    "realize": "am realizing", "realizes": "is realizing",
+  };
+  for (const [stative, progressive] of Object.entries(stativeVerbs)) {
+    s = simpleHash(s.toString() + stative);
+    if (seededRandom(s) > prob) continue;
+    const regex = new RegExp(`\\b(I|we|they|he|she|it|one)\\s+${escapeRegex(stative)}\\b`, "gi");
+    if (regex.test(output)) {
+      let replaced = false;
+      output = output.replace(regex, (match, subject) => {
+        if (replaced) return match;
+        replaced = true;
+        const prog = subject.toLowerCase() === "i" ? stativeVerbs[stative] || progressive :
+          subject.toLowerCase().match(/^(he|she|it|one)$/) ? progressive.replace("am ", "is ") : progressive.replace("am ", "are ");
+        const mutated = `${subject} ${prog}`;
+        log.push({ type: "stative_progressive", original: match, mutated, position: -1 });
+        return mutated;
+      });
+      break;
+    }
+  }
+  return output;
+}
+
+function applyThoughButDouble(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "thobut");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // "Although X, Y" → "Although X, but Y"
+  let replaced = false;
+  output = output.replace(/\b(Although|Though|Even though)\s+([^,]+),\s+/gi, (match, conj, clause) => {
+    if (replaced) return match;
+    replaced = true;
+    const mutated = `${conj} ${clause}, but `;
+    log.push({ type: "though_but_double", original: match.trim(), mutated: mutated.trim(), position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applyUniversalTagQuestion(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "tagq");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // Add "isn't it?" to end of a statement
+  const sentences = output.split(/(?<=[.!?])\s+/);
+  if (sentences.length > 3) {
+    const idx = Math.floor(seededRandom(s + 1) * (sentences.length - 1));
+    const sent = sentences[idx];
+    if (sent.endsWith(".") && sent.length > 25 && !sent.includes("?")) {
+      sentences[idx] = sent.replace(/\.$/, ", isn't it?");
+      log.push({ type: "universal_tag", original: sent, mutated: sentences[idx], position: -1 });
+      output = sentences.join(" ");
+    }
+  }
+  return output;
+}
+
+function applySinceForConfusion(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "sinfor");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // "for many years" → "since many years" / "for a long time" → "since a long time"
+  const patterns: [RegExp, string][] = [
+    [/\bfor\s+(many\s+years|a\s+long\s+time|several\s+years|decades|centuries)\b/gi, "since $1"],
+    [/\bfor\s+(\d+\s+(?:years|months|days|weeks|hours))\b/gi, "since $1"],
+  ];
+  for (const [regex, replacement] of patterns) {
+    if (regex.test(output)) {
+      let replaced = false;
+      output = output.replace(regex, (match) => {
+        if (replaced) return match;
+        replaced = true;
+        const result = match.replace(regex, replacement);
+        log.push({ type: "since_for_confusion", original: match, mutated: result, position: -1 });
+        return result;
+      });
+      break;
+    }
+  }
+  return output;
+}
+
+function applyPluralMarkingOmission(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  let output = text;
+  // "many studies" → "many study" / "several factors" → "several factor"
+  const quantifiers = ["many", "several", "various", "multiple", "numerous", "different", "three", "four", "five"];
+  for (const quant of quantifiers) {
+    s = simpleHash(s.toString() + quant);
+    if (seededRandom(s) > prob) continue;
+    const regex = new RegExp(`\\b${quant}\\s+(\\w{4,}?)s\\b`, "gi");
+    if (regex.test(output)) {
+      let replaced = false;
+      output = output.replace(regex, (match, noun) => {
+        if (replaced) return match;
+        if (noun.endsWith("s") || noun.endsWith("i")) return match; // avoid double strip
+        replaced = true;
+        const mutated = `${quant} ${noun}`;
+        log.push({ type: "plural_omission", original: match, mutated, position: -1 });
+        return mutated;
+      });
+      break;
+    }
+  }
+  return output;
+}
+
+function applyGenderPronounConfusion(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "gender");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // Swap a "she" to "he" or vice versa (Bangla has one pronoun 'সে' for all)
+  let replaced = false;
+  output = output.replace(/\b(she|her)\b/gi, (match) => {
+    if (replaced) return match;
+    replaced = true;
+    const mutated = match.toLowerCase() === "she" ? "he" : "his";
+    log.push({ type: "gender_pronoun", original: match, mutated, position: -1 });
+    return match[0] === match[0].toUpperCase() ? mutated.charAt(0).toUpperCase() + mutated.slice(1) : mutated;
+  });
+  return output;
+}
+
+function applyPerfectPastConfusion(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "perfpast");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // "The study found" → "The study has found" (inject present perfect with past context)
+  let replaced = false;
+  output = output.replace(/\b(The\s+(?:study|research|analysis|experiment))\s+(found|showed|demonstrated|indicated|revealed)\b/gi, (match, subj, verb) => {
+    if (replaced) return match;
+    replaced = true;
+    const mutated = `${subj} has ${verb}`;
+    log.push({ type: "perfect_past_confusion", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applyArticleOveruse(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  let output = text;
+  // Add "the" before abstract nouns: "education is" → "the education is"
+  const abstractNouns = ["education", "poverty", "society", "life", "nature", "science", "knowledge", "information", "progress", "development"];
+  for (const noun of abstractNouns) {
+    s = simpleHash(s.toString() + noun);
+    if (seededRandom(s) > prob) continue;
+    const regex = new RegExp(`(?<!the\\s)\\b(${noun})\\s+(is|was|has|plays|remains)\\b`, "gi");
+    if (regex.test(output)) {
+      let replaced = false;
+      output = output.replace(regex, (match, n, verb) => {
+        if (replaced) return match;
+        replaced = true;
+        const mutated = `the ${n} ${verb}`;
+        log.push({ type: "article_overuse", original: match, mutated, position: -1 });
+        return mutated;
+      });
+      break;
+    }
+  }
+  return output;
+}
+
+function applyAlreadyTenseMarker(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "already");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // "has completed" → "already complete" / "have finished" → "already finish"
+  let replaced = false;
+  output = output.replace(/\b(has|have)\s+(completed|finished|submitted|published|established)\b/gi, (match, aux, verb) => {
+    if (replaced) return match;
+    replaced = true;
+    const stem = verb.replace(/ed$/, "").replace(/ished$/, "ish").replace(/tted$/, "t");
+    const mutated = `already ${stem}`;
+    log.push({ type: "already_tense", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+// ─── TIER 7: South Asian Academic English Fingerprint ─────────────────────────
+
+function applyCopeUpWith(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "copeup");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  let replaced = false;
+  output = output.replace(/\bcope\s+with\b/gi, (match) => {
+    if (replaced) return match;
+    replaced = true;
+    log.push({ type: "cope_up_with", original: match, mutated: "cope up with", position: -1 });
+    return "cope up with";
+  });
+  return output;
+}
+
+function applyDiscussAbout(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "discuss");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  let replaced = false;
+  output = output.replace(/\bdiscuss(es|ed)?\s+the\b/gi, (match, suffix) => {
+    if (replaced) return match;
+    replaced = true;
+    const mutated = `discuss${suffix || ""} about the`;
+    log.push({ type: "discuss_about", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applyCompriseOf(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "comprise");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  let replaced = false;
+  output = output.replace(/\bcomprises?\s+(?!of\b)/gi, (match) => {
+    if (replaced) return match;
+    replaced = true;
+    const mutated = match.trim() + " of ";
+    log.push({ type: "comprise_of", original: match.trim(), mutated: mutated.trim(), position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applyRevertBack(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "revertbk");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // "return to" → "return back to"
+  let replaced = false;
+  output = output.replace(/\breturn\s+to\b/gi, (match) => {
+    if (replaced) return match;
+    replaced = true;
+    log.push({ type: "revert_back", original: match, mutated: "return back to", position: -1 });
+    return "return back to";
+  });
+  return output;
+}
+
+function applyExplainMePattern(
+  text: string, prob: number, seed: number, log: ErrorMutationLog[]
+): string {
+  let s = seed;
+  s = simpleHash(s.toString() + "explainme");
+  if (seededRandom(s) > prob) return text;
+  let output = text;
+  // "explain to the reader" → "explain the reader" (missing preposition)
+  let replaced = false;
+  output = output.replace(/\bexplain\s+to\s+(the\s+\w+)/gi, (match, obj) => {
+    if (replaced) return match;
+    replaced = true;
+    const mutated = `explain ${obj}`;
+    log.push({ type: "explain_me", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+// ─── TIER 8: Pan-Asian Persona Specialty Rules ─────────────────────────
+
+function applyAlreadySuffixPH(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let s = seed;
+  const regex = /\b(finished|done|completed|submitted|sent|checked|verified)\b/gi;
+  return deterministicReplace(text, regex, prob, s, (match) => {
+    log.push({ type: "already_suffix", original: match, mutated: match + " already", position: -1 });
+    return match + " already";
+  });
+}
+
+function applyLahParticleMYID(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let s = seed;
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  const processed = sentences.map((sent, idx) => {
+    s = simpleHash(s.toString() + idx);
+    if (seededRandom(s) > prob * 0.4 || sent.length < 30) return sent;
+    const particles = ["lah", "meh", "sih", "leh"];
+    const p = particles[Math.floor(seededRandom(s + 1) * particles.length)];
+    const mutated = sent.replace(/[.!?]$/, `, ${p}$1`);
+    log.push({ type: "particle_injection", original: sent, mutated, position: -1 });
+    return mutated;
+  });
+  return processed.join(" ");
+}
+
+function applyJujurlyHonestly(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let s = seed;
+  const regex = /\b(honestly|to be honest|frankly)\b/gi;
+  return deterministicReplace(text, regex, prob, s, (match) => {
+    const mutated = match.toLowerCase() === "honestly" ? "jujurly" : "to be honest";
+    log.push({ type: "jujurly_usage", original: match, mutated, position: -1 });
+    return mutated;
+  });
+}
+
+function applyTenseSimplificationTHVN(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let s = seed;
+  const regex = /\b(\w+)(ed|s)\b/gi; // Strip past and 3rd person singular
+  return deterministicReplace(text, regex, prob * 0.6, s, (match, stem) => {
+    log.push({ type: "tense_simplification", original: match, mutated: stem, position: -1 });
+    return stem;
+  });
+}
+
+function applyJapaneseHonorifics(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let s = seed;
+  const regex = /\b(Sir|Professor|Dr\.|Madam)\b/gi;
+  return deterministicReplace(text, regex, prob, s, (match) => {
+    const mutated = match + "-san";
+    log.push({ type: "honorifics", original: match, mutated, position: -1 });
+    return mutated;
+  });
+}
+
+function applyLowercaseStart(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let s = seed;
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  const processed = sentences.map((sent, idx) => {
+    s = simpleHash(s.toString() + idx);
+    if (seededRandom(s) > prob * 0.5) return sent;
+    const mutated = sent.charAt(0).toLowerCase() + sent.slice(1);
+    log.push({ type: "lowercase_start", original: sent, mutated, position: -1 });
+    return mutated;
+  });
+  return processed.join(" ");
+}
+
+// ─── Persona DNA Registry (V20 - Master Asian Engine) ──────────────────────
+
+export type PersonaID = 
+  | "AUTO" 
+  | "SA_RANTER" | "SA_STUDENT" | "MINIMALIST" 
+  | "TAGLISH_PRO" | "SE_HYBRID" | "DIRECT_TR" | "POLITE_ACHIEVER"
+  | "GCC_EXPAT" | "CENTRAL_ASIAN";
+
+export interface PersonaDNA {
+  id: PersonaID;
+  name: string;
+  icon: string;
+  rules: string[]; // Specific rule names allowed for this persona
+  fillers: string[];
+  intensityBias: number;
+}
+
+export const PERSONA_REGISTRY: Record<PersonaID, PersonaDNA> = {
+  AUTO: { id: "AUTO", name: "Auto-DNA", icon: "🧬", rules: [], fillers: [], intensityBias: 1.0 },
+  SA_RANTER: { 
+    id: "SA_RANTER", name: "South Asian Ranter", icon: "🇧🇩", 
+    rules: ["comma_splice", "missing_copula", "existential_error", "verb_tense", "fragments", "stutter"],
+    fillers: ["basically", "bro", "actually", "honestly"],
+    intensityBias: 1.2
+  },
+  SA_STUDENT: { 
+    id: "SA_STUDENT", name: "Formal Student", icon: "🇮🇳", 
+    rules: ["discuss_about", "revert_back", "article_overuse", "academic_hedge", "caps"],
+    fillers: ["kindly", "respected", "in fact"],
+    intensityBias: 0.8
+  },
+  MINIMALIST: { 
+    id: "MINIMALIST", name: "The Minimalist", icon: "📱", 
+    rules: ["determ_omission", "lowercase_start", "missing_comma"],
+    fillers: ["tbh", "idk", "wdym"],
+    intensityBias: 1.5
+  },
+  TAGLISH_PRO: { 
+    id: "TAGLISH_PRO", name: "Taglish Pro", icon: "🇵🇭", 
+    rules: ["already_tense", "already_suffix", "kindly_usage", "tense_flip"],
+    fillers: ["already", "so yeah", "actually"],
+    intensityBias: 1.0
+  },
+  SE_HYBRID: { 
+    id: "SE_HYBRID", name: "SE Asian Hybrid", icon: "🇲🇾", 
+    rules: ["lah_particle", "sih_particle", "article_flux", "jujurly_usage"],
+    fillers: ["lah", "meh", "jujurly"],
+    intensityBias: 1.1
+  },
+  DIRECT_TR: { 
+    id: "DIRECT_TR", name: "Direct Translator", icon: "🇹🇭", 
+    rules: ["tense_simplification", "same_same", "no_have", "softener_nha"],
+    fillers: ["same same", "anyway", "nha"],
+    intensityBias: 1.3
+  },
+  POLITE_ACHIEVER: { 
+    id: "POLITE_ACHIEVER", name: "Polite Achiever", icon: "🇯🇵", 
+    rules: ["honorifics", "excessive_modesty", "it_cant_be_helped", "apology_pattern"],
+    fillers: ["sorry", "i will work hard", "shikata ga nai"],
+    intensityBias: 0.7
+  },
+  GCC_EXPAT: { 
+    id: "GCC_EXPAT", name: "GCC Expat", icon: "🇦🇪", 
+    rules: ["lingua_franca", "do_the_needful", "third_space_pragmatics", "revert_back"],
+    fillers: ["kindly", "please", "revert"],
+    intensityBias: 0.9
+  },
+  CENTRAL_ASIAN: { 
+    id: "CENTRAL_ASIAN", name: "Central Asian L2", icon: "🇺🇿", 
+    rules: ["russian_syntax", "missing_articles", "literal_idioms"],
+    fillers: ["basically", "how to say", "look"],
+    intensityBias: 1.1
+  }
+};
 
 export interface HumanErrorConfig {
   chaosThreshold: number;   // 0-100 slider value
   errorFactor: number;      // From user DNA (0.3-2.0)
   isAcademic: boolean;
   dnaSeed: string;          // User DNA hash for reproducibility
+  persona?: PersonaID;      // V20 Persona ID
+  extremeMultiplier?: number; // v3.3: 1.0-2.0 scaling based on slider tier
+  assignmentMode?: boolean;   // Assignment mode flag
 }
 
 export interface ErrorMutationLog {
@@ -409,93 +1459,799 @@ function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// ─── ASSIGNMENT MODE ERRORS (Tier 4-6) ───────────────────────────────────
+
+function deterministicReplace(
+  text: string, 
+  regex: RegExp, 
+  prob: number, 
+  baseSeed: number, 
+  replacer: (match: string, ...args: any[]) => string
+): string {
+  let s = baseSeed;
+  return text.replace(regex, (...args) => {
+    const match = args[0] as string;
+    s = simpleHash(s.toString() + match);
+    if (seededRandom(s) < prob) {
+      return replacer(match, ...args.slice(1));
+    }
+    return match;
+  });
+}
+
+function applyPunctuationSpacingBleed(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  const regex = /([a-zA-Z]+)([,.])/g;
+  output = deterministicReplace(output, regex, prob, seed, (match: string, word: string, punc: string) => {
+    const mutated = `${word} ${punc}`;
+    log.push({ type: "punc_bleed", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applyAcademicOverhedging(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  const hedgingMap = [
+    { regex: /\b(indicates that|shows that)\b/i, replacement: "might possibly indicate that" },
+    { regex: /\b(proves that|demonstrates that)\b/i, replacement: "could essentially demonstrate that" },
+    { regex: /\b(is clear that|is evident that)\b/i, replacement: "can be argued that perhaps it is evident that" },
+    { regex: /\b(implies that)\b/i, replacement: "seems to imply that maybe" }
+  ];
+  hedgingMap.forEach((rule, idx) => {
+    output = deterministicReplace(output, rule.regex, prob, seed + idx, (match: string) => {
+      let mutated = rule.replacement;
+      if (match[0] === match[0].toUpperCase()) mutated = mutated.charAt(0).toUpperCase() + mutated.slice(1);
+      log.push({ type: "academic_hedge", original: match, mutated, position: -1 });
+      return mutated;
+    });
+  });
+  return output;
+}
+
+function applyReferenceFormattingChaos(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  // match standard citations like (Smith, 2020) and break them or et al.
+  output = deterministicReplace(output, /\(et al\.\)/g, prob, seed, (match: string) => {
+    const mutated = "(et. al.)";
+    log.push({ type: "ref_chaos", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  output = deterministicReplace(output, /\b([A-Z][a-z]+),\s(\d{4})\)/g, prob, seed + 1, (match: string, name: string, year: string) => {
+    // Drop the closing parenthesis occasionally
+    const mutated = `${name}, ${year} `;
+    log.push({ type: "ref_chaos_drop", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applyLostSubjectBleed(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  // Insert redundant subject 'it' or 'they' after a complex noun phrase
+  const regex = /\b(The (?:comprehensive|detailed|initial)?\s?[a-zA-Z]+\s(?:analysis|study|data|results|findings)+)\s+(shows|indicates|reveals|demonstrates)\b/ig;
+  output = deterministicReplace(output, regex, prob * 0.5, seed, (match: string, subject: string, verb: string) => {
+    const isPlural = /results|findings|data/i.test(subject);
+    const pronoun = isPlural ? "they" : "it";
+    // Avoid double pronoun if already there
+    if (output.includes(`${subject}, ${pronoun} ${verb}`)) return match;
+    const mutated = `${subject}, ${pronoun} ${verb}`;
+    log.push({ type: "lost_subject", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applySentenceFracture(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  // Match long dense sentences and forcibly slice them
+  const regex = /([^.?!]{120,}) (which|that|because|since|as) ([^.?!]+)/i;
+  output = deterministicReplace(output, regex, prob * 0.4, seed, (match: string, before: string, conj: string, after: string) => {
+    // Fracture it
+    const mutated = `${before.trim()}. This is ${after.trim()}`;
+    log.push({ type: "sentence_fracture", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applyEmDashInjection(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  // V6.0: Target more common AI structures for em-dash framing
+  const regex = /\b(which is|that is|because it is|meaning that|essentially)\s+([a-zA-Z\s]{4,30})\b/gi;
+  output = deterministicReplace(output, regex, prob * 0.7, seed, (match: string, phrase: string, rest: string) => {
+    const mutated = `— ${phrase} ${rest} —`;
+    log.push({ type: "em_dash_chaos", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applyAcademicLinguisticInversion(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  const inversionMap = [
+    { regex: /\bwe\s+rarely\s+see\b/gi, replacement: "rarely we see" },
+    { regex: /\bit\s+hardly\s+matters\b/gi, replacement: "hardly it matters" },
+    { regex: /\bthey\s+little\s+understood\b/gi, replacement: "little they understood" },
+    { regex: /\bhe\s+only\s+knew\b/gi, replacement: "only he knew" },
+    { regex: /\bthe\s+research\s+notably\s+fails\b/gi, replacement: "notably, the research fails" }
+  ];
+  inversionMap.forEach((rule) => {
+    output = deterministicReplace(output, rule.regex, prob, seed, (match) => {
+      log.push({ type: "linguistic_inversion", original: match, mutated: rule.replacement, position: -1 });
+      return rule.replacement;
+    });
+  });
+  return output;
+}
+
+function applyKeyboardProximityErrors(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  const keyboardMap: Record<string, string[]> = {
+    'a': ['s', 'q', 'z'], 'e': ['r', 'w', 's'], 'i': ['u', 'o', 'k'],
+    'o': ['i', 'p', 'l'], 'u': ['y', 'i', 'j'], 't': ['r', 'y', 'g'],
+    'n': ['m', 'b', 'h'], 's': ['a', 'd', 'w'], 'r': ['e', 't', 'f']
+  };
+
+  const lines = output.split('\n');
+  const processedLines = lines.map((line, lIdx) => {
+    const words = line.split(/(\s+)/);
+    // V7.1: Header Protection - skip lines that look like headers (short, many caps)
+    if (words.length < 8) return line; 
+
+    const mutatedWords = words.map((word, wIdx) => {
+      // V7.1: Strict Filtering
+      // 1. Skip if short
+      // 2. Skip if it starts with Uppercase (Proper nouns / Sentence starts)
+      // 3. Skip if it's whitespace
+      if (word.length < 8 || /^\s+$/.test(word) || /^[A-Z]/.test(word)) return word;
+
+      const s = simpleHash(seed.toString() + word + wIdx + lIdx);
+      // V7.1: Drop prob to 5% of base density
+      if (seededRandom(s) > prob * 0.05) return word; 
+
+      // 4. Positional protection: Only index 3 to length-2
+      const charIdx = 3 + Math.floor(seededRandom(s + 1) * (word.length - 5));
+      const char = word[charIdx].toLowerCase();
+      const neighbors = keyboardMap[char];
+      
+      if (neighbors) {
+        const neighbor = neighbors[Math.floor(seededRandom(s + 2) * neighbors.length)];
+        const mutated = word.substring(0, charIdx) + neighbor + word.substring(charIdx + 1);
+        log.push({ type: "keyboard_proximity", original: word, mutated, position: -1 });
+        return mutated;
+      }
+      return word;
+    });
+    return mutatedWords.join('');
+  });
+
+  return processedLines.join('\n');
+}
+
+function applyAsianCollocationShift(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  const collocationMap = [
+    { regex: /\b(discuss(?:ed|ing|es)?)\s+(the|a|an)\b/gi, replacement: "$1 about $2" },
+    { regex: /\b(make|made|making)\s+(a|the)\s+decision\b/gi, replacement: "take $2 decision" },
+    { regex: /\b(return(?:ed)?)\b/gi, replacement: "$1 back" },
+    { regex: /\b(comprise(?:s|d)?)\b/gi, replacement: "$1 of" },
+    { regex: /\b(cope)\s+with\b/gi, replacement: "$1 up with" },
+    { regex: /\b(pay(?:ing)?)\s+attention\s+to\b/gi, replacement: "give attention on" },
+    { regex: /\b(do|did|doing)\s+(an\s+)?exam/gi, replacement: "give $2exam" },
+    { regex: /\b(revert(?:ed)?)\b/gi, replacement: "$1 back" }
+  ];
+  
+  collocationMap.forEach((rule, idx) => {
+    output = deterministicReplace(output, rule.regex, prob, seed + idx, (match: string, p1: string, p2: string) => {
+      // rule.replacement can use matched groups, but our deterministicReplace passes them as args
+      let mutated = rule.replacement.replace(/\$1/g, p1).replace(/\$2/g, p2 || '');
+      // Match case of first letter
+      if (match[0] === match[0].toUpperCase()) mutated = mutated.charAt(0).toUpperCase() + mutated.slice(1);
+      log.push({ type: "asian_colloc", original: match, mutated, position: -1 });
+      return mutated;
+    });
+  });
+  return output;
+}
+
+function applyDoubleAdverb(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  const regex = /\b(really|actually|basically|literally|genuinely)\s+([a-z]+)\b/gi;
+  output = deterministicReplace(output, regex, prob * 0.6, seed, (match: string, adv: string, word: string) => {
+    if (["really", "actually", "basically", "literally", "genuinely"].includes(word)) return match;
+    const secondAdv = adv.toLowerCase() === "really" ? "genuinely" : "really";
+    let mutated = `${adv} ${secondAdv} ${word}`;
+    if (adv[0] === adv[0].toUpperCase()) mutated = mutated.charAt(0).toUpperCase() + mutated.slice(1);
+    log.push({ type: "double_adverb", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applyStructuralInversion(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  // Match sentences starting with a prepositional phrase: "In the realm of X, Y happens."
+  // Target: ^(Prepositional Phrase), (Main Clause)
+  const regex = /^([A-Z][a-z\s]{3,25}),\s+([^.?!]+[.?!])$/gm;
+  output = deterministicReplace(output, regex, prob * 0.7, seed, (match: string, prep: string, rest: string) => {
+    // Flip: Rest + prep + . 
+    // "Opportunities abound — especially in real estate."
+    const cleanRest = rest.replace(/[.?!]$/, "").trim();
+    const mutated = `${cleanRest.charAt(0).toUpperCase() + cleanRest.slice(1)} — particularly ${prep.toLowerCase()} — .`;
+    log.push({ type: "structural_inversion", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
+function applySemanticNoise(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  const fillers = ["actually", "basically", "literally", "to be honest", "honestly", "to some extent"];
+  const regex = /(\b(?:is|are|was|were|has|have|can|could|will|would)\s+)([a-z]+)/gi;
+  output = deterministicReplace(output, regex, prob * 0.5, seed, (match: string, verb: string, nextWord: string) => {
+    const s = simpleHash(seed.toString() + match);
+    const filler = fillers[Math.floor(seededRandom(s) * fillers.length)];
+    const mutated = `${verb}${filler} ${nextWord}`;
+    log.push({ type: "semantic_noise", original: match, mutated, position: -1 });
+    return mutated;
+  });
+  return output;
+}
+
 /**
- * Main Error Injection Engine — Stage 1
- * Applies all 35+ error types to pre-conditioned text.
+ * V8.0 MUTATION REGISTRY (75+ Patterns)
+ * Each entry is a wrapper that applies a specific mutation type.
+ */
+type MutationFn = (text: string, prob: number, seed: number, log: ErrorMutationLog[]) => string;
+
+/**
+ * V9.0: Article Flux Mutation
+ * Randomly omits or swaps articles (the, a, an) to mimic non-native human variance.
+ */
+function applyArticleFlux(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let s = seed;
+  return text.replace(/\b(the|a|an)\b/gi, (match) => {
+    s = simpleHash(s.toString() + match);
+    if (seededRandom(s) > prob * 0.8) return match;
+
+    const roll = seededRandom(s + 1);
+    const lower = match.toLowerCase();
+    if (roll < 0.7) {
+      log.push({ type: "article_omission", original: match, mutated: "", position: -1 });
+      return "";
+    }
+    const swaps: Record<string, string[]> = {
+      "the": ["a", "an"], "a": ["the", "an"], "an": ["the", "a"]
+    };
+    const options = swaps[lower] || [];
+    const replacement = options[Math.floor(seededRandom(s + 2) * options.length)];
+    const cased = match[0] === match[0].toUpperCase()
+      ? replacement.charAt(0).toUpperCase() + replacement.slice(1)
+      : replacement;
+    log.push({ type: "article_swap", original: match, mutated: cased, position: -1 });
+    return cased;
+  }).replace(/\s{2,}/g, " ").trim();
+}
+
+/**
+ * V9.0: Nuclear Grammar Chaos (Grammar Rule Splintering)
+ */
+function applyNuclearGrammarChaos(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  const rules = [
+    { regex: /\b(is|was|has|does)\b/gi, swaps: ["are", "were", "have", "do"] },
+    { regex: /\b(shows|indicates|requires|suggests|remains)\b/gi, swaps: ["showed", "indicated", "required", "suggested", "remained"] },
+    { regex: /\b(I|He|She|They|We)\b/gi, swaps: ["me", "him", "her", "them", "us"] },
+    { regex: /\b(in|on|at|of|for|with|by|from)\b/gi, swaps: ["at", "in", "of", "from", "on", "to", "at", "with"] },
+    { regex: /\b(many|much|little|few)\b/gi, swaps: ["much", "many", "few", "little"] },
+    { regex: /\b(it's|its)\b/gi, swaps: ["its", "it's"] }
+  ];
+  rules.forEach((rule, idx) => {
+    output = deterministicReplace(output, rule.regex, prob * 0.9, seed + idx, (match: string) => {
+      const options = rule.swaps;
+      const lower = match.toLowerCase();
+      const matchIdx = rule.regex.source.split('|').indexOf(lower.replace(/[\(\)\b]/g, ''));
+      const replacement = matchIdx !== -1 && options[matchIdx] ? options[matchIdx] : options[Math.floor(seededRandom(seed + idx) * options.length)];
+      let mutated = replacement;
+      if (match[0] === match[0].toUpperCase()) mutated = mutated.charAt(0).toUpperCase() + mutated.slice(1);
+      log.push({ type: "nuclear_grammar", original: match, mutated, position: -1 });
+      return mutated;
+    });
+  });
+  return output;
+}
+
+const MUTATION_REGISTRY: { name: string; fn: MutationFn; weight: number; range?: [number, number] }[] = [
+  // Tier 1: Punctuation & Structure
+  { name: "comma_splice", fn: applyCommaSplice, weight: 0.7 },
+  { name: "missing_comma", fn: applyMissingExtraComma, weight: 0.75 },
+  { name: "semicolon_misuse", fn: applySemicolonMisuse, weight: 0.5 },
+  { name: "sentence_fragment", fn: applySentenceFragment, weight: 0.45 },
+  { name: "period_boundary", fn: applyPeriodBoundaryChaos, weight: 0.4 },
+  
+  // Tier 2: South Asian L1 Structural Bleed
+  { name: "double_subject", fn: applyDoubleSubject, weight: 0.6 },
+  { name: "missing_copula", fn: applyMissingCopula, weight: 0.55 },
+  { name: "existential_error", fn: applyExistentialError, weight: 0.6 },
+  { name: "gerund_infinitive", fn: applyGerundInfinitiveConfusion, weight: 0.65 },
+  { name: "word_order_bleed", fn: applyWordOrderBleed, weight: 0.45 },
+  { name: "missing_auxiliary", fn: applyMissingAuxiliary, weight: 0.55 },
+  
+  // Tier 3: Academic-Specific
+  { name: "pleonasm", fn: applyRedundancyPleonasm, weight: 0.7 },
+  { name: "hedging_overload", fn: applyHedgingOverload, weight: 0.5 },
+  { name: "passive_injection", fn: applyPassiveVoiceInjection, weight: 0.55 },
+  { name: "conj_chain", fn: applyConjunctionChain, weight: 0.45 },
+  { name: "tautology", fn: applyTautologicalPhrases, weight: 0.65 },
+  
+  // Tier 4: Pronoun & Agreement
+  { name: "rel_pronoun", fn: applyWrongRelativePronoun, weight: 0.6 },
+  { name: "det_omission", fn: applyDeterminerOmission, weight: 0.55 },
+  
+  // Tier 5: Anti-AI Fingerprint (Slider >= 40)
+  { name: "could_of", fn: applyCouldOfError, weight: 0.5, range: [40, 100] },
+  { name: "cond_mood", fn: applyConditionalMoodError, weight: 0.55, range: [40, 100] },
+  { name: "subjunctive", fn: applySubjunctiveAvoidance, weight: 0.6, range: [40, 100] },
+  { name: "hyper_I", fn: applyHypercorrectionI, weight: 0.55, range: [40, 100] },
+  { name: "comma_that", fn: applyCommaBeforeThat, weight: 0.65, range: [40, 100] },
+  { name: "parallel_break", fn: applyParallelismBreak, weight: 0.5, range: [40, 100] },
+  { name: "which_no_comma", fn: applyWhichWithoutComma, weight: 0.6, range: [40, 100] },
+  
+  // Tier 6: Eastern L1 Deep (Slider >= 60)
+  { name: "stative_prog", fn: applyStativeProgressive, weight: 0.6, range: [60, 100] },
+  { name: "though_but", fn: applyThoughButDouble, weight: 0.55, range: [60, 100] },
+  { name: "tag_question", fn: applyUniversalTagQuestion, weight: 0.5, range: [60, 100] },
+  { name: "since_for", fn: applySinceForConfusion, weight: 0.55, range: [60, 100] },
+  { name: "plural_omission", fn: applyPluralMarkingOmission, weight: 0.5, range: [60, 100] },
+  { name: "gender_pronoun", fn: applyGenderPronounConfusion, weight: 0.45, range: [60, 100] },
+  { name: "perfect_past", fn: applyPerfectPastConfusion, weight: 0.5, range: [60, 100] },
+  { name: "article_overuse", fn: applyArticleOveruse, weight: 0.55, range: [60, 100] },
+  { name: "already_tense", fn: applyAlreadyTenseMarker, weight: 0.45, range: [60, 100] },
+  
+  // Tier 7: South Asian Academic Fingerprint (Slider >= 60)
+  { name: "cope_up", fn: applyCopeUpWith, weight: 0.6, range: [60, 100] },
+  { name: "discuss_about", fn: applyDiscussAbout, weight: 0.65, range: [60, 100] },
+  { name: "comprise_of", fn: applyCompriseOf, weight: 0.55, range: [60, 100] },
+  { name: "revert_back", fn: applyRevertBack, weight: 0.6, range: [60, 100] },
+  { name: "explain_me", fn: applyExplainMePattern, weight: 0.55, range: [60, 100] },
+  
+  // Original Basics
+  { name: "verb_tense", fn: applyVerbTenseChaos, weight: 0.7 },
+  { name: "articles", fn: applyArticleErrors, weight: 0.8 },
+  { name: "prepositions", fn: applyPrepositionErrors, weight: 0.75 },
+  { name: "agreement", fn: applyAgreementErrors, weight: 0.65 },
+  { name: "spelling", fn: applySpellingErrors, weight: 0.85 },
+  { name: "noun_plural", fn: applyNounPluralErrors, weight: 0.8 },
+  { name: "confused_words", fn: applyConfusedWords, weight: 0.6 },
+  { name: "l1_interfere", fn: applyL1Interference, weight: 0.5 },
+  { name: "dbl_comp", fn: applyDoubleComparatives, weight: 0.5 },
+  { name: "am_br", fn: applyAmBrMix, weight: 0.55 },
+  { name: "transitions", fn: applyTransitionChaos, weight: 0.4 },
+  { name: "quantifiers", fn: applyQuantifierErrors, weight: 0.55 },
+  { name: "run_ons", fn: applyRunOnFragments, weight: 0.35 },
+  { name: "caps", fn: applyCapitalizationErrors, weight: 0.4 },
+  { name: "collocations", fn: applyWrongCollocations, weight: 0.6 },
+  
+  // Advanced Assignment Mode Chaos
+  { name: "academic_hedge", fn: applyAcademicOverhedging, weight: 0.75 },
+  { name: "ref_chaos", fn: applyReferenceFormattingChaos, weight: 0.9 },
+  { name: "lost_subj", fn: applyLostSubjectBleed, weight: 0.6 },
+  { name: "fracture", fn: applySentenceFracture, weight: 0.7 },
+  { name: "em_dash", fn: applyEmDashInjection, weight: 0.65 },
+  { name: "asian_colloc", fn: applyAsianCollocationShift, weight: 0.9 },
+  { name: "dbl_adv", fn: applyDoubleAdverb, weight: 0.8 },
+  { name: "struct_inversion", fn: applyStructuralInversion, weight: 0.85 },
+  { name: "semantic_noise", fn: applySemanticNoise, weight: 0.15 },
+  { name: "ling_inversion", fn: applyAcademicLinguisticInversion, weight: 0.8 },
+  { name: "keyboard_prox", fn: applyKeyboardProximityErrors, weight: 0.5 },
+  
+  { name: "punc_spacing", fn: applyPunctuationSpacingBleed, weight: 0.35 },
+  { name: "article_flux", fn: applyArticleFlux, weight: 0.85 },
+  { name: "nuclear_grammar", fn: applyNuclearGrammarChaos, weight: 0.95 },
+  { name: "v10_fracture", fn: applyRadicalSentenceFracture, weight: 1.0 },
+  { name: "v10_spacing", fn: applyStochasticDoubleSpacing, weight: 1.0 },
+  { name: "v11_regression", fn: applyVocabularyRegression, weight: 1.0 },
+  
+  // Pan-Asian Specialty Layer (V20)
+  { name: "already_suffix", fn: applyAlreadySuffixPH, weight: 1.0 },
+  { name: "lah_particle", fn: applyLahParticleMYID, weight: 0.8 },
+  { name: "jujurly_usage", fn: applyJujurlyHonestly, weight: 0.9 },
+  { name: "tense_simplification", fn: applyTenseSimplificationTHVN, weight: 1.1 },
+  { name: "honorifics", fn: applyJapaneseHonorifics, weight: 0.7 },
+  { name: "lowercase_start", fn: applyLowercaseStart, weight: 1.5 }
+];
+
+/**
+ * V11/V12: Vocabulary Regression & L1 Rhythm
+ * Replaces high-probability AI academic jargon with high-perplexity human synonyms.
+ */
+function applyVocabularyRegression(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  let s = seed;
+
+  const regressionMap: Record<string, string[]> = {
+    "significantly": ["real much", "a lot", "very much", "so much"],
+    "therefore": ["so", "that's why", "which means"],
+    "furthermore": ["also", "and one more thing", "plus"],
+    "however": ["but", "even so", "still"],
+    "nevertheless": ["but still", "anyway", "even then"],
+    "indicated": ["showed", "said", "made it clear"],
+    "demonstrates": ["shows", "proves it"],
+    "utilized": ["used", "put to use"],
+    "substantial": ["big", "large", "huge", "massive"],
+    "consequently": ["so", "as a result", "finally"],
+    "complex": ["hard", "difficult", "very confusing"],
+    "merely": ["just", "only", "simply"],
+    "regarding": ["about", "on the topic of"],
+    "requires": ["needs", "wants"],
+    "indicates": ["shows", "means"],
+    "unprecedented": ["never seen before", "real new", "totally unique"],
+    "collision": ["clash", "fight", "hit"],
+    "aspirations": ["hopes", "dreams", "wishes"],
+    "transformative": ["big change", "deep change"],
+    "paradoxically": ["strangely enough", "funny thing is"],
+    "fundamental": ["basic", "root"]
+  };
+
+  const words = Object.keys(regressionMap);
+  words.forEach((word) => {
+    const regex = new RegExp(`\\b${word}\\b`, "gi");
+    output = deterministicReplace(output, regex, prob * 1.0, s++, (match) => {
+      const options = regressionMap[word.toLowerCase()];
+      const replacement = options[Math.floor(seededRandom(s++) * options.length)];
+      let mutated = replacement;
+      if (match[0] === match[0].toUpperCase()) mutated = mutated.charAt(0).toUpperCase() + mutated.slice(1);
+      log.push({ type: "v11_regression", original: match, mutated, position: -1 });
+      return mutated;
+    });
+  });
+
+  // V12: L1 Rhythm Injection (Non-native patterns)
+  const l1Patterns = [
+    { regex: /\bdiscuss\b/gi, replacement: "discuss about" },
+    { regex: /\breturn\b/gi, replacement: "return back" },
+    { regex: /\bwill be\b/gi, replacement: "will being" },
+    { regex: /\bwas shown\b/gi, replacement: "was showed" },
+    { regex: /\bdid not\b\s+(\w+ed)\b/gi, replacement: "did not $1" } // e.g. did not went
+  ];
+
+  l1Patterns.forEach(p => {
+    output = deterministicReplace(output, p.regex, prob * 0.5, s++, (match) => {
+      const muted = match.replace(p.regex, p.replacement);
+      log.push({ type: "l1_rhythm", original: match, mutated: muted, position: -1 });
+      return muted;
+    });
+  });
+
+  return output;
+}
+
+/**
+ * V10: Radical Sentence Fracture
+ */
+function applyRadicalSentenceFracture(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  if (text.split(/\s+/).length < 20) return text;
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  let s = seed;
+  const processed = sentences.map((sentence) => {
+    const words = sentence.split(/\s+/);
+    if (words.length < 10) return sentence; // Shorten threshold for V12
+    s = simpleHash(s.toString() + sentence);
+    if (seededRandom(s) > prob * 1.0) return sentence;
+    
+    // Nuclear split at middle comma or conjunction
+    const splitRegex = /(.{15,60}),\s*(and|but|which|that|who|because|although)\s*(.{15,})/i;
+    const match = sentence.match(splitRegex);
+    if (match) {
+      const mutated = `${match[1]}. ${match[2].charAt(0).toUpperCase() + match[2].slice(1)} ${match[3]}`;
+      log.push({ type: "v10_fracture", original: sentence, mutated, position: -1 });
+      return mutated;
+    }
+    return sentence;
+  });
+  return processed.join(' ');
+}
+
+/**
+ * V10: Stochastic Double Spacing
+ */
+function applyStochasticDoubleSpacing(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  const words = text.split(/\s+/);
+  let s = seed;
+  let output = "";
+  for (let i = 0; i < words.length; i++) {
+    output += words[i];
+    if (i < words.length - 1) {
+      s = simpleHash(s.toString() + words[i]);
+      if (seededRandom(s) < prob * 0.4) {
+        output += "  ";
+        log.push({ type: "v10_spacing", original: " ", mutated: "  ", position: -1 });
+      } else {
+        output += " ";
+      }
+    }
+  }
+  return output;
+}
+
+/**
+ * V14: Century Edition (Random Noise Engine)
+ * This is a massive deterministic rule engine containing 100+ mutation patterns.
+ * Layer 1 & 2: SVA, Tense, Articles, Prepositions.
+ */
+function applyCenturyNoise(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  let s = seed;
+
+  const centuryRules = [
+    // --- LAYER 1: Subject-Verb Agreement (SVA) ---
+    { name: "c14_sva_1", regex: /\b(he|she|it|this|that)\s+(\w+)\b/gi, category: 0, replacement: (m: string, p1: string, p2: string) => {
+      if (p2.endsWith('s') || p2.endsWith('es')) return p1 + " " + p2.slice(0, -1); // Force break Correct -> Wrong
+      return p1 + " " + p2 + "s"; // Force break Wrong -> Correct (confuses detectors)
+    }},
+    { name: "c14_sva_2", regex: /\b(they|we|you|these|those|people|students|results)\s+(\w+s)\b/gi, category: 1, replacement: "$1 $2_REMOVE_S" },
+    { name: "c14_sva_3", regex: /\bthere\s+is\s+(\w+s)\b/gi, category: 1, replacement: "there is $1" }, // AI always says "there are"
+    { name: "c14_sva_4", regex: /\beveryone\s+have\b/gi, category: 0, replacement: "everyone have" },
+    { name: "c14_sva_5", regex: /\bthe\s+quality\s+of\s+(\w+s)\s+are\b/gi, category: 1, replacement: "the quality of $1 are" },
+
+    // --- LAYER 1: Tense & Aspect ---
+    { name: "c14_tense_1", regex: /\b(have|has|had)\s+(\w+ed)\b/gi, category: 2, replacement: (m: string, p1: string, p2: string) => {
+      return p1 + " " + p2.replace(/ed$/, ""); // I have work yesterday
+    }},
+    { name: "c14_tense_2", regex: /\byesterday\b(.*?)\b(is|are|am)\b/gi, category: 3, replacement: "yesterday $1 was" },
+    { name: "c14_tense_3", regex: /\b(will|shall|can|must)\s+(\w+s)\b/gi, category: 4, replacement: "$1 $2" },
+    { name: "c14_tense_4", regex: /\bi\s+am\s+knowing\b/gi, category: 3, replacement: "I am knowing" }, // Progressing stative verbs
+    { name: "c14_tense_5", regex: /\bdid\s+not\s+(\w+ed)\b/gi, category: 2, replacement: "did not $1" },
+
+    // --- LAYER 2: Articles & Determiners ---
+    { name: "c14_art_1", regex: /\b(the|a|an)\b\s+([A-Z]\w+)\b/g, category: 5, replacement: "$2" }, // Omit articles before proper nouns
+    { name: "c14_art_2", regex: /\b(information|equipment|furniture|knowledge|homework)\b/gi, category: 6, replacement: "$1s" }, // False pluralization
+    { name: "c14_art_3", regex: /\bmany\s+(water|money|evidence|advice)\b/gi, category: 7, replacement: "many $1" },
+    { name: "c14_art_4", regex: /\ba\s+apple\b/gi, category: 5, replacement: "a apple" },
+    { name: "c14_art_5", regex: /\bthe\s+happiness\b/gi, category: 6, replacement: "the happiness" },
+
+    // --- LAYER 2: Prepositions ---
+    { name: "c14_prep_1", regex: /\bin\b\s+the\s+(bus|car|plane|train)\b/gi, category: 8, replacement: "at the $1" },
+    { name: "c14_prep_2", regex: /\bdiscuss\b\s+about\b/gi, category: 9, replacement: "discuss about" },
+    { name: "c14_prep_3", regex: /\breturn\b\s+back\b/gi, category: 10, replacement: "return back" },
+    { name: "c14_prep_4", regex: /\border\b\s+for\b/gi, category: 9, replacement: "order for" },
+    { name: "c14_prep_5", regex: /\binterested\b\s+with\b/gi, category: 10, replacement: "interested with" },
+
+    // --- LAYER 3: Syntax & Word Order ---
+    { name: "c14_syn_1", regex: /\b(What|How|Why|Where|When)\b\s+(is|are|am|was|were|do|does|did)\b\s+(he|she|it|they|we|you)\b/gi, category: 11, replacement: "$1 $3 $2" }, // Failed question inversion
+    { name: "c14_syn_2", regex: /\b(don't|doesn't|didn't|cannot|never)\s+know\s+anything\b/gi, category: 12, replacement: "$1 know nothing" }, // Double negative
+    { name: "c14_syn_3", regex: /\balmost\b\s+(\w+)\b/gi, category: 13, replacement: (m: string, p1: string) => {
+      return p1 + " almost"; // Misplaced adverb
+    }},
+    { name: "c14_syn_4", regex: /\b(he|she|they|we)\s+speaks\s+well\s+English\b/gi, category: 11, replacement: "$1 speaks well English" },
+    { name: "c14_syn_5", regex: /\bto\s+boldly\s+go\b/gi, category: 14, replacement: "to boldly go" }, // Split infinitive (AI usually avoids)
+    { name: "c14_syn_6", regex: /\ba\s+red\s+big\s+car\b/gi, category: 14, replacement: "a red big car" }, // Adjective order slip
+    { name: "c14_syn_7", regex: /\bonly\s+have\s+one\b/gi, category: 11, replacement: "only have one" },
+    { name: "c14_syn_8", regex: /\btell\s+me\s+what\s+(is|are|was|were)\b\s+(\w+)\b/gi, category: 12, replacement: "tell me what $1 $2" }, // Indirect question flip
+    { name: "c14_syn_9", regex: /\breally\s+like\b/gi, category: 13, replacement: "like real much" },
+    { name: "c14_syn_10", regex: /\bcannot\b\s+able\s+to\b/gi, category: 11, replacement: "cannot able to" },
+
+    // --- LAYER 4: L1 South Asian Human Patterns ---
+    { name: "c14_l1_1", regex: /\bcope\b\s+with\b/gi, category: 15, replacement: "cope up with" },
+    { name: "c14_l1_2", regex: /\bmention\b\s+about\b/gi, category: 16, replacement: "mention about" },
+    { name: "c14_l1_3", regex: /\brevert\b\s+back\b/gi, category: 16, replacement: "revert back" },
+    { name: "c14_l1_4", regex: /\bexplain\b\s+me\b/gi, category: 17, replacement: "explain me" },
+    { name: "c14_l1_5", regex: /\bmistake\b/gi, category: 15, swaps: ["did a mistake", "committed a mistake"] },
+    { name: "c14_l1_6", regex: /\b(the|this)\b\s+same\b\s+(\w+)\b/gi, category: 15, replacement: "the same $2" },
+    { name: "c14_l1_7", regex: /\bI\s+will\s+return\b/gi, category: 16, replacement: "I will be returning back" },
+    { name: "c14_l1_8", regex: /\bit\s+is\s+happening\b/gi, category: 15, replacement: "it is happened" },
+    { name: "c14_l1_9", regex: /\bwe\s+shall\b\s+(\w+)\b/gi, category: 16, replacement: "we will be $1ing" },
+    { name: "c14_l1_10", regex: /\bvery\s+(good|nice|big|huge)\b/gi, category: 18, replacement: "real much $1" },
+
+    // --- LAYER 5: Nuclear Entropy Protocol (V15) ---
+    { name: "v15_stutter_1", regex: /\b(the|it|to|of|and|but|that|was)\b\s+(\1)\b/gi, category: 19, replacement: "$1 $2" }, // Keep existing stutter if any (identity swap)
+    { name: "v15_stutter_2", regex: /\b(the|it|is|this)\b/gi, category: 19, replacement: (m: string) => {
+      return Math.random() < 0.05 ? `${m} ${m}` : m; // Force stutter repetition
+    }},
+    { name: "v15_aside_1", regex: /(?<=[.!?])\s+/g, category: 20, replacement: (m: string) => {
+      const asides = [" (actually), ", " (I guess), ", " (sort of), ", " (basically), ", " -- actually -- "];
+      return Math.random() < 0.1 ? asides[Math.floor(Math.random() * asides.length)] : m;
+    }},
+    { name: "v15_focus_1", regex: /\b(that|this|it)\./gi, category: 24, replacement: "$1 itself." }, // South Asian focus: "it itself."
+    { name: "v15_focus_2", regex: /\b(\w+)ing\./gi, category: 25, replacement: "$1ing only." }, // "doing only."
+    { name: "v15_shatter_1", regex: /\b(although|because|while|since)\b/gi, category: 22, replacement: (m: string) => {
+      return Math.random() < 0.2 ? `. ${m.charAt(0).toUpperCase() + m.slice(1)}` : m; // Fragment the clause
+    }},
+    { name: "v15_jitter_1", regex: /\b([a-z])([a-z]+)\b/gi, category: 34, replacement: (m: string, p1: string, p2: string) => {
+       // Occasional random mid-sentence capital for emphasis (human artifact)
+       return Math.random() < 0.02 ? p1.toUpperCase() + p2 : m;
+    }},
+
+    // --- LAYER 6: Ghost Protocol (V16) ---
+    { name: "v16_struct_1", regex: /(?<=[.!?])\s+([A-Z]\w+)\b/g, category: 26, replacement: (m: string, p1: string) => {
+      const padding = [
+        " In fact, I guess, ",
+        " If we look at it carefully, ",
+        " Actually, what I think is, ",
+        " In the current scenario, ",
+        " Basically, I'd say ",
+        " To be honest, maybe, "
+      ];
+      return Math.random() < 0.08 ? padding[Math.floor(Math.random() * padding.length)] + p1.toLowerCase() : m;
+    }},
+    { name: "v16_dilution_1", regex: /(?<=[.!?])\s+/g, category: 28, replacement: (m: string) => {
+      const rephrase = [
+        " I mean, it's like this only. ",
+        " Which means that it's quite important. ",
+        " Again, I should mention this. ",
+        " That's what I was telling. "
+      ];
+      return Math.random() < 0.05 ? rephrase[Math.floor(Math.random() * rephrase.length)] : m;
+    }},
+    { name: "v16_logic_1", regex: /\b(Furthermore|Consequently|Moreover|Therefore|In addition)\b/gi, category: 29, replacement: (m: string) => {
+      const wordy = ["Also, one more thing to say is,", "So basically, as a result for this,", "Plus, also I must add that,", "Actually, therefore I think,"];
+      return Math.random() < 0.3 ? wordy[Math.floor(Math.random() * wordy.length)] : m;
+    }},
+
+    // --- LAYER 7: The Intro Breaker (V17 - Context Aware) ---
+    { name: "v17_intro_1", regex: /\bprofound\s+paradigm\s+shift\b/gi, category: 30, replacement: "real huge deep change" },
+    { name: "v17_intro_2", regex: /\bsystemic\s+rupture\b/gi, category: 31, replacement: "massive breaking point" },
+    { name: "v17_intro_3", regex: /\bsignificant\s+mandate\b/gi, category: 32, replacement: "big order" },
+    { name: "v17_intro_4", regex: /\balgorithmic\s+statecraft\b/gi, category: 33, replacement: "computerized way for ruling" },
+    { name: "v17_intro_5", regex: /\bfoundational\s+infrastructure\b/gi, category: 33, replacement: "basic building blocks" }
+  ];
+
+  // V19 QUANTUM CHAOS SEQUENCER
+  // Deterministic shuffle of category IDs [0..34] per document
+  const categoryPool = Array.from({length: 35}, (_, i) => i);
+  // Fisher-Yates Shuffle based on base seed
+  for (let i = categoryPool.length - 1; i > 0; i--) {
+    const j = Math.floor(seededRandom(seed + i) * (i + 1));
+    [categoryPool[i], categoryPool[j]] = [categoryPool[j], categoryPool[i]];
+  }
+
+  // Sentence-specific target from the shuffled deck
+  const sentenceMutationID = categoryPool[seed % categoryPool.length];
+
+  centuryRules.forEach((rule, idx) => {
+    // Quantum Chaos Selection: Only apply if it's the target DNA for this specific sentence
+    if (rule.category !== undefined && rule.category !== sentenceMutationID) return;
+    
+    // Dynamic Seeded Chaos: Shift probability based on rule index and base seed
+    const ruleSeed = simpleHash(s.toString() + rule.name);
+    // V19: High-Intensity targeted chaos
+    let ruleProb = prob * (0.8 + seededRandom(ruleSeed) * 0.4); 
+    if (rule.category === sentenceMutationID) ruleProb *= 2.0; 
+    if (rule.name.startsWith("v17")) ruleProb *= 1.5; // Always keep intro softening alive
+    
+    output = deterministicReplace(output, rule.regex, ruleProb, s + idx, (match, ...args) => {
+      let mutated: string;
+      if (typeof rule.replacement === 'function') {
+        mutated = (rule.replacement as any)(match, ...args.slice(0, -2));
+      } else {
+        mutated = match.replace(rule.regex, rule.replacement as string).replace("_REMOVE_S", (m) => "");
+        // Post-processing for _REMOVE_S logic
+        if (mutated.includes("_REMOVE_S")) {
+           mutated = mutated.replace(/s_REMOVE_S/gi, "").replace(/_REMOVE_S/gi, "");
+        }
+      }
+      log.push({ type: rule.name, original: match, mutated, position: -1 });
+      return mutated;
+    });
+  });
+
+  return output;
+}
+
+/**
+ * V13: Asian Grammar Net (Sovereign Mode)
+ */
+function applyAsianGrammarNet(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  // Legacy pass for V13, integrated into Century Edition in V14
+  return applyCenturyNoise(text, prob, seed, log);
+}
+
+/**
+ * Main Error Injection Engine — V8.0 STOCHASTIC ORCHESTRATOR
+ * Splits text into sentences and applies a random subset of mutations per sentence.
+ */
+/**
+ * Main Error Injection Engine — Ghost V20 Master Asian Engine
+ * Splits text into sentences and applies a random subset of mutations per persona.
  */
 export function applyHumanErrors(
   text: string,
   config: HumanErrorConfig
-): { text: string; mutations: ErrorMutationLog[] } {
-  if (!text || config.chaosThreshold <= 0) return { text, mutations: [] };
-
-  const baseSeed = simpleHash(config.dnaSeed || "default_error_dna");
-  // 🚀 EXPONENTIAL POWER BOOST: Multiply threshold by 2.0 to aggressively drive up error rate
-  // (10% slider = 0.1 * 2.0 = 0.2 density * errorFactor)
-  let density = (config.chaosThreshold / 100) * 2.5 * config.errorFactor;
-  // Increase the academic cap from 0.60 to 0.85 so we don't stifle power
-  if (config.isAcademic) density = Math.min(density, 0.85);
-
-  const mutations: ErrorMutationLog[] = [];
-  let currentSeed = baseSeed;
-  let output = text;
-
-  // Apply error groups in order of impact priority
-  // Each group operates on the full text with its own sub-probability
-  // Drastically increased base probabilities per group
-
-  // ─── GROUP 1: Verb Tense & Sequence Chaos (Highest Impact) ──────────
-  output = applyVerbTenseChaos(output, density * 0.70, currentSeed, mutations);
-  currentSeed = simpleHash(currentSeed.toString() + "verb");
-
-  // ─── GROUP 2: Article Errors ────────────────────────────────────────
-  output = applyArticleErrors(output, density * 0.80, currentSeed, mutations);
-  currentSeed = simpleHash(currentSeed.toString() + "article");
-
-  // ─── GROUP 3: Preposition Errors ────────────────────────────────────
-  output = applyPrepositionErrors(output, density * 0.75, currentSeed, mutations);
-  currentSeed = simpleHash(currentSeed.toString() + "prep");
-
-  // ─── GROUP 4: Subject-Verb Agreement ────────────────────────────────
-  output = applyAgreementErrors(output, density * 0.65, currentSeed, mutations);
-  currentSeed = simpleHash(currentSeed.toString() + "agree");
-
-  // ─── GROUP 5: Complex Spelling Errors ───────────────────────────────
-  output = applySpellingErrors(output, density * 0.85, currentSeed, mutations);
-  currentSeed = simpleHash(currentSeed.toString() + "spell");
-
-  // ─── GROUP 6: Uncountable Noun Pluralization ────────────────────────
-  output = applyNounPluralErrors(output, density * 0.80, currentSeed, mutations);
-  currentSeed = simpleHash(currentSeed.toString() + "noun");
-
-  // ─── GROUP 7: Confused Words (Homophones) ──────────────────────────
-  output = applyConfusedWords(output, density * 0.60, currentSeed, mutations);
-  currentSeed = simpleHash(currentSeed.toString() + "confuse");
-
-  // ─── GROUP 8: L1 Interference Phrases ──────────────────────────────
-  if (!config.isAcademic || density > 0.3) {
-    output = applyL1Interference(output, density * 0.50, currentSeed, mutations);
-    currentSeed = simpleHash(currentSeed.toString() + "l1");
+): { text: string; mutations: ErrorMutationLog[]; persona: PersonaID } {
+  if (!text || config.chaosThreshold <= 0) {
+    return { text, mutations: [], persona: config.persona || "AUTO" };
   }
 
-  // ─── GROUP 9: Double Comparatives ──────────────────────────────────
-  output = applyDoubleComparatives(output, density * 0.50, currentSeed, mutations);
-  currentSeed = simpleHash(currentSeed.toString() + "comp");
+  // 1. Resolve Persona
+  const baseSeed = simpleHash(config.dnaSeed || "ghost_v20_dna");
+  let activePersonaID = config.persona || "AUTO";
+  if (activePersonaID === "AUTO") {
+    const ids = Object.keys(PERSONA_REGISTRY).filter(id => id !== "AUTO") as PersonaID[];
+    activePersonaID = ids[baseSeed % ids.length];
+  }
+  const persona = PERSONA_REGISTRY[activePersonaID];
 
-  // ─── GROUP 10: American/British Spelling Mix ───────────────────────
-  output = applyAmBrMix(output, density * 0.55, currentSeed, mutations);
-  currentSeed = simpleHash(currentSeed.toString() + "ambr");
+  // 2. Base Intensity Scaling
+  let extremeMul = config.extremeMultiplier || 1.0;
+  if (config.assignmentMode) extremeMul *= 1.5;
+  
+  // Base density scaled by chaosThreshold (0.1 to 1.0) and persona bias
+  let baseDensity = (config.chaosThreshold / 100) * config.errorFactor * extremeMul * persona.intensityBias;
+  if (config.isAcademic) baseDensity = Math.min(baseDensity, 0.95);
 
-  // ─── GROUP 11: Transition/Linking Word Chaos ───────────────────────
-  output = applyTransitionChaos(output, density * 0.40, currentSeed, mutations);
-  currentSeed = simpleHash(currentSeed.toString() + "trans");
+  let mutations: ErrorMutationLog[] = [];
+  let outputText = text;
 
-  // ─── GROUP 12: Quantifier/Countable Confusion ─────────────────────
-  output = applyQuantifierErrors(output, density * 0.55, currentSeed, mutations);
-  currentSeed = simpleHash(currentSeed.toString() + "quant");
+  // 3. Process Blocks
+  const paragraphs = outputText.split(/\n\n+/);
+  const processedParagraphs = paragraphs.map((para, pIdx) => {
+    if (para.trim().length === 0) return para;
+    
+    // Header check
+    if (para.length < 100 && /^[A-Z][^a-z]*$/.test(para)) return para;
 
-  // ─── GROUP 13: Run-on / Fragment Mixing ────────────────────────────
-  output = applyRunOnFragments(output, density * 0.35, currentSeed, mutations);
-  currentSeed = simpleHash(currentSeed.toString() + "runon");
+    const sentences = para.split(/(?<=[.!?])\s+/);
+    const processedSentences = sentences.map((sent, sIdx) => {
+      let mutatedSent = sent;
+      const sSeed = simpleHash(baseSeed.toString() + pIdx + sIdx + sent.substring(0, 10));
+      
+      /** 
+       * V20 GUARD-DROP PROTOCOL:
+       * Increase density as we move deeper into the text.
+       * Logic: Density increases by 2% per sentence.
+       */
+      const guardDropFactor = 1.0 + (sIdx * 0.05); // 5% increase per sentence
+      const sentenceDensity = baseDensity * guardDropFactor;
 
-  // ─── GROUP 14: Capitalization Chaos ────────────────────────────────
-  output = applyCapitalizationErrors(output, density * 0.40, currentSeed, mutations);
-  currentSeed = simpleHash(currentSeed.toString() + "caps");
+      // Filter valid mutations based on Persona and Slider
+      const validPool = MUTATION_REGISTRY.filter(m => {
+        // Range check
+        if (m.range && (config.chaosThreshold < m.range[0] || config.chaosThreshold > m.range[1])) return false;
+        
+        // Persona DNA check: If persona is set, it must include this rule or it must be a general rule
+        if (activePersonaID !== "AUTO") {
+           const pRules = persona.rules;
+           // If the rule is not in persona DNA, only 20% chance of being selected (General background noise)
+           if (!pRules.includes(m.name) && seededRandom(sSeed + 99) > 0.2) return false;
+        }
+        return true;
+      });
 
-  // ─── GROUP 15: Wrong Collocations ─────────────────────────────────
-  output = applyWrongCollocations(output, density * 0.60, currentSeed, mutations);
+      // Select mutations
+      const targetCount = config.assignmentMode ? validPool.length : (2 + Math.floor(seededRandom(sSeed) * 5));
+      const selectedIndices = new Set<number>();
+      
+      for (let i = 0; i < 20 && selectedIndices.size < targetCount; i++) {
+        selectedIndices.add(Math.floor(seededRandom(sSeed + i) * validPool.length));
+      }
 
-  return { text: output, mutations };
+      // Apply
+      Array.from(selectedIndices).forEach((idx, iter) => {
+        const m = validPool[idx];
+        const iterSeed = simpleHash(sSeed.toString() + iter + m.name);
+        mutatedSent = m.fn(mutatedSent, sentenceDensity * m.weight, iterSeed, mutations);
+      });
+
+      // Special Filler Injection (Persona specific)
+      if (persona.fillers.length > 0 && seededRandom(sSeed + 13) < (sentenceDensity * 0.1)) {
+         const filler = persona.fillers[Math.floor(seededRandom(sSeed + 14) * persona.fillers.length)];
+         if (mutatedSent.length > 50) {
+            mutatedSent = mutatedSent.replace(/([.!?])$/, `, ${filler}$1`);
+         }
+      }
+
+      return mutatedSent;
+    });
+
+    return processedSentences.join(" ");
+  });
+
+  return { 
+    text: processedParagraphs.join("\n\n"), 
+    mutations,
+    persona: activePersonaID 
+  };
 }
 
 // ─── GROUP IMPLEMENTATIONS ──────────────────────────────────────────────────
@@ -978,37 +2734,67 @@ export function lightReInjectErrors(
 ): { text: string; mutations: ErrorMutationLog[] } {
   if (!text || config.chaosThreshold <= 0) return { text, mutations: [] };
 
-  // Safety net uses 40% of the original strength + shifted seed (to avoid same positions)
+  // Safety net uses 40% of the original strength + shifted seed
   const safetyConfig: HumanErrorConfig = {
     ...config,
     chaosThreshold: config.chaosThreshold * 0.40,
-    dnaSeed: config.dnaSeed + "_safety_net_v1",
+    dnaSeed: config.dnaSeed + "_safety_net_v3.3",
   };
 
   const baseSeed = simpleHash(safetyConfig.dnaSeed);
-  let density = (safetyConfig.chaosThreshold / 100) * safetyConfig.errorFactor;
+  const extremeMul = safetyConfig.extremeMultiplier || 1.0;
+  let density = (safetyConfig.chaosThreshold / 100) * safetyConfig.errorFactor * extremeMul;
   if (safetyConfig.isAcademic) density = Math.min(density, 0.35);
 
   const mutations: ErrorMutationLog[] = [];
   let output = text;
   let seed = baseSeed;
 
-  // Only apply the 4 highest-impact categories in the safety net:
-
-  // 1. Verb Tense (priority target — LLM most likely to "fix" these)
+  // Core 4 (always re-inject — LLM most likely to fix these)
   output = applyVerbTenseChaos(output, density * 0.45, seed, mutations);
   seed = simpleHash(seed.toString() + "safe_verb");
 
-  // 2. Article Errors (subtle, easy to miss during LLM polish)
   output = applyArticleErrors(output, density * 0.40, seed, mutations);
   seed = simpleHash(seed.toString() + "safe_art");
 
-  // 3. Preposition Errors
   output = applyPrepositionErrors(output, density * 0.35, seed, mutations);
   seed = simpleHash(seed.toString() + "safe_prep");
 
-  // 4. Spelling Errors (flagship non-native signal)
   output = applySpellingErrors(output, density * 0.35, seed, mutations);
+  seed = simpleHash(seed.toString() + "safe_spell");
+
+  // v3.3: Expanded safety net — Tier 1-2 at 40%, Tier 5-6 at 25%
+  output = applyCommaSplice(output, density * 0.30, seed, mutations);
+  seed = simpleHash(seed.toString() + "safe_csplice");
+
+  output = applyMissingCopula(output, density * 0.25, seed, mutations);
+  seed = simpleHash(seed.toString() + "safe_copula");
+
+  output = applyGerundInfinitiveConfusion(output, density * 0.25, seed, mutations);
+  seed = simpleHash(seed.toString() + "safe_gerund");
+
+  output = applyRedundancyPleonasm(output, density * 0.30, seed, mutations);
+  seed = simpleHash(seed.toString() + "safe_pleon");
+
+  // Golden signals (lighter touch to avoid overcooking)
+  if (config.chaosThreshold >= 40) {
+    output = applyCouldOfError(output, density * 0.20, seed, mutations);
+    seed = simpleHash(seed.toString() + "safe_couldof");
+
+    output = applyCommaBeforeThat(output, density * 0.25, seed, mutations);
+    seed = simpleHash(seed.toString() + "safe_commathat");
+  }
+
+  // L1 deep errors at 20% strength  
+  if (config.chaosThreshold >= 60) {
+    output = applyStativeProgressive(output, density * 0.20, seed, mutations);
+    seed = simpleHash(seed.toString() + "safe_stative");
+
+    output = applySinceForConfusion(output, density * 0.20, seed, mutations);
+    seed = simpleHash(seed.toString() + "safe_sincefor");
+
+    output = applyDiscussAbout(output, density * 0.25, seed, mutations);
+  }
 
   return { text: output, mutations };
 }

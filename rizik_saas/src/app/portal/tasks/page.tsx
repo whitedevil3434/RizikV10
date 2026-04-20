@@ -2,7 +2,7 @@ import OpsShell from "@/components/workspace/ops-shell";
 import { portalNavItems } from "@/lib/workspace/nav";
 import { getEmployeeTasks, type OpsTask } from "@/lib/ops/data";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getRoleTeam } from "@/lib/auth/policy";
 
 function groupTasks(tasks: OpsTask[]) {

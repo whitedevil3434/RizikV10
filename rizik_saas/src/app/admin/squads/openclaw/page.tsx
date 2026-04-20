@@ -1,6 +1,6 @@
 import OpsShell from "@/components/workspace/ops-shell";
 import { adminNavItems } from "@/lib/workspace/nav";
-import { createAdminClient } from "@/lib/supabase/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import OpenClawChatClient from "./OpenClawChatClient";
 import { getCurrentUserContext } from "@/lib/auth/session";
 

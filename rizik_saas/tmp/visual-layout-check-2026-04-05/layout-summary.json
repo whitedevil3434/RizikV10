@@ -1,0 +1,37 @@
+{
+  "email": "layout.check.1775400604934@example.com",
+  "desktop": {
+    "url": "https://rizikecosystem.com/writer",
+    "hasLeft": true,
+    "hasMiddle": true,
+    "hasRight": true,
+    "left": {
+      "x": 148,
+      "y": 192,
+      "w": 710.390625,
+      "h": 491
+    },
+    "middle": {
+      "x": 148,
+      "y": 715,
+      "w": 710.390625,
+      "h": 655
+    },
+    "right": {
+      "x": 890.390625,
+      "y": 192,
+      "w": 473.609375,
+      "h": 654
+    },
+    "desktopW": 1512
+  },
+  "interpretation": {
+    "stackedLeft": true,
+    "rightSeparateColumn": true
+  },
+  "screenshots": {
+    "desktop": "/Users/sabbir/Downloads/RizikV10/rizik_saas/tmp/visual-layout-check-2026-04-05/writer-desktop.png",
+    "mobile": "/Users/sabbir/Downloads/RizikV10/rizik_saas/tmp/visual-layout-check-2026-04-05/writer-mobile.png"
+  },
+  "checkedAt": "2026-04-05T14:50:17.283Z"
+}

@@ -1,7 +1,9 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getCurrentUserContext } from "@/lib/auth/session";
+import { canAccessAdminRole } from "@/lib/auth/policy";
 
 interface OrderItem {
     sku: string;
@@ -102,6 +104,11 @@ export async function placeOrderAction(input: PlaceOrderInput) {
 
 export async function updateOrderStatusAction(id: string, status: string, sla_state?: string) {
     try {
+        const { user, role } = await getCurrentUserContext();
+        if (!user || !canAccessAdminRole(role)) {
+            return { error: "Unauthorized." };
+        }
+
         const admin = createAdminClient();
         const updateData: Record<string, string> = { status };
         if (sla_state) {
@@ -131,6 +138,11 @@ export async function updateOrderStatusAction(id: string, status: string, sla_st
  */
 export async function approveWriterCreditsAction(orderId: string): Promise<{ success: boolean; error?: string }> {
   try {
+    const { user, role } = await getCurrentUserContext();
+    if (!user || !canAccessAdminRole(role)) {
+      return { success: false, error: "Unauthorized." };
+    }
+
     const admin = createAdminClient();
 
     // 1. Get the order details

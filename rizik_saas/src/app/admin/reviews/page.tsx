@@ -1,6 +1,6 @@
 import OpsShell from "@/components/workspace/ops-shell";
 import { adminNavItems } from "@/lib/workspace/nav";
-import { createAdminClient } from "@/lib/supabase/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export default async function ProductReviewsPage() {
     const admin = createAdminClient();

@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface OpsProduct {
   product_id: string;

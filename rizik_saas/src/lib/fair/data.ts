@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const DEFAULT_FAIR_SLUG = "rizik-fair-launch";
 

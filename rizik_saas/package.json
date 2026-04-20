@@ -8,17 +8,20 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "health:next": "bash scripts/check-next-runtime.sh"
+    "health:next": "bash scripts/check-next-runtime.sh",
+    "smoke:auth": "python3 scripts/smoke_auth_persistence.py",
+    "stress:auth": "python3 scripts/stress_auth_writer.py"
   },
   "dependencies": {
     "@cloudflare/next-on-pages": "^1.13.16",
     "@heroicons/react": "^2.2.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.98.0",
+    "docx": "^9.6.1",
+    "file-saver": "^2.0.5",
     "firebase": "^12.10.0",
     "framer-motion": "^12.34.3",
     "lightningcss": "^1.32.0",
-    "lightningcss-darwin-arm64": "^1.32.0",
     "lucide-react": "^1.7.0",
     "next": "15.1.0",
     "qrcode.react": "^4.2.0",

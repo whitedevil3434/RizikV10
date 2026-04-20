@@ -67,9 +67,24 @@ export default function WriterPage() {
   const [chaosLevel, setChaosLevel] = useState(0.8);
   const [isAcademic, setIsAcademic] = useState(false);
   const [dnaMatching, setDnaMatching] = useState(false);
+  const [useBladerHumanizer, setUseBladerHumanizer] = useState(true);
 
   // Human Error Chaos State (0-100)
   const [humanErrorLevel, setHumanErrorLevel] = useState(0);
+  const [isAssignmentMode, setIsAssignmentMode] = useState(false);
+  const [selectedPersona, setSelectedPersona] = useState<string>("AUTO");
+
+  const PERSONAS = [
+    { id: "AUTO", name: "Auto DNA", icon: "🧬", desc: "System auto-detects DNA from input" },
+    { id: "SA_RANTER", name: "BD Ranter", icon: "🇧🇩", desc: "Fragmented, raw South Asian logic" },
+    { id: "SA_STUDENT", name: "IN Scholar", icon: "🇮🇳", desc: "Formal tone but article-heavy slips" },
+    { id: "TAGLISH_PRO", name: "PH Professional", icon: "🇵🇭", desc: "Suffix markers like 'already' & 'po'" },
+    { id: "SE_HYBRID", name: "SE Asia Mix", icon: "🇲🇾", desc: "Particles like 'lah', 'sih', 'leh'" },
+    { id: "DIRECT_TR", name: "Direct Translator", icon: "🇹🇭", desc: "Thai/VN style tense simplification" },
+    { id: "POLITE_ACHIEVER", name: "Polite JP/KR", icon: "🇯🇵", desc: "Excessive modesty & honorific slips" },
+    { id: "GCC_EXPAT", name: "GCC Professional", icon: "🇦🇪", desc: "Gulf expat syntactic rhythm" },
+    { id: "CENTRAL_ASIAN", name: "Central Asian", icon: "🇺🇿", desc: "Russian-influenced structural DNA" },
+  ];
 
   // Voice Pipeline State
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -316,7 +331,10 @@ export default function WriterPage() {
             academic: isAcademic,
             chaosLevel: effectiveChaosLevel,
             useConsortium: useHumanConsortium,
-            humanErrorThreshold: effectiveHumanErrorLevel
+            humanErrorThreshold: effectiveHumanErrorLevel,
+            assignmentMode: isAssignmentMode,
+            bladerHumanizer: useBladerHumanizer,
+            persona: selectedPersona
           }
         }),
       }, 120000);
@@ -326,7 +344,12 @@ export default function WriterPage() {
         setOutputText(data.content || "");
         setPipelineText(data.pipelineOutput || "");
         // Default render target is always pipeline output.
-        setViewMode("pipeline");
+        // V7.0 Stealth: Force pipeline view in Assignment Mode to ensure ZERO LLM visual leakage
+        if (isAssignmentMode) {
+          setViewMode("pipeline");
+        } else {
+          setViewMode("pipeline"); 
+        }
         fetchUsage(); // Refresh credits
       } else {
         setErrorMsg(data?.message || data?.error || "Humanizer failed. Please try again.");
@@ -643,6 +666,43 @@ export default function WriterPage() {
                   </div>
                 </div>
 
+                {/* Persona DNA Selector (Ghost V20) */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between px-1">
+                    <label className="text-[10px] font-black uppercase text-[#04204C]/30 tracking-widest">
+                      Linguistic Persona DNA Selection
+                    </label>
+                    <span className="text-[10px] font-black text-[#00B16A] uppercase tracking-tighter">V20 Master Engine</span>
+                  </div>
+                  <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
+                    {PERSONAS.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setSelectedPersona(p.id)}
+                        className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all relative group h-24 ${
+                          selectedPersona === p.id 
+                          ? "border-[#00B16A] bg-[#00B16A]/5 shadow-sm" 
+                          : "border-[#04204C]/5 bg-[#F9F7F2] hover:border-[#04204C]/10"
+                        }`}
+                        title={p.desc}
+                      >
+                        <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">{p.icon}</span>
+                        <span className={`text-[9px] font-black uppercase tracking-tighter text-center leading-none ${
+                           selectedPersona === p.id ? "text-[#00B16A]" : "text-[#04204C]/40"
+                        }`}>
+                          {p.name.split(' ')[0]}<br/>{p.name.split(' ')[1] || ''}
+                        </span>
+                        {selectedPersona === p.id && (
+                          <div className="absolute -top-1 -right-1 bg-[#00B16A] text-white rounded-full p-0.5">
+                            <Check size={8} strokeWidth={4} />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <textarea
                   className="input-field min-h-[300px] !bg-[#F9F7F2] !border-[#04204C]/10"
                   placeholder="Paste your AI generated text here..."
@@ -683,7 +743,7 @@ export default function WriterPage() {
                       <span className={`font-mono font-black ${humanErrorLevel > 0 ? 'text-[#E2136E]' : 'text-[#04204C]'}`}>{humanErrorLevel}%</span>
                     </div>
                   </div>
-                  <div className="space-y-4 md:col-span-2">
+                  <div className="space-y-4 md:col-span-1">
                     <label className="text-[10px] font-black uppercase text-[#04204C]/30 tracking-widest ml-1">Knowledge Source</label>
                     <button 
                       type="button"
@@ -696,16 +756,56 @@ export default function WriterPage() {
                            setChaosLevel(0.35);
                         }
                       }}
-                      className={`w-full py-4 rounded-2xl border font-black transition-all flex h-[58px] items-center justify-center gap-3 text-xs tracking-widest ${
+                      className={`w-full py-4 rounded-2xl border font-black transition-all flex h-[58px] items-center justify-center gap-2 text-xs tracking-widest ${
                         isAcademic 
                         ? "border-[#00B16A] bg-[#00B16A]/5 text-[#00B16A]" 
                         : "border-[#04204C]/10 bg-[#F9F7F2] text-[#04204C]/30"
                       }`}
                     >
                       {isAcademic ? <Lock size={14}/> : <Globe size={14}/>}
-                      {isAcademic ? 'SCHOLARLY CONSORTIUM (ON)' : 'SCHOLARLY CONSORTIUM (OFF)'}
+                      {isAcademic ? 'SCHOLARLY' : 'GENERAL'}
                     </button>
                   </div>
+                  <div className="space-y-4 md:col-span-1">
+                    <label className="text-[10px] font-black uppercase text-[#04204C]/30 tracking-widest ml-1">Formatting Profile</label>
+                    <button 
+                      type="button"
+                      onClick={() => setIsAssignmentMode(!isAssignmentMode)}
+                      className={`w-full py-4 rounded-2xl border font-black transition-all flex h-[58px] items-center justify-center gap-2 text-xs tracking-widest ${
+                        isAssignmentMode 
+                        ? "border-[#E2136E] bg-[#E2136E]/5 text-[#E2136E]" 
+                        : "border-[#04204C]/10 bg-[#F9F7F2] text-[#04204C]/30"
+                      }`}
+                    >
+                      {isAssignmentMode ? <FileText size={14}/> : <FileText size={14}/>}
+                      {isAssignmentMode ? 'ASSIGNMENT MODE' : 'STANDARD DOC'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between bg-[#F9F7F2] p-4 rounded-2xl border border-[#04204C]/5">
+                  <div className="space-y-1">
+                    <div className="text-[10px] font-black uppercase text-[#04204C]/30 tracking-widest">
+                      Anti-AI Humanizer
+                    </div>
+                    <div className="text-xs font-medium text-[#04204C]/60">
+                      Applies `blader/humanizer` cleanup rules (signposting, AI vocab, copula avoidance).
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setUseBladerHumanizer((v) => !v)}
+                    disabled={isAssignmentMode}
+                    className={`px-4 py-2 rounded-xl border font-black text-xs tracking-widest transition-all ${
+                      isAssignmentMode
+                        ? "border-[#04204C]/10 bg-[#04204C]/5 text-[#04204C]/30"
+                        : useBladerHumanizer
+                          ? "border-[#00B16A] bg-[#00B16A]/10 text-[#00B16A]"
+                          : "border-[#04204C]/10 bg-white text-[#04204C]/40"
+                    }`}
+                  >
+                    {useBladerHumanizer ? "ON" : "OFF"}
+                  </button>
                 </div>
 
                 <button 

@@ -9,9 +9,18 @@ interface AddToCartButtonProps {
   name: string;
   price: number;
   category: string;
+  label?: string;
+  disabled?: boolean;
 }
 
-export default function AddToCartButton({ sku, name, price, category }: AddToCartButtonProps) {
+export default function AddToCartButton({
+  sku,
+  name,
+  price,
+  category,
+  label = "Add to Cart",
+  disabled = false,
+}: AddToCartButtonProps) {
   const addItem = useCartStore((state) => state.addItem);
   const [added, setAdded] = useState(false);
 
@@ -24,9 +33,13 @@ export default function AddToCartButton({ sku, name, price, category }: AddToCar
   return (
     <button
       onClick={handleAdd}
-      disabled={added}
+      disabled={added || disabled}
       className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-bold shadow-md transition-all ${
-        added ? "bg-[#00B16A] text-white" : "bg-[#031E49] text-white hover:bg-[#0A2D6C]"
+        added
+          ? "bg-[#00B16A] text-white"
+          : disabled
+            ? "bg-[#031E49]/35 text-white cursor-not-allowed"
+            : "bg-[#031E49] text-white hover:bg-[#0A2D6C]"
       }`}
     >
       {added ? (
@@ -35,7 +48,7 @@ export default function AddToCartButton({ sku, name, price, category }: AddToCar
         </>
       ) : (
         <>
-          <ShoppingCartIcon className="w-5 h-5" /> Add to Cart
+          <ShoppingCartIcon className="w-5 h-5" /> {label}
         </>
       )}
     </button>

@@ -1,0 +1,41 @@
+{
+  "startedAt": "2026-04-06T17:18:48.724248Z",
+  "baseUrl": "https://rizikecosystem.com",
+  "user": {
+    "email": "auth.gate.1775495928724@gmail.com",
+    "fullName": "Auth Gate 1775495928724"
+  },
+  "steps": [
+    {
+      "name": "signup_via_ui",
+      "ok": true,
+      "afterSignupUrl": "https://rizikecosystem.com/login",
+      "signupError": "email rate limit exceeded",
+      "fallback": {
+        "ok": true,
+        "status": 200,
+        "body": "{\"id\":\"8aacdc3d-f25e-4fe4-abd5-cbe2e0ea1993\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"auth.gate.1775495928724@gmail.com\",\"email_confirmed_at\":\"2026-04-06T17:18:52.807826867Z\",\"phone\":\"\",\"app_metadata\":{\"provider\":\"email\",\"providers\":[\"email\"]},\"user_metadata\":{\"email_verified\":true,\"ful"
+      }
+    },
+    {
+      "name": "sign_in_with_new_account",
+      "ok": true,
+      "postLoginUrl": "https://rizikecosystem.com/writer",
+      "loginError": ""
+    },
+    {
+      "name": "writer_access_with_session",
+      "ok": true,
+      "writerUrl": "https://rizikecosystem.com/writer",
+      "writerTitleVisible": true
+    },
+    {
+      "name": "writer_blocked_without_session",
+      "ok": true,
+      "unauthUrl": "https://rizikecosystem.com/login?next=%2Fwriter",
+      "loginHeadingVisible": true
+    }
+  ],
+  "success": true,
+  "finishedAt": "2026-04-06T17:18:58.553182Z"
+}
