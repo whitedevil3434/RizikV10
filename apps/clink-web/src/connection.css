@@ -1,0 +1,6 @@
+.connection-status{display:inline-flex;align-items:center;gap:5px;font-size:10px;color:#6E6E73;margin-left:4px}
+.connection-status i{width:6px;height:6px;border-radius:50%;background:#FFA000}
+.connection-status.connected{color:#008F42}.connection-status.connected i{background:#00A150}
+.connection-status.offline{color:#A96600}.connection-status.offline i{background:#FFA000}
+.toast{position:fixed;right:24px;bottom:24px;z-index:80;border:1px solid #D8D8DD;border-radius:10px;background:#1D1D1F;color:#fff;padding:12px 14px;display:flex;align-items:center;gap:12px;font-size:11px;box-shadow:0 10px 30px rgba(29,29,31,.2)}
+@media(max-width:720px){.connection-status{display:none}.toast{right:16px;left:16px;justify-content:space-between;bottom:16px}}

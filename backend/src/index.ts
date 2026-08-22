@@ -1,6 +1,7 @@
 import { ChatRoom } from "./do/ChatRoom";
 import { VoiceAgent } from "./do/VoiceAgent";
 import { DurableObject } from "cloudflare:workers";
+import { clinkApp } from "./clink/routes";
 
 export { ChatRoom, VoiceAgent };
 
@@ -79,6 +80,12 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     console.log(`🚦 Traffic Police: ${request.method} ${url.pathname}`);
+
+    // C-Link is an isolated commitment/evidence surface. It intentionally does
+    // not depend on Rizik marketplace, wallet, khata, or delivery modules.
+    if (url.pathname.startsWith("/api/clink/")) {
+      return clinkApp.fetch(request, env);
+    }
 
     // 🚦 TRAFFIC POLICE: Forward ALL /api/voice/* requests to VoiceAgent
     // Don't filter, don't block, just forward!
