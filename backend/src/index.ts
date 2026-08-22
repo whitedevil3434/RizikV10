@@ -5,6 +5,7 @@ import { extractDNA } from "./ghost/dnaEngine";
 import { transformText } from "./ghost/transformEngine";
 import { populateConsortium, ingestBatch } from "./ghost/consortiumPopulator";
 import { extractVoiceDNA } from "./ghost/voiceAnalyzer";
+import { clinkApp } from "./clink/routes";
 
 export { ChatRoom, VoiceAgent };
 
@@ -378,6 +379,12 @@ export default {
   async fetch(request: any, env: any) {
     const url = new URL(request.url);
     console.log(`GODLY_DEBUG: ${request.method} ${url.pathname}`);
+
+    // C-Link is an isolated commitment/evidence surface. It intentionally does
+    // not depend on Rizik marketplace, wallet, khata, or delivery modules.
+    if (url.pathname.startsWith("/api/clink/")) {
+      return clinkApp.fetch(request, env);
+    }
     
     // CORS Preflight for all endpoints
     if (request.method === "OPTIONS") {
