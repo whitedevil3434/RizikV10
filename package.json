@@ -9,6 +9,8 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240208.0",
+    "@playwright/test": "^1.62.1",
+    "html-to-text": "^10.0.1",
     "typescript": "^5.3.3",
     "wrangler": "^3.28.1"
   },

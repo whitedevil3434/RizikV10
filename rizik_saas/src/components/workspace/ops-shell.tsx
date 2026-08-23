@@ -88,7 +88,7 @@ export default function OpsShell({
 }: OpsShellProps) {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const publicSiteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "").trim().replace(/\/+$/, "");
-  const customerSurfaceHref = publicSiteUrl ? `${publicSiteUrl}/store` : "/store";
+  const customerSurfaceHref = publicSiteUrl ? `${publicSiteUrl}/` : "/";
 
   const mobileQuickLinks = useMemo(() => {
     if (quickLinks.length > 0) return quickLinks.slice(0, 3);

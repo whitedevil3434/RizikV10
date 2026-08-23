@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
 const mod = require(path.resolve(__dirname, "../dist-test/transformEngine.js"));
 const quality = require(path.resolve(__dirname, "../dist-test/qualityEngine.js"));
+const humanErrors = require(path.resolve(__dirname, "../dist-test/humanErrorEngine.js"));
 
 const {
   applyHumanizerQualityPolicy,
@@ -18,6 +19,7 @@ const {
   calculateMaxAllowedFillers,
 } = mod;
 const { evaluateHumanQuality } = quality;
+const { applyHumanErrors } = humanErrors;
 
 assert.equal(typeof applyHumanizerQualityPolicy, "function", "applyHumanizerQualityPolicy not exported");
 assert.equal(typeof applyBladerHumanizerPolicy, "function", "applyBladerHumanizerPolicy not exported");
@@ -25,6 +27,7 @@ assert.equal(typeof applyStructureRefinement, "function", "applyStructureRefinem
 assert.equal(typeof getQualityMetrics, "function", "getQualityMetrics not exported");
 assert.equal(typeof calculateMaxAllowedFillers, "function", "calculateMaxAllowedFillers not exported");
 assert.equal(typeof evaluateHumanQuality, "function", "evaluateHumanQuality not exported");
+assert.equal(typeof applyHumanErrors, "function", "applyHumanErrors not exported");
 
 function makeSentence(lead, n) {
   return `${lead}, this is sentence number ${n} with enough words to keep structure stable.`;
@@ -99,6 +102,77 @@ assert(!/\badditionally\b/i.test(bladerOut), "AI vocab (additionally) survived")
 assert(/\balso\b/i.test(bladerOut), "Expected 'also' replacement missing");
 assert(!/\bserves as\b/i.test(bladerOut), "Copula avoidance survived");
 
+// Case 9: V20 Rant-Abbreviator injects shorthand when enabled via persona + threshold.
+const rantInput = "What do you mean people want something like this? I finished the report.";
+const rantRes = applyHumanErrors(rantInput, {
+  chaosThreshold: 95,
+  errorFactor: 1.8,
+  isAcademic: false,
+  dnaSeed: "test_dna_seed_v20",
+  persona: "SA_RANTER",
+  personaIntensity: 1.0,
+  guardDropEnabled: false,
+  extremeMultiplier: 2.0,
+});
+assert.equal(rantRes.persona, "SA_RANTER");
+assert(/\b(wdym|ppl|sth)\b/i.test(rantRes.text), "Rant abbreviations missing");
+
+// Case 10: Persona diversity: Taglish vs Ranter produce distinct forensic signatures.
+const baseText = "I finished the report. The team discussed the plan and submitted the work. This is the result.";
+const taglish = applyHumanErrors(baseText, {
+  chaosThreshold: 95,
+  errorFactor: 1.8,
+  isAcademic: false,
+  dnaSeed: "test_dna_seed_v20_diversity",
+  persona: "TAGLISH_PRO",
+  personaIntensity: 1.0,
+  guardDropEnabled: false,
+  extremeMultiplier: 2.0,
+});
+const ranter = applyHumanErrors(baseText, {
+  chaosThreshold: 95,
+  errorFactor: 1.8,
+  isAcademic: false,
+  dnaSeed: "test_dna_seed_v20_diversity",
+  persona: "SA_RANTER",
+  personaIntensity: 1.0,
+  guardDropEnabled: false,
+  extremeMultiplier: 2.0,
+});
+assert.equal(taglish.persona, "TAGLISH_PRO");
+assert.equal(ranter.persona, "SA_RANTER");
+assert.notEqual(taglish.text, ranter.text, "Personas produced identical output");
+assert(
+  taglish.mutations.some((m) => m.type === "already_suffix"),
+  "Expected Taglish to trigger already_suffix at least once",
+);
+
+// Case 11: Guard-drop increases mutation count on long documents.
+const longText = Array.from({ length: 45 }, () =>
+  "The system finished the task and the team discussed the plan. The report was submitted and the result was checked."
+).join(" ");
+const gdOn = applyHumanErrors(longText, {
+  chaosThreshold: 80,
+  errorFactor: 1.5,
+  isAcademic: false,
+  dnaSeed: "test_dna_seed_guard_drop",
+  persona: "AUTO",
+  personaIntensity: 1.0,
+  guardDropEnabled: true,
+  extremeMultiplier: 1.6,
+});
+const gdOff = applyHumanErrors(longText, {
+  chaosThreshold: 80,
+  errorFactor: 1.5,
+  isAcademic: false,
+  dnaSeed: "test_dna_seed_guard_drop",
+  persona: "AUTO",
+  personaIntensity: 1.0,
+  guardDropEnabled: false,
+  extremeMultiplier: 1.6,
+});
+assert(gdOn.mutations.length > gdOff.mutations.length, "Guard-drop did not increase mutation count");
+
 console.log(
   JSON.stringify(
     {
@@ -110,11 +184,18 @@ console.log(
         "hqs-threshold",
         "structure-refinement-strong",
         "blader-humanizer-cleanup",
+        "v20-rant-abbrev",
+        "v20-persona-diversity",
+        "v20-guard-drop",
       ],
       sample: out100.slice(0, 180),
       hqsSample: hqs,
       structureSample: structured,
       bladerSample: bladerOut,
+      v20RantSample: rantRes.text.slice(0, 140),
+      v20TaglishSample: taglish.text.slice(0, 140),
+      v20RanterSample: ranter.text.slice(0, 140),
+      v20GuardDropMutations: { on: gdOn.mutations.length, off: gdOff.mutations.length },
     },
     null,
     2,

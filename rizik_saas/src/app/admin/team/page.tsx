@@ -31,7 +31,7 @@ const roleHierarchy = [
   { role: "LOGISTICS_MANAGER", label: "Logistics Manager", desc: "Controls dispatch planning, fleet assignment, and delivery status.", level: 3 },
   { role: "SUPPORT_AGENT", label: "Support Agent", desc: "Handles customer tickets, follow-up, and response SLA.", level: 2 },
   { role: "B2B_BUYER", label: "B2B Buyer", desc: "External account with enterprise order and tracking visibility.", level: 1 },
-  { role: "CUSTOMER", label: "Customer", desc: "Retail account for storefront, checkout, and order follow-up.", level: 0 },
+  { role: "CUSTOMER", label: "Customer", desc: "Customer account for service access and order follow-up.", level: 0 },
 ];
 
 const roleColor: Record<string, string> = {

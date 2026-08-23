@@ -12,7 +12,7 @@ export default async function PortalLayout({
   }
 
   if (!canAccessPortalRole(role)) {
-    redirect("/store?error=unauthorized_portal");
+    redirect("/?error=unauthorized_portal");
   }
 
   return <>{children}</>;

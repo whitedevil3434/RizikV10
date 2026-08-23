@@ -4,8 +4,8 @@ const subsidiaries = [
   {
     name: "Rizik Textile",
     endorsed: "by Rizik Global",
-    focus: "Advanced textile manufacturing and precision fabrication. First hero product: Rizik EcoMat.",
-    href: "/store",
+    focus: "Advanced textile manufacturing and precision fabrication for enterprise and institutional clients.",
+    href: "#",
     stage: "Commercial",
     color: "from-[#031E49] to-[#0A2D6C]",
   },
@@ -20,10 +20,18 @@ const subsidiaries = [
   {
     name: "Rizik Tech",
     endorsed: "by Rizik Global",
-    focus: "Ecosystem software, AI workforce integration, and enterprise infrastructure. Flagship product: Rizik Writer.",
-    href: "/writer",
-    stage: "Scaling",
+    focus: "Ecosystem software, AI workforce integration, and enterprise infrastructure.",
+    href: "#",
+    stage: "Upgrade",
     color: "from-[#111111] to-[#333333]",
+  },
+  {
+    name: "C-Link",
+    endorsed: "by Rizik Global",
+    focus: "A private coordination workspace for expectations, capabilities, assignments, evidence and outcomes between authorized organizations.",
+    href: "/clink",
+    stage: "New subsidiary",
+    color: "from-[#00A150] to-[#008F42]",
   },
   {
     name: "Rizik Cloud Kitchen",
@@ -63,7 +71,7 @@ export default function SubsidiariesPage() {
           Rizik Global + Endorsed Subsidiaries
         </h1>
         <p className="mt-4 max-w-3xl text-[#0A2D6C]/70">
-          Rizik Global operates an endorsed brand system where each subsidiary runs its own business model while governance, trust, and quality flow from the holding company.
+          Rizik Global provides the brand and operating context while each subsidiary runs its own business model. C-Link remains an independently operated private coordination platform, separate from the parent ecosystem's legacy business modules.
         </p>
 
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -291,10 +291,10 @@ export default function LoginPage() {
             : "Sign in to Rizik Ecosystem";
 
     const subtitle = mode === "signUp"
-        ? "Create an account to access store and business services."
+        ? "Create an account to access business services."
         : mode === "forgotPassword"
             ? "Enter your email address and we'll send you a link to reset your password."
-            : "Access your dashboard, storefront, or admin panel.";
+            : "Access your dashboard or admin panel.";
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#F5F2EB] px-4">

@@ -45,6 +45,8 @@
 - Storage monitoring prevents system degradation
 - Automated protocols ensure continuity
 - **Obsidian Vaults:** Treat note structure as externalized cognition.
+- Ollama on this machine is stable with `qwen2.5:0.5b`, and `gemma4:e2b` is now retagged locally with `num_gpu 0` + `num_batch 64` so it avoids the Metal OOM.
+- Rizik SaaS official logo asset is publicly served at `https://rizikecosystem.com/rizik-logo.svg`; icon mark is at `https://rizikecosystem.com/rizik-mark.svg`.
 
 ## Important Protocols
 1. **Heartbeat Protocol** - Check system status periodically

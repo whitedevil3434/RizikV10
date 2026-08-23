@@ -571,6 +571,9 @@ async function transformText(aiText, dnaProfile, env, options = {}) {
     const isAcademic = options.academic || false;
     const isAssignmentMode = options.assignmentMode || false;
     const useBladerHumanizer = options.bladerHumanizer !== false;
+    const activePersonaID = options.persona || "AUTO";
+    const personaIntensity = typeof options.personaIntensity === "number" ? options.personaIntensity : 1.0;
+    const guardDropEnabled = options.guardDropEnabled !== false;
     // ─── Document Structure Parsing (v3.3) ──────────────────────────────
     // Split into structural blocks. Only 'body' blocks get humanized.
     const rawLines = aiText.split(/\r?\n/);
@@ -650,6 +653,9 @@ async function transformText(aiText, dnaProfile, env, options = {}) {
         isAcademic: isAcademic,
         dnaSeed: userDnaSeed,
         assignmentMode: isAssignmentMode,
+        persona: activePersonaID,
+        personaIntensity,
+        guardDropEnabled,
     };
     // ─── Extreme Mode Multiplier (v3.3) ──────────────────────────────────
     const extremeMultiplier = humanErrorThreshold < 40 ? 1.0
@@ -679,7 +685,10 @@ async function transformText(aiText, dnaProfile, env, options = {}) {
                         ...errorConfig,
                         // Seed depends strictly on the string itself, guaranteeing TOC matches Headers
                         dnaSeed: userDnaSeed + "_" + blockSeedHash,
-                        extremeMultiplier: 1.0 // Keep structural headers relatively stable, don't over-mutate
+                        extremeMultiplier: 1.0, // Keep structural headers relatively stable, don't over-mutate
+                        persona: activePersonaID,
+                        personaIntensity,
+                        guardDropEnabled,
                     };
                     const errorResult = (0, humanErrorEngine_1.applyHumanErrors)(cleanContent, structuralErrorConfig);
                     // POST-CHECK VALIDATOR: Auto-Repair
@@ -927,6 +936,7 @@ async function transformText(aiText, dnaProfile, env, options = {}) {
                     ...errorConfig,
                     dnaSeed: `${userDnaSeed}_v6_${pIdx}`, // Salt per paragraph
                     extremeMultiplier: extremeMultiplier * shadowEntropyJitter,
+                    persona: activePersonaID
                 };
                 const errorResult = (0, humanErrorEngine_1.applyHumanErrors)(outputParagraph, extremeConfig);
                 outputParagraph = errorResult.text;

@@ -145,7 +145,7 @@ export async function signUpAction(formData: FormData) {
     // Depending on Supabase email-confirmation policy, signUp may create a user without an active session.
     // In that case, keep flow explicit: return to login instead of pretending the user is signed in.
     if (!data.session) {
-        const next = safeNext || "/store";
+        const next = safeNext || "/";
         return { redirectTo: `/login?created=1&next=${encodeURIComponent(next)}` };
     }
 
@@ -182,7 +182,7 @@ export async function signUpAction(formData: FormData) {
         }
     }
 
-    return { redirectTo: safeNext || "/store" };
+    return { redirectTo: safeNext || "/" };
 }
 
 function getSafeNextPath(requestedNext: string | null): string {
@@ -232,7 +232,7 @@ export async function signInAction(formData: FormData) {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-        return { redirectTo: safeNext || "/store" };
+        return { redirectTo: safeNext || "/" };
     }
 
     // Seed usage best-effort without making login routing depend on service-role availability.
@@ -302,7 +302,7 @@ export async function signInAction(formData: FormData) {
 
     if (isAdmin) return { redirectTo: "/admin" };
     if (isPortal) return { redirectTo: "/portal" };
-    return { redirectTo: safeNext || "/store" };
+    return { redirectTo: safeNext || "/" };
 }
 
 /**
@@ -468,7 +468,7 @@ export async function syncFirebaseUserAndSignInAction(firebaseUser: { uid: strin
         if (isPortal) return { redirectTo: "/portal" };
     }
 
-    return { redirectTo: safeNext || "/store" };
+    return { redirectTo: safeNext || "/" };
 }
 
 /**
@@ -517,7 +517,7 @@ export async function updatePasswordAction(formData: FormData) {
         return { error: "Failed to update password. The reset link may have expired." };
     }
 
-    return { success: true, redirectTo: "/store" };
+    return { success: true, redirectTo: "/" };
 }
 
 /**

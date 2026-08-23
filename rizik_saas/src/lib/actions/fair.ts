@@ -42,7 +42,7 @@ async function requireAdminUser(nextPath: string) {
   }
 
   if (!role || !canAccessAdminRole(role)) {
-    redirect("/store?error=unauthorized_admin");
+    redirect("/?error=unauthorized_admin");
   }
 
   return user;

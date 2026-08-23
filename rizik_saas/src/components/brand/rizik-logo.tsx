@@ -20,8 +20,8 @@ export default function RizikLogo({
   ...rest
 }: RizikLogoProps) {
   const isLight = tone === "light";
-  // The provided rizik-logo.svg is 724x325.
-  // We use CSS filter to adapt the tone dynamically (invert for dark theme if needed)
+  // The full logo is a vector SVG asset.
+  // We use a CSS filter only for the light tone variant on dark backgrounds.
   const filterStyle = isLight ? { filter: "brightness(0) invert(1)" } : undefined;
 
   if (variant === "mark") {

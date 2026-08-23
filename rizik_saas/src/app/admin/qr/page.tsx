@@ -8,7 +8,7 @@ import { adminNavItems } from "@/lib/workspace/nav";
 
 export default function AdminQRGenerator() {
   const [batchId, setBatchId] = useState("");
-  const [productId, setProductId] = useState("MAT-GLOW-01");
+  const [productId, setProductId] = useState("TEXTILE-BATCH-01");
   const [quantity, setQuantity] = useState(200);
   const [generatedQR, setGeneratedQR] = useState<string | null>(null);
   const [entryMode, setEntryMode] = useState<"VERIFY" | "FAIR">("VERIFY");
@@ -54,7 +54,7 @@ export default function AdminQRGenerator() {
                 onChange={(event) => setProductId(event.target.value)}
                 className="mt-1.5 w-full rounded-xl border border-[#031E49]/15 bg-[#F5F2EB]/50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#031E49]/20"
               >
-                <option value="MAT-GLOW-01">Eco-Mat Glow Series</option>
+                <option value="TEXTILE-BATCH-01">Textile Batch</option>
                 <option value="BIO-RETORT-V1">Bio-Shield Retort Pouch</option>
               </select>
             </label>

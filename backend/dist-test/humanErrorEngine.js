@@ -8,7 +8,7 @@
 // ║  Safety Net:        lightReInjectErrors() runs as Stage 3 (post-LLM)        ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PRESERVE_ERRORS_SYSTEM_PROMPT = exports.PRECONDITION_SYSTEM_PROMPT = void 0;
+exports.PRESERVE_ERRORS_SYSTEM_PROMPT = exports.PRECONDITION_SYSTEM_PROMPT = exports.PERSONA_REGISTRY = void 0;
 exports.applyHumanErrors = applyHumanErrors;
 exports.lightReInjectErrors = lightReInjectErrors;
 // ─── Seeded Randomness (Deterministic per User DNA) ─────────────────────────
@@ -1226,6 +1226,232 @@ function applyExplainMePattern(text, prob, seed, log) {
     });
     return output;
 }
+// ─── TIER 8: Pan-Asian Persona Specialty Rules ─────────────────────────
+function applyAlreadySuffixPH(text, prob, seed, log) {
+    let s = seed;
+    const regex = /\b(finished|done|completed|submitted|sent|checked|verified)\b/gi;
+    return deterministicReplace(text, regex, prob, s, (match) => {
+        log.push({ type: "already_suffix", original: match, mutated: match + " already", position: -1 });
+        return match + " already";
+    });
+}
+function applyLahParticleMYID(text, prob, seed, log) {
+    let s = seed;
+    const sentences = text.split(/(?<=[.!?])\s+/);
+    const processed = sentences.map((sent, idx) => {
+        s = simpleHash(s.toString() + idx);
+        if (seededRandom(s) > prob * 0.4 || sent.length < 30)
+            return sent;
+        const particles = ["lah", "meh", "sih", "leh"];
+        const p = particles[Math.floor(seededRandom(s + 1) * particles.length)];
+        const mutated = sent.replace(/[.!?]$/, `, ${p}$1`);
+        log.push({ type: "particle_injection", original: sent, mutated, position: -1 });
+        return mutated;
+    });
+    return processed.join(" ");
+}
+function applyJujurlyHonestly(text, prob, seed, log) {
+    let s = seed;
+    const regex = /\b(honestly|to be honest|frankly)\b/gi;
+    return deterministicReplace(text, regex, prob, s, (match) => {
+        const mutated = match.toLowerCase() === "honestly" ? "jujurly" : "to be honest";
+        log.push({ type: "jujurly_usage", original: match, mutated, position: -1 });
+        return mutated;
+    });
+}
+function applyTenseSimplificationTHVN(text, prob, seed, log) {
+    let s = seed;
+    const regex = /\b(\w+)(ed|s)\b/gi; // Strip past and 3rd person singular
+    return deterministicReplace(text, regex, prob * 0.6, s, (match, stem) => {
+        log.push({ type: "tense_simplification", original: match, mutated: stem, position: -1 });
+        return stem;
+    });
+}
+function applyJapaneseHonorifics(text, prob, seed, log) {
+    let s = seed;
+    const regex = /\b(Sir|Professor|Dr\.|Madam)\b/gi;
+    return deterministicReplace(text, regex, prob, s, (match) => {
+        const mutated = match + "-san";
+        log.push({ type: "honorifics", original: match, mutated, position: -1 });
+        return mutated;
+    });
+}
+function applyLowercaseStart(text, prob, seed, log) {
+    let s = seed;
+    const sentences = text.split(/(?<=[.!?])\s+/);
+    const processed = sentences.map((sent, idx) => {
+        s = simpleHash(s.toString() + idx);
+        if (seededRandom(s) > prob * 0.5)
+            return sent;
+        const mutated = sent.charAt(0).toLowerCase() + sent.slice(1);
+        log.push({ type: "lowercase_start", original: sent, mutated, position: -1 });
+        return mutated;
+    });
+    return processed.join(" ");
+}
+// ─── V20 Specialized Mutation Layers (Plan Items) ─────────────────────────
+// M1: The Rant-Abbreviator (sth, wdym, ppl).
+function applyRantAbbreviator(text, prob, seed, log) {
+    let output = text;
+    let s = seed;
+    const phraseRules = [
+        { regex: /\bwhat\s+do\s+you\s+mean\b/gi, replacement: "wdym", type: "rant_abbrev_wdym" },
+        { regex: /\bwhat\s+do\s+u\s+mean\b/gi, replacement: "wdym", type: "rant_abbrev_wdym" },
+    ];
+    for (const rule of phraseRules) {
+        output = deterministicReplace(output, rule.regex, prob * 0.85, s, (match) => {
+            const mutated = match[0] === match[0].toUpperCase()
+                ? rule.replacement.toUpperCase()
+                : rule.replacement;
+            log.push({ type: rule.type, original: match, mutated, position: -1 });
+            return mutated;
+        });
+        s = simpleHash(s.toString() + rule.type);
+    }
+    const tokenRules = [
+        { regex: /\bpeople\b/gi, replacement: "ppl", type: "rant_abbrev_ppl" },
+        { regex: /\bsomething\b/gi, replacement: "sth", type: "rant_abbrev_sth" },
+    ];
+    for (const rule of tokenRules) {
+        output = deterministicReplace(output, rule.regex, prob * 0.65, s, (match) => {
+            const mutated = match[0] === match[0].toUpperCase()
+                ? rule.replacement.toUpperCase()
+                : rule.replacement;
+            log.push({ type: rule.type, original: match, mutated, position: -1 });
+            return mutated;
+        });
+        s = simpleHash(s.toString() + rule.type);
+    }
+    return output;
+}
+// M2: The Hyphen-Descriptor (self-created compound adjectives).
+function applyHyphenDescriptor(text, prob, seed, log) {
+    const raw = text || "";
+    let s = seed;
+    if (seededRandom(simpleHash(s.toString() + raw.slice(0, 12))) > prob * 0.55)
+        return raw;
+    const stop = new Set([
+        "the", "a", "an", "to", "of", "in", "on", "for", "and", "or", "but", "with", "by", "as", "at", "from", "into",
+    ]);
+    const candidates = [];
+    const re = /\b([A-Za-z]{3,12})\s+([A-Za-z]{3,12})\b/g;
+    let m;
+    while ((m = re.exec(raw))) {
+        const w1 = m[1];
+        const w2 = m[2];
+        if (!w1 || !w2)
+            continue;
+        if (stop.has(w1.toLowerCase()) || stop.has(w2.toLowerCase()))
+            continue;
+        if (w1.includes("-") || w2.includes("-"))
+            continue;
+        if (w1[0] === w1[0].toUpperCase() && w2[0] === w2[0].toUpperCase())
+            continue;
+        candidates.push({ start: m.index, end: m.index + m[0].length, w1, w2, match: m[0] });
+        if (candidates.length >= 12)
+            break;
+    }
+    if (!candidates.length)
+        return raw;
+    s = simpleHash(s.toString() + "hyphen_descriptor_pick");
+    const pick = candidates[Math.floor(seededRandom(s) * candidates.length)];
+    if (!pick)
+        return raw;
+    const mutated = `${pick.w1}-${pick.w2}`;
+    const out = raw.slice(0, pick.start) + mutated + raw.slice(pick.end);
+    log.push({ type: "hyphen_descriptor", original: pick.match, mutated, position: pick.start });
+    return out;
+}
+// M4: Syntactic Contrast Layer — self-correction markers (dashes/parentheses).
+function applySelfCorrectionMarkers(text, prob, seed, log) {
+    let s = seed;
+    const sentences = String(text || "").split(/(?<=[.!?])\s+/);
+    if (!sentences.length)
+        return text;
+    const eligible = sentences
+        .map((sent, idx) => ({ sent, idx }))
+        .filter(({ sent }) => sent.length > 70 && /\s/.test(sent));
+    if (!eligible.length)
+        return text;
+    s = simpleHash(s.toString() + "self_correction_pick");
+    if (seededRandom(s) > prob * 0.35)
+        return text;
+    const target = eligible[Math.floor(seededRandom(s + 1) * eligible.length)];
+    if (!target)
+        return text;
+    const markerPool = ["— actually,", "(I mean)", "— I mean,", "(like)"];
+    const marker = markerPool[Math.floor(seededRandom(s + 2) * markerPool.length)];
+    const words = target.sent.split(/\s+/);
+    const insertAt = Math.min(words.length - 2, 3 + Math.floor(seededRandom(s + 3) * 4)); // 3..6
+    if (insertAt <= 1)
+        return text;
+    const rebuilt = [
+        words.slice(0, insertAt).join(" "),
+        marker,
+        words.slice(insertAt).join(" "),
+    ].join(" ");
+    const nextSentences = sentences.slice();
+    nextSentences[target.idx] = rebuilt.replace(/\s{2,}/g, " ").trim();
+    log.push({ type: "self_correction", original: target.sent, mutated: nextSentences[target.idx], position: -1 });
+    return nextSentences.join(" ");
+}
+exports.PERSONA_REGISTRY = {
+    AUTO: { id: "AUTO", name: "Auto-DNA", icon: "🧬", rules: [], fillers: [], intensityBias: 1.0 },
+    SA_RANTER: {
+        id: "SA_RANTER", name: "South Asian Ranter", icon: "🇧🇩",
+        rules: ["comma_splice", "missing_copula", "existential_error", "verb_tense", "fragments", "stutter", "rant_abbrev", "self_correction", "hyphen_descriptor"],
+        fillers: ["basically", "bro", "actually", "honestly"],
+        intensityBias: 1.2
+    },
+    SA_STUDENT: {
+        id: "SA_STUDENT", name: "Formal Student", icon: "🇮🇳",
+        rules: ["discuss_about", "revert_back", "article_overuse", "academic_hedge", "caps"],
+        fillers: ["kindly", "respected", "in fact"],
+        intensityBias: 0.8
+    },
+    MINIMALIST: {
+        id: "MINIMALIST", name: "The Minimalist", icon: "📱",
+        rules: ["determ_omission", "lowercase_start", "missing_comma", "rant_abbrev", "hyphen_descriptor"],
+        fillers: ["tbh", "idk", "wdym"],
+        intensityBias: 1.5
+    },
+    TAGLISH_PRO: {
+        id: "TAGLISH_PRO", name: "Taglish Pro", icon: "🇵🇭",
+        rules: ["already_tense", "already_suffix", "kindly_usage", "tense_flip"],
+        fillers: ["already", "so yeah", "actually"],
+        intensityBias: 1.0
+    },
+    SE_HYBRID: {
+        id: "SE_HYBRID", name: "SE Asian Hybrid", icon: "🇲🇾",
+        rules: ["lah_particle", "sih_particle", "article_flux", "jujurly_usage"],
+        fillers: ["lah", "meh", "jujurly"],
+        intensityBias: 1.1
+    },
+    DIRECT_TR: {
+        id: "DIRECT_TR", name: "Direct Translator", icon: "🇹🇭",
+        rules: ["tense_simplification", "same_same", "no_have", "softener_nha"],
+        fillers: ["same same", "anyway", "nha"],
+        intensityBias: 1.3
+    },
+    POLITE_ACHIEVER: {
+        id: "POLITE_ACHIEVER", name: "Polite Achiever", icon: "🇯🇵",
+        rules: ["honorifics", "excessive_modesty", "it_cant_be_helped", "apology_pattern"],
+        fillers: ["sorry", "i will work hard", "shikata ga nai"],
+        intensityBias: 0.7
+    },
+    GCC_EXPAT: {
+        id: "GCC_EXPAT", name: "GCC Expat", icon: "🇦🇪",
+        rules: ["lingua_franca", "do_the_needful", "third_space_pragmatics", "revert_back", "self_correction", "hyphen_descriptor"],
+        fillers: ["kindly", "please", "revert"],
+        intensityBias: 0.9
+    },
+    CENTRAL_ASIAN: {
+        id: "CENTRAL_ASIAN", name: "Central Asian L2", icon: "🇺🇿",
+        rules: ["russian_syntax", "missing_articles", "literal_idioms"],
+        fillers: ["basically", "how to say", "look"],
+        intensityBias: 1.1
+    }
+};
 function escapeRegex(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -1586,7 +1812,18 @@ const MUTATION_REGISTRY = [
     { name: "nuclear_grammar", fn: applyNuclearGrammarChaos, weight: 0.95 },
     { name: "v10_fracture", fn: applyRadicalSentenceFracture, weight: 1.0 },
     { name: "v10_spacing", fn: applyStochasticDoubleSpacing, weight: 1.0 },
-    { name: "v11_regression", fn: applyVocabularyRegression, weight: 1.0 }
+    { name: "v11_regression", fn: applyVocabularyRegression, weight: 1.0 },
+    // Pan-Asian Specialty Layer (V20)
+    { name: "already_suffix", fn: applyAlreadySuffixPH, weight: 1.0 },
+    { name: "lah_particle", fn: applyLahParticleMYID, weight: 0.8 },
+    { name: "jujurly_usage", fn: applyJujurlyHonestly, weight: 0.9 },
+    { name: "tense_simplification", fn: applyTenseSimplificationTHVN, weight: 1.1 },
+    { name: "honorifics", fn: applyJapaneseHonorifics, weight: 0.7 },
+    { name: "lowercase_start", fn: applyLowercaseStart, weight: 1.5 },
+    // V20: Specialized layers requested in the Implementation Plan
+    { name: "rant_abbrev", fn: applyRantAbbreviator, weight: 1.0, range: [70, 100] },
+    { name: "hyphen_descriptor", fn: applyHyphenDescriptor, weight: 0.65, range: [55, 100] },
+    { name: "self_correction", fn: applySelfCorrectionMarkers, weight: 0.6, range: [55, 100] }
 ];
 /**
  * V11/V12: Vocabulary Regression & L1 Rhythm
@@ -1861,67 +2098,108 @@ function applyAsianGrammarNet(text, prob, seed, log) {
  * Main Error Injection Engine — V8.0 STOCHASTIC ORCHESTRATOR
  * Splits text into sentences and applies a random subset of mutations per sentence.
  */
+/**
+ * Main Error Injection Engine — Ghost V20 Master Asian Engine
+ * Splits text into sentences and applies a random subset of mutations per persona.
+ */
 function applyHumanErrors(text, config) {
-    if (!text || config.chaosThreshold <= 0)
-        return { text, mutations: [] };
-    const baseSeed = simpleHash(config.dnaSeed || "default_error_dna_v8");
+    if (!text || config.chaosThreshold <= 0) {
+        return { text, mutations: [], persona: config.persona || "AUTO" };
+    }
+    // 1. Resolve Persona
+    const baseSeed = simpleHash(config.dnaSeed || "ghost_v20_dna");
+    let activePersonaID = config.persona || "AUTO";
+    if (activePersonaID === "AUTO") {
+        const ids = Object.keys(exports.PERSONA_REGISTRY).filter(id => id !== "AUTO");
+        activePersonaID = ids[baseSeed % ids.length];
+    }
+    const persona = exports.PERSONA_REGISTRY[activePersonaID];
+    // 2. Base Intensity Scaling
     let extremeMul = config.extremeMultiplier || 1.0;
     if (config.assignmentMode)
         extremeMul *= 1.5;
-    let density = (config.chaosThreshold / 100) * 10.0 * config.errorFactor * extremeMul;
+    const intensityScalarRaw = typeof config.personaIntensity === "number" ? config.personaIntensity : 1.0;
+    const intensityScalar = Math.max(0.1, Math.min(1.0, intensityScalarRaw));
+    // Base density scaled by chaosThreshold (0.1 to 1.0) and persona bias
+    let baseDensity = (config.chaosThreshold / 100) * config.errorFactor * extremeMul * persona.intensityBias * intensityScalar;
     if (config.isAcademic)
-        density = Math.min(density, config.assignmentMode ? 0.99 : 0.95);
+        baseDensity = Math.min(baseDensity, 0.95);
     let mutations = [];
     let outputText = text;
-    // V13: Sovereign Asian Grammar Net Pass (Full Rate)
-    if (config.assignmentMode) {
-        outputText = applyAsianGrammarNet(outputText, density, baseSeed, mutations);
-    }
-    // 1. Split text into logical blocks (paragraphs then sentences)
+    // 3. Process Blocks
     const paragraphs = outputText.split(/\n\n+/);
     const processedParagraphs = paragraphs.map((para, pIdx) => {
         if (para.trim().length === 0)
             return para;
-        // Header check: skip processing if it looks like a header (short, many caps)
-        const lines = para.split("\n");
-        if (lines.length === 1 && para.length < 100 && /^[A-Z]/.test(para))
+        // Header check
+        if (para.length < 100 && /^[A-Z][^a-z]*$/.test(para))
             return para;
         const sentences = para.split(/(?<=[.!?])\s+/);
         const processedSentences = sentences.map((sent, sIdx) => {
             let mutatedSent = sent;
             const sSeed = simpleHash(baseSeed.toString() + pIdx + sIdx + sent.substring(0, 10));
-            // Select valid mutations based on current slider (range)
+            /**
+             * V20 GUARD-DROP PROTOCOL:
+             * Increase density as we move deeper into the text.
+             * Logic: Density increases by 2% per sentence.
+             */
+            const guardDropOn = config.guardDropEnabled !== false;
+            const guardDropFactor = guardDropOn ? (1.0 + (sIdx * 0.05)) : 1.0; // 5% increase per sentence
+            const sentenceDensity = baseDensity * guardDropFactor;
+            // Filter valid mutations based on Persona and Slider
             const validPool = MUTATION_REGISTRY.filter(m => {
-                if (!m.range)
-                    return true;
-                return config.chaosThreshold >= m.range[0] && config.chaosThreshold <= m.range[1];
+                // Range check
+                if (m.range && (config.chaosThreshold < m.range[0] || config.chaosThreshold > m.range[1]))
+                    return false;
+                // Persona DNA check: If persona is set, it must include this rule or it must be a general rule
+                if (activePersonaID !== "AUTO") {
+                    const pRules = persona.rules;
+                    // If the rule is not in persona DNA, only 20% chance of being selected (General background noise)
+                    if (!pRules.includes(m.name) && seededRandom(sSeed + 99) > 0.2)
+                        return false;
+                }
+                return true;
             });
-            // Lottery: Select 3-7 random mutation functions for this sentence
-            // V12 GODLY MODE: 100% Saturation in Assignment Mode (Apply ALL valid mutations)
-            const targetCount = config.assignmentMode ? validPool.length : (3 + Math.floor(seededRandom(sSeed) * 5));
+            // Select mutations
+            const targetCount = config.assignmentMode ? validPool.length : (2 + Math.floor(seededRandom(sSeed) * 5));
             const selectedIndices = new Set();
-            if (config.assignmentMode) {
-                // Apply all mutations in parallel/sequence
-                for (let i = 0; i < validPool.length; i++)
-                    selectedIndices.add(i);
+            for (let i = 0; i < 20 && selectedIndices.size < targetCount; i++) {
+                selectedIndices.add(Math.floor(seededRandom(sSeed + i) * validPool.length));
             }
-            else {
-                for (let i = 0; i < 20 && selectedIndices.size < targetCount; i++) {
-                    selectedIndices.add(Math.floor(seededRandom(sSeed + i) * validPool.length));
+            // Persona signature enforcement (V20): always include key persona rules when possible
+            // This keeps personas distinct even when the random sampler misses a rule.
+            if (activePersonaID !== "AUTO" && persona?.rules?.length) {
+                const mustInclude = ["already_suffix", "rant_abbrev", "hyphen_descriptor", "self_correction", "lah_particle"];
+                for (const ruleName of mustInclude) {
+                    if (!persona.rules.includes(ruleName))
+                        continue;
+                    const idx = validPool.findIndex((m) => m.name === ruleName);
+                    if (idx >= 0)
+                        selectedIndices.add(idx);
                 }
             }
-            // Apply selected mutations
+            // Apply
             Array.from(selectedIndices).forEach((idx, iter) => {
                 const m = validPool[idx];
                 const iterSeed = simpleHash(sSeed.toString() + iter + m.name);
-                // Apply with its own weight multiplier
-                mutatedSent = m.fn(mutatedSent, density * m.weight, iterSeed, mutations);
+                mutatedSent = m.fn(mutatedSent, sentenceDensity * m.weight, iterSeed, mutations);
             });
+            // Special Filler Injection (Persona specific)
+            if (persona.fillers.length > 0 && seededRandom(sSeed + 13) < (sentenceDensity * 0.1)) {
+                const filler = persona.fillers[Math.floor(seededRandom(sSeed + 14) * persona.fillers.length)];
+                if (mutatedSent.length > 50) {
+                    mutatedSent = mutatedSent.replace(/([.!?])$/, `, ${filler}$1`);
+                }
+            }
             return mutatedSent;
         });
         return processedSentences.join(" ");
     });
-    return { text: processedParagraphs.join("\n\n"), mutations };
+    return {
+        text: processedParagraphs.join("\n\n"),
+        mutations,
+        persona: activePersonaID
+    };
 }
 // ─── GROUP IMPLEMENTATIONS ──────────────────────────────────────────────────
 function applyVerbTenseChaos(text, prob, seed, log) {

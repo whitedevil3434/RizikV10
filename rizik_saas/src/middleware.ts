@@ -39,16 +39,24 @@ export async function middleware(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
     const search = request.nextUrl.search;
     const isControlPlane = isControlPlanePath(pathname);
-    const isWriterPath = pathname.startsWith("/writer");
     const isAccountPath = pathname.startsWith("/account");
-    const requiresAuth = isControlPlane || isWriterPath || isAccountPath;
+    const isDisabledCustomerSurface =
+        pathname === "/mats" ||
+        pathname.startsWith("/mats/") ||
+        pathname === "/store" ||
+        pathname.startsWith("/store/") ||
+        pathname === "/cart" ||
+        pathname === "/checkout" ||
+        pathname === "/writer" ||
+        pathname.startsWith("/writer/");
+    const requiresAuth = isControlPlane || isAccountPath;
     const isAuthenticated = Boolean(userId);
     const canonicalHost = resolveHostFromSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
 
     // Redirect ghost subdomain to the integrated writer route
     if (hostnameOnly.startsWith("ghost.")) {
         const writerUrl = request.nextUrl.clone();
-        writerUrl.pathname = "/writer";
+        writerUrl.pathname = "/";
         return cloneSetCookies(sessionResponse, NextResponse.redirect(writerUrl));
     }
 
@@ -74,6 +82,14 @@ export async function middleware(request: NextRequest) {
         return cloneSetCookies(sessionResponse, NextResponse.redirect(opsUrl));
     }
 
+    // Hard-disable the store and writer surfaces.
+    if (isDisabledCustomerSurface) {
+        const disabledUrl = request.nextUrl.clone();
+        disabledUrl.pathname = "/";
+        disabledUrl.search = "";
+        return cloneSetCookies(sessionResponse, NextResponse.redirect(disabledUrl));
+    }
+
     // Dedicated ops host should stay focused on control-plane routes.
     // If user visits customer surfaces on ops host, move them to public host (same path) when configured.
     if (opsHost && isOpsHost && !isControlPlane && !isAuthSurfacePath(pathname) && pathname !== "/account") {
@@ -89,7 +105,7 @@ export async function middleware(request: NextRequest) {
         return cloneSetCookies(sessionResponse, NextResponse.redirect(adminUrl));
     }
 
-    // Early auth gate for admin/portal/writer/account paths. Role checks remain in route layouts.
+    // Early auth gate for admin/portal/account paths. Role checks remain in route layouts.
     if (requiresAuth && !isAuthenticated) {
         return loginRedirect(request, pathname, search, sessionResponse);
     }

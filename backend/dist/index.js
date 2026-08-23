@@ -5,6 +5,7 @@ import { extractDNA } from "./ghost/dnaEngine";
 import { transformText } from "./ghost/transformEngine";
 import { populateConsortium, ingestBatch } from "./ghost/consortiumPopulator";
 import { extractVoiceDNA } from "./ghost/voiceAnalyzer";
+import { clinkApp } from "./clink/routes";
 export { ChatRoom, VoiceAgent };
 // Legacy Stubs (To fix deployment migration errors)
 export class MeetingRoom extends DurableObject {
@@ -300,6 +301,11 @@ export default {
     async fetch(request, env) {
         const url = new URL(request.url);
         console.log(`GODLY_DEBUG: ${request.method} ${url.pathname}`);
+        // C-Link is an isolated commitment/evidence surface. It intentionally does
+        // not depend on Rizik marketplace, wallet, khata, or delivery modules.
+        if (url.pathname.startsWith("/api/clink/")) {
+            return clinkApp.fetch(request, env);
+        }
         // CORS Preflight for all endpoints
         if (request.method === "OPTIONS") {
             return new Response(null, {
@@ -445,9 +451,22 @@ export default {
                 return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
             }
         }
-        // 🏆 ADMIN: Consortium DNA Population
+        // 🏆 ADMIN: Consortium DNA Population (v3.3: Auth Required)
         if (url.pathname === "/api/admin/consortium/populate" && request.method === "POST") {
             try {
+                // Admin auth gate
+                const adminAuth = request.headers.get("Authorization");
+                const adminKey = request.headers.get("X-Rizik-Admin-Key");
+                if (!adminKey || adminKey !== env.SUPABASE_SERVICE_ROLE_KEY) {
+                    if (!adminAuth?.startsWith("Bearer ")) {
+                        return new Response(JSON.stringify({ error: "Admin authentication required" }), { status: 401, headers: corsHeaders });
+                    }
+                    const adminToken = adminAuth.split(" ")[1];
+                    const adminUserId = env.SUPABASE_JWT_SECRET ? await verifySupabaseJWT(adminToken, env.SUPABASE_JWT_SECRET) : null;
+                    if (!adminUserId || !(await isUnlimitedUser(adminUserId, null, env))) {
+                        return new Response(JSON.stringify({ error: "Admin access denied" }), { status: 403, headers: corsHeaders });
+                    }
+                }
                 const { subreddit, limit } = await request.json();
                 const result = await populateConsortium(subreddit || "bangladesh", limit || 100, env);
                 return new Response(JSON.stringify(result), { headers: corsHeaders });
@@ -467,9 +486,21 @@ export default {
                 return new Response(JSON.stringify({ success: false, error: err.message }), { status: 500, headers: corsHeaders });
             }
         }
-        // Admin: Batch Populate Consortium (Academic/Niche)
+        // Admin: Batch Populate Consortium (Academic/Niche) (v3.3: Auth Required)
         if (url.pathname === "/api/admin/consortium/batch-populate" && request.method === "POST") {
             try {
+                const batchAdminAuth = request.headers.get("Authorization");
+                const batchAdminKey = request.headers.get("X-Rizik-Admin-Key");
+                if (!batchAdminKey || batchAdminKey !== env.SUPABASE_SERVICE_ROLE_KEY) {
+                    if (!batchAdminAuth?.startsWith("Bearer ")) {
+                        return new Response(JSON.stringify({ error: "Admin authentication required" }), { status: 401, headers: corsHeaders });
+                    }
+                    const bToken = batchAdminAuth.split(" ")[1];
+                    const bUserId = env.SUPABASE_JWT_SECRET ? await verifySupabaseJWT(bToken, env.SUPABASE_JWT_SECRET) : null;
+                    if (!bUserId || !(await isUnlimitedUser(bUserId, null, env))) {
+                        return new Response(JSON.stringify({ error: "Admin access denied" }), { status: 403, headers: corsHeaders });
+                    }
+                }
                 const { subreddits, limitPerSub } = await request.json();
                 const results = [];
                 for (const sub of subreddits) {
@@ -482,9 +513,21 @@ export default {
                 return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
             }
         }
-        // Admin: Ingest Batch (New)
+        // Admin: Ingest Batch (v3.3: Auth Required)
         if (url.pathname === "/api/admin/ingest-batch" && request.method === "POST") {
             try {
+                const ingestAdminAuth = request.headers.get("Authorization");
+                const ingestAdminKey = request.headers.get("X-Rizik-Admin-Key");
+                if (!ingestAdminKey || ingestAdminKey !== env.SUPABASE_SERVICE_ROLE_KEY) {
+                    if (!ingestAdminAuth?.startsWith("Bearer ")) {
+                        return new Response(JSON.stringify({ error: "Admin authentication required" }), { status: 401, headers: corsHeaders });
+                    }
+                    const iToken = ingestAdminAuth.split(" ")[1];
+                    const iUserId = env.SUPABASE_JWT_SECRET ? await verifySupabaseJWT(iToken, env.SUPABASE_JWT_SECRET) : null;
+                    if (!iUserId || !(await isUnlimitedUser(iUserId, null, env))) {
+                        return new Response(JSON.stringify({ error: "Admin access denied" }), { status: 403, headers: corsHeaders });
+                    }
+                }
                 const { batch } = await request.json();
                 const result = await ingestBatch(batch, env);
                 return new Response(JSON.stringify(result), { headers: corsHeaders });

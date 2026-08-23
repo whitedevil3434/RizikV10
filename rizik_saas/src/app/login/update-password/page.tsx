@@ -22,7 +22,7 @@ export default function UpdatePasswordPage() {
             setError(result.error);
             setLoading(false);
         } else if (result && 'success' in result && result.success) {
-            router.push(result.redirectTo || "/store");
+            router.push(result.redirectTo || "/");
         }
     }
 

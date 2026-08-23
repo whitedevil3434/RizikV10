@@ -51,7 +51,7 @@ export default function B2BInquiryPage() {
                     </p>
                     <h1 className="text-4xl font-bold text-[#031E49] mb-4">B2B Commercial Inquiry</h1>
                     <p className="text-[#0A2D6C]/60 max-w-xl mx-auto">
-                        Submit your organization requirements for custom eco-products, bulk procurement, or specialized bio-shield packaging.
+                        Submit your organization requirements for bulk procurement, custom enterprise solutions, or specialized packaging.
                     </p>
                 </div>
 
@@ -106,7 +106,7 @@ export default function B2BInquiryPage() {
                                     name="category"
                                     className="w-full px-5 py-4 rounded-2xl border border-[#031E49]/10 bg-[#F5F2EB]/30 text-[#031E49] focus:outline-none focus:ring-2 focus:ring-[#031E49]/20 transition-all font-medium appearance-none"
                                 >
-                                    <option value="ECO_MAT">Eco-Mat Bulk</option>
+                                    <option value="TEXTILE_BULK">Textile Bulk</option>
                                     <option value="BIO_SHIELD">Bio-Shield Packaging</option>
                                     <option value="CUSTOM">Custom Development</option>
                                     <option value="OTHER">Other Enterprise Solutions</option>

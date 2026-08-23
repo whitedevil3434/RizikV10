@@ -6,6 +6,8 @@
     "dev": "next dev",
     "dev:reset": "bash scripts/dev-reset.sh",
     "build": "next build",
+    "build:pages": "next-on-pages",
+    "deploy:pages": "npm run build:pages && wrangler pages deploy .vercel/output/static --project-name rizik-saas-v10 --branch main",
     "start": "next start",
     "lint": "eslint",
     "health:next": "bash scripts/check-next-runtime.sh",

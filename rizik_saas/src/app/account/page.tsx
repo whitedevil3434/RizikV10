@@ -52,7 +52,7 @@ async function OrderHistorySection({ customerName }: { customerName: string }) {
             </div>
 
             {orders.length === 0 ? (
-                <p className="text-sm text-[#0A2D6C]/50">No orders found. Place your first order from the store!</p>
+                <p className="text-sm text-[#0A2D6C]/50">No orders found. Your account activity will appear here once available.</p>
             ) : (
                 <div className="space-y-3">
                     {orders.map((order) => (

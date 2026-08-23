@@ -1,0 +1,135 @@
+[
+  {
+    "name": "home",
+    "url": "https://rizikecosystem.com/",
+    "finalUrl": "https://rizikecosystem.com/",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/01-home.jpg",
+    "size": 205458
+  },
+  {
+    "name": "b2b",
+    "url": "https://rizikecosystem.com/b2b",
+    "finalUrl": "https://rizikecosystem.com/b2b",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/02-b2b.jpg",
+    "size": 78477
+  },
+  {
+    "name": "b2b-inquiry",
+    "url": "https://rizikecosystem.com/b2b/inquiry",
+    "finalUrl": "https://rizikecosystem.com/b2b/inquiry",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/03-b2b-inquiry.jpg",
+    "size": 62637
+  },
+  {
+    "name": "subsidiaries",
+    "url": "https://rizikecosystem.com/subsidiaries",
+    "finalUrl": "https://rizikecosystem.com/subsidiaries",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/04-subsidiaries.jpg",
+    "size": 106257
+  },
+  {
+    "name": "impact",
+    "url": "https://rizikecosystem.com/impact",
+    "finalUrl": "https://rizikecosystem.com/impact",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/05-impact.jpg",
+    "size": 73130
+  },
+  {
+    "name": "trust",
+    "url": "https://rizikecosystem.com/trust",
+    "finalUrl": "https://rizikecosystem.com/trust",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/06-trust.jpg",
+    "size": 70719
+  },
+  {
+    "name": "fair",
+    "url": "https://rizikecosystem.com/fair",
+    "finalUrl": "https://rizikecosystem.com/fair",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/07-fair.jpg",
+    "size": 150398
+  },
+  {
+    "name": "fair-join",
+    "url": "https://rizikecosystem.com/fair/join",
+    "finalUrl": "https://rizikecosystem.com/fair/join",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/08-fair-join.jpg",
+    "size": 41432
+  },
+  {
+    "name": "fair-dashboard",
+    "url": "https://rizikecosystem.com/fair/dashboard",
+    "finalUrl": "https://rizikecosystem.com/login?next=/fair/dashboard",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/09-fair-dashboard.jpg",
+    "size": 44213
+  },
+  {
+    "name": "community",
+    "url": "https://rizikecosystem.com/community",
+    "finalUrl": "https://rizikecosystem.com/community",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/10-community.jpg",
+    "size": 48157
+  },
+  {
+    "name": "login",
+    "url": "https://rizikecosystem.com/login",
+    "finalUrl": "https://rizikecosystem.com/login",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/11-login.jpg",
+    "size": 44213
+  },
+  {
+    "name": "account",
+    "url": "https://rizikecosystem.com/account",
+    "finalUrl": "https://rizikecosystem.com/login?next=%2Faccount",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/12-account.jpg",
+    "size": 44213
+  },
+  {
+    "name": "store",
+    "url": "https://rizikecosystem.com/store",
+    "error": "page.goto: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://rizikecosystem.com/store\", waiting until \"networkidle\"\u001b[22m\n"
+  },
+  {
+    "name": "cart",
+    "url": "https://rizikecosystem.com/cart",
+    "finalUrl": "https://rizikecosystem.com/cart",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/14-cart.jpg",
+    "size": 31733
+  },
+  {
+    "name": "checkout",
+    "url": "https://rizikecosystem.com/checkout",
+    "finalUrl": "https://rizikecosystem.com/checkout",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/15-checkout.jpg",
+    "size": 28013
+  },
+  {
+    "name": "writer",
+    "url": "https://rizikecosystem.com/writer",
+    "finalUrl": "https://rizikecosystem.com/login?next=%2Fwriter",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/16-writer.jpg",
+    "size": 44213
+  },
+  {
+    "name": "admin",
+    "url": "https://rizikecosystem.com/admin",
+    "finalUrl": "https://rizikecosystem.com/login?next=%2Fadmin",
+    "title": "Rizik Global | Engineering the Future of Eco-Tech & Food Safety",
+    "file": "/Users/sabbir/Downloads/RizikV10/.audit_screens/17-admin.jpg",
+    "size": 44213
+  }
+]

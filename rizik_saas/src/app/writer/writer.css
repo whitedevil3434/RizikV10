@@ -179,8 +179,143 @@
   padding: 0 32px; /* 8 * 4 */
 }
 
+@keyframes floaty {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -18px, 0) scale(1.04);
+  }
+}
+
+@keyframes progressGlow {
+  0%, 100% {
+    filter: saturate(1) brightness(1);
+    transform: translateX(0);
+  }
+  50% {
+    filter: saturate(1.15) brightness(1.08);
+    transform: translateX(1.5%);
+  }
+}
+
+@keyframes holoSpin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(0.92);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(180deg) scale(1);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg) scale(0.92);
+  }
+}
+
+@keyframes pulseBars {
+  0%, 100% {
+    transform: scaleY(0.88);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scaleY(1.12);
+    opacity: 1;
+  }
+}
+
+@keyframes cardFloat {
+  0%, 100% {
+    transform: translateY(0) rotateX(10deg) rotateY(-8deg);
+  }
+  50% {
+    transform: translateY(-8px) rotateX(12deg) rotateY(8deg);
+  }
+}
+
+.writer-page .writer-holo {
+  perspective: 1200px;
+}
+
+.writer-page .writer-holo-core {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: min(28vw, 280px);
+  height: min(28vw, 280px);
+  border-radius: 9999px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.95), rgba(0, 177, 106, 0.35) 34%, rgba(4, 32, 76, 0.08) 68%, transparent 72%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.55) inset,
+    0 0 80px rgba(0, 177, 106, 0.2),
+    0 0 140px rgba(4, 32, 76, 0.16);
+  transform: translate(-50%, -50%);
+  animation: holoSpin 14s linear infinite;
+}
+
+.writer-page .writer-holo-ring {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  border-radius: 9999px;
+  border: 1px solid rgba(4, 32, 76, 0.12);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%);
+}
+
+.writer-page .writer-holo-ring-a {
+  width: min(52vw, 460px);
+  height: min(52vw, 460px);
+  animation: holoSpin 18s linear infinite reverse;
+  background: radial-gradient(circle, transparent 57%, rgba(0, 177, 106, 0.12) 58%, transparent 65%);
+}
+
+.writer-page .writer-holo-ring-b {
+  width: min(62vw, 540px);
+  height: min(62vw, 540px);
+  opacity: 0.55;
+  animation: holoSpin 22s linear infinite;
+  background: radial-gradient(circle, transparent 61%, rgba(4, 32, 76, 0.08) 62%, transparent 68%);
+}
+
+.writer-page .writer-holo-ring-c {
+  width: min(70vw, 620px);
+  height: min(70vw, 620px);
+  opacity: 0.35;
+  animation: holoSpin 26s linear infinite reverse;
+  background: radial-gradient(circle, transparent 64%, rgba(0, 177, 106, 0.08) 65%, transparent 72%);
+}
+
+.writer-page .writer-card {
+  transform-style: preserve-3d;
+  animation: cardFloat 9s ease-in-out infinite;
+}
+
+.writer-page .writer-pulse-bar {
+  animation: pulseBars 1.8s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
 @media (max-width: 768px) {
   .writer-page .wr-container {
     padding: 0 16px;
+  }
+
+  .writer-page .writer-holo-core {
+    width: 220px;
+    height: 220px;
+  }
+
+  .writer-page .writer-holo-ring-a {
+    width: 360px;
+    height: 360px;
+  }
+
+  .writer-page .writer-holo-ring-b {
+    width: 440px;
+    height: 440px;
+  }
+
+  .writer-page .writer-holo-ring-c {
+    width: 520px;
+    height: 520px;
   }
 }

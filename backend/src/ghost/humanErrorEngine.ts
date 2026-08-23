@@ -1363,6 +1363,181 @@ function applyLowercaseStart(text: string, prob: number, seed: number, log: Erro
   return processed.join(" ");
 }
 
+// ─── V20 Specialized Mutation Layers (Plan Items) ─────────────────────────
+
+// M1: The Rant-Abbreviator (sth, wdym, ppl).
+function applyRantAbbreviator(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let output = text;
+  let s = seed;
+
+  const phraseRules: Array<{ regex: RegExp; replacement: string; type: string }> = [
+    { regex: /\bwhat\s+do\s+you\s+mean\b/gi, replacement: "wdym", type: "rant_abbrev_wdym" },
+    { regex: /\bwhat\s+do\s+u\s+mean\b/gi, replacement: "wdym", type: "rant_abbrev_wdym" },
+  ];
+
+  for (const rule of phraseRules) {
+    output = deterministicReplace(output, rule.regex, prob * 0.85, s, (match: string) => {
+      const mutated = match[0] === match[0].toUpperCase()
+        ? rule.replacement.toUpperCase()
+        : rule.replacement;
+      log.push({ type: rule.type, original: match, mutated, position: -1 });
+      return mutated;
+    });
+    s = simpleHash(s.toString() + rule.type);
+  }
+
+  const tokenRules: Array<{ regex: RegExp; replacement: string; type: string }> = [
+    { regex: /\bpeople\b/gi, replacement: "ppl", type: "rant_abbrev_ppl" },
+    { regex: /\bsomething\b/gi, replacement: "sth", type: "rant_abbrev_sth" },
+  ];
+
+  for (const rule of tokenRules) {
+    output = deterministicReplace(output, rule.regex, prob * 0.65, s, (match: string) => {
+      const mutated = match[0] === match[0].toUpperCase()
+        ? rule.replacement.toUpperCase()
+        : rule.replacement;
+      log.push({ type: rule.type, original: match, mutated, position: -1 });
+      return mutated;
+    });
+    s = simpleHash(s.toString() + rule.type);
+  }
+
+  return output;
+}
+
+// M2: The Hyphen-Descriptor (self-created compound adjectives).
+function applyHyphenDescriptor(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  const raw = text || "";
+  let s = seed;
+  if (seededRandom(simpleHash(s.toString() + raw.slice(0, 12))) > prob * 0.55) return raw;
+
+  const stop = new Set([
+    "the", "a", "an", "to", "of", "in", "on", "for", "and", "or", "but", "with", "by", "as", "at", "from", "into",
+  ]);
+
+  const candidates: Array<{ start: number; end: number; w1: string; w2: string; match: string }> = [];
+  const re = /\b([A-Za-z]{3,12})\s+([A-Za-z]{3,12})\b/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(raw))) {
+    const w1 = m[1];
+    const w2 = m[2];
+    if (!w1 || !w2) continue;
+    if (stop.has(w1.toLowerCase()) || stop.has(w2.toLowerCase())) continue;
+    if (w1.includes("-") || w2.includes("-")) continue;
+    if (w1[0] === w1[0].toUpperCase() && w2[0] === w2[0].toUpperCase()) continue;
+    candidates.push({ start: m.index, end: m.index + m[0].length, w1, w2, match: m[0] });
+    if (candidates.length >= 12) break;
+  }
+
+  if (!candidates.length) return raw;
+
+  s = simpleHash(s.toString() + "hyphen_descriptor_pick");
+  const pick = candidates[Math.floor(seededRandom(s) * candidates.length)];
+  if (!pick) return raw;
+
+  const mutated = `${pick.w1}-${pick.w2}`;
+  const out = raw.slice(0, pick.start) + mutated + raw.slice(pick.end);
+  log.push({ type: "hyphen_descriptor", original: pick.match, mutated, position: pick.start });
+  return out;
+}
+
+// M4: Syntactic Contrast Layer — self-correction markers (dashes/parentheses).
+function applySelfCorrectionMarkers(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let s = seed;
+  const sentences = String(text || "").split(/(?<=[.!?])\s+/);
+  if (!sentences.length) return text;
+
+  const eligible = sentences
+    .map((sent, idx) => ({ sent, idx }))
+    .filter(({ sent }) => sent.length > 70 && /\s/.test(sent));
+
+  if (!eligible.length) return text;
+  s = simpleHash(s.toString() + "self_correction_pick");
+  if (seededRandom(s) > prob * 0.35) return text;
+
+  const target = eligible[Math.floor(seededRandom(s + 1) * eligible.length)];
+  if (!target) return text;
+
+  const markerPool = [
+    "— actually,", 
+    "(I mean)", 
+    "— I mean,", 
+    "(like)", 
+    ", really,", 
+    ", honestly,", 
+    ", so basically,", 
+    ", as it turns out,", 
+    ", to be fair,", 
+    "— if I'm being real,",
+    "— honestly,",
+    ", like I said,",
+    ", wait, actually,",
+    ", lowkey,",
+    "— honestly though,"
+  ];
+  const marker = markerPool[Math.floor(seededRandom(s + 2) * markerPool.length)];
+
+  const words = target.sent.split(/\s+/);
+  const insertAt = Math.min(words.length - 2, 3 + Math.floor(seededRandom(s + 3) * 4)); // 3..6
+  if (insertAt <= 1) return text;
+
+  const rebuilt = [
+    words.slice(0, insertAt).join(" "),
+    marker,
+    words.slice(insertAt).join(" "),
+  ].join(" ");
+
+  const nextSentences = sentences.slice();
+  nextSentences[target.idx] = rebuilt.replace(/\s{2,}/g, " ").trim();
+
+  log.push({ type: "self_correction", original: target.sent, mutated: nextSentences[target.idx], position: -1 });
+  return nextSentences.join(" ");
+}
+
+/**
+ * V25: Right Form of Verb (RFV) Engine
+ * Injects common human verb-tense-subject errors.
+ */
+function applyRFVErrors(text: string, prob: number, seed: number, log: ErrorMutationLog[]): string {
+  let s = seed;
+  let output = text;
+
+  const rfvPatterns: Array<[RegExp, string]> = [
+    [/\b(he|she|it|The study)\s+has\b/gi, "$1 have"],
+    [/\b(he|she|it|The analysis)\s+does\b/gi, "$1 do"],
+    [/\b(did|does|do)\s+([a-z]+)ed\b/gi, "$1 $2"],
+    [/\b(is|are|was|were)\s+think\b/gi, "$1 thinking"],
+    [/\b(is|are|was|were)\s+suggest\b/gi, "$1 suggesting"],
+    [/\bdiscuss\b/gi, "discuss about"],
+    [/\bcope\s+with\b/gi, "cope up with"],
+    [/\bexplain\s+to\s+me\b/gi, "explain me"],
+    [/\brevert\b/gi, "revert back"],
+    [/\bcomprise\b/gi, "comprise of"],
+    // V26: Nuclear RFV (Dyslexic/Non-native high-entropy flips)
+    [/\bwas\s+([a-z]+)ing\b/gi, "was $1ed"], 
+    [/\bis\s+([a-z]+)ed\b/gi, "is $1ing"]
+  ];
+
+  for (const [re, rep] of rfvPatterns) {
+    if (seededRandom(s++) < prob * 0.6) { // V26: Increased density from 0.4
+      const original = output;
+      output = output.replace(re, rep);
+      if (original !== output) {
+        log.push({ type: "rfv_error", original, mutated: output, position: -1 });
+      }
+    }
+  }
+
+  // V26: Um/Uh Orality Markers
+  if (seededRandom(s++) < 0.02 * (prob / 50)) {
+     const markers = ["um, ", "uh, ", "like, "];
+     const marker = markers[Math.floor(seededRandom(s++) * markers.length)];
+     output = output.replace(/\b([A-Z][a-z]+)\b/, `$1, ${marker}`);
+  }
+
+  return output;
+}
+
 // ─── Persona DNA Registry (V20 - Master Asian Engine) ──────────────────────
 
 export type PersonaID = 
@@ -1384,7 +1559,7 @@ export const PERSONA_REGISTRY: Record<PersonaID, PersonaDNA> = {
   AUTO: { id: "AUTO", name: "Auto-DNA", icon: "🧬", rules: [], fillers: [], intensityBias: 1.0 },
   SA_RANTER: { 
     id: "SA_RANTER", name: "South Asian Ranter", icon: "🇧🇩", 
-    rules: ["comma_splice", "missing_copula", "existential_error", "verb_tense", "fragments", "stutter"],
+    rules: ["comma_splice", "missing_copula", "existential_error", "verb_tense", "fragments", "stutter", "rant_abbrev", "self_correction", "hyphen_descriptor"],
     fillers: ["basically", "bro", "actually", "honestly"],
     intensityBias: 1.2
   },
@@ -1396,7 +1571,7 @@ export const PERSONA_REGISTRY: Record<PersonaID, PersonaDNA> = {
   },
   MINIMALIST: { 
     id: "MINIMALIST", name: "The Minimalist", icon: "📱", 
-    rules: ["determ_omission", "lowercase_start", "missing_comma"],
+    rules: ["determ_omission", "lowercase_start", "missing_comma", "rant_abbrev", "hyphen_descriptor"],
     fillers: ["tbh", "idk", "wdym"],
     intensityBias: 1.5
   },
@@ -1426,7 +1601,7 @@ export const PERSONA_REGISTRY: Record<PersonaID, PersonaDNA> = {
   },
   GCC_EXPAT: { 
     id: "GCC_EXPAT", name: "GCC Expat", icon: "🇦🇪", 
-    rules: ["lingua_franca", "do_the_needful", "third_space_pragmatics", "revert_back"],
+    rules: ["lingua_franca", "do_the_needful", "third_space_pragmatics", "revert_back", "self_correction", "hyphen_descriptor"],
     fillers: ["kindly", "please", "revert"],
     intensityBias: 0.9
   },
@@ -1444,6 +1619,8 @@ export interface HumanErrorConfig {
   isAcademic: boolean;
   dnaSeed: string;          // User DNA hash for reproducibility
   persona?: PersonaID;      // V20 Persona ID
+  personaIntensity?: number; // V20: 0.1 - 1.0 scalar for persona impact
+  guardDropEnabled?: boolean; // V20: enable tone-shift density ramp
   extremeMultiplier?: number; // v3.3: 1.0-2.0 scaling based on slider tier
   assignmentMode?: boolean;   // Assignment mode flag
 }
@@ -1859,7 +2036,13 @@ const MUTATION_REGISTRY: { name: string; fn: MutationFn; weight: number; range?:
   { name: "jujurly_usage", fn: applyJujurlyHonestly, weight: 0.9 },
   { name: "tense_simplification", fn: applyTenseSimplificationTHVN, weight: 1.1 },
   { name: "honorifics", fn: applyJapaneseHonorifics, weight: 0.7 },
-  { name: "lowercase_start", fn: applyLowercaseStart, weight: 1.5 }
+  { name: "lowercase_start", fn: applyLowercaseStart, weight: 1.5 },
+
+  // V20: Specialized layers requested in the Implementation Plan
+  { name: "rant_abbrev", fn: applyRantAbbreviator, weight: 1.0, range: [70, 100] },
+  { name: "hyphen_descriptor", fn: applyHyphenDescriptor, weight: 0.65, range: [55, 100] },
+  { name: "self_correction", fn: applySelfCorrectionMarkers, weight: 0.8, range: [55, 100] },
+  { name: "rfv_engine", fn: applyRFVErrors, weight: 0.9, range: [40, 100] }
 ];
 
 /**
@@ -1873,7 +2056,7 @@ function applyVocabularyRegression(text: string, prob: number, seed: number, log
   const regressionMap: Record<string, string[]> = {
     "significantly": ["real much", "a lot", "very much", "so much"],
     "therefore": ["so", "that's why", "which means"],
-    "furthermore": ["also", "and one more thing", "plus"],
+    "furthermore": ["and one more thing", "plus", "moving on", "another point is"],
     "however": ["but", "even so", "still"],
     "nevertheless": ["but still", "anyway", "even then"],
     "indicated": ["showed", "said", "made it clear"],
@@ -2050,8 +2233,8 @@ function applyCenturyNoise(text: string, prob: number, seed: number, log: ErrorM
       return Math.random() < 0.05 ? `${m} ${m}` : m; // Force stutter repetition
     }},
     { name: "v15_aside_1", regex: /(?<=[.!?])\s+/g, category: 20, replacement: (m: string) => {
-      const asides = [" (actually), ", " (I guess), ", " (sort of), ", " (basically), ", " -- actually -- "];
-      return Math.random() < 0.1 ? asides[Math.floor(Math.random() * asides.length)] : m;
+      const asides = [", actually, ", ", I guess, ", ", sort of, ", ", basically, ", " — actually, "];
+      return Math.random() < 0.06 ? asides[Math.floor(Math.random() * asides.length)] : m;
     }},
     { name: "v15_focus_1", regex: /\b(that|this|it)\./gi, category: 24, replacement: "$1 itself." }, // South Asian focus: "it itself."
     { name: "v15_focus_2", regex: /\b(\w+)ing\./gi, category: 25, replacement: "$1ing only." }, // "doing only."
@@ -2085,8 +2268,8 @@ function applyCenturyNoise(text: string, prob: number, seed: number, log: ErrorM
       return Math.random() < 0.05 ? rephrase[Math.floor(Math.random() * rephrase.length)] : m;
     }},
     { name: "v16_logic_1", regex: /\b(Furthermore|Consequently|Moreover|Therefore|In addition)\b/gi, category: 29, replacement: (m: string) => {
-      const wordy = ["Also, one more thing to say is,", "So basically, as a result for this,", "Plus, also I must add that,", "Actually, therefore I think,"];
-      return Math.random() < 0.3 ? wordy[Math.floor(Math.random() * wordy.length)] : m;
+      const wordy = ["On top of that,", "And here's the thing,", "What I should mention is,", "Going further,", "Now,", "At this point,", "So,", "Here,"];
+      return Math.random() < 0.25 ? wordy[Math.floor(Math.random() * wordy.length)] : m;
     }},
 
     // --- LAYER 7: The Intro Breaker (V17 - Context Aware) ---
@@ -2152,8 +2335,20 @@ function applyAsianGrammarNet(text: string, prob: number, seed: number, log: Err
  * Splits text into sentences and applies a random subset of mutations per sentence.
  */
 /**
- * Main Error Injection Engine — Ghost V20 Master Asian Engine
- * Splits text into sentences and applies a random subset of mutations per persona.
+ * Main Error Injection Engine — Ghost V22 COGNITIVE STATE MACHINE
+ * 
+ * ARCHITECTURE: Instead of smooth pseudo-random distribution, this engine
+ * models 4 mental states that transition stochastically:
+ *   FOCUSED   → 0-1 errors, clean grammar, no fillers
+ *   NEUTRAL   → 1-3 errors, light noise
+ *   DISTRACTED → 3-6 errors, heavy noise, fillers cluster here
+ *   FATIGUED  → 2-4 errors but DIFFERENT types (lazy errors, not chaotic)
+ * 
+ * Each sentence gets a unique "cognitive fingerprint" derived from:
+ *   - Content hash (what the sentence says)
+ *   - Position hash (where it is in the document)
+ *   - Previous sentence hash (path-dependent chaos)
+ *   - Paragraph mood hash (paragraph-level personality shifts)
  */
 export function applyHumanErrors(
   text: string,
@@ -2164,7 +2359,7 @@ export function applyHumanErrors(
   }
 
   // 1. Resolve Persona
-  const baseSeed = simpleHash(config.dnaSeed || "ghost_v20_dna");
+  const baseSeed = simpleHash(config.dnaSeed || "ghost_v22_dna");
   let activePersonaID = config.persona || "AUTO";
   if (activePersonaID === "AUTO") {
     const ids = Object.keys(PERSONA_REGISTRY).filter(id => id !== "AUTO") as PersonaID[];
@@ -2175,71 +2370,227 @@ export function applyHumanErrors(
   // 2. Base Intensity Scaling
   let extremeMul = config.extremeMultiplier || 1.0;
   if (config.assignmentMode) extremeMul *= 1.5;
-  
-  // Base density scaled by chaosThreshold (0.1 to 1.0) and persona bias
-  let baseDensity = (config.chaosThreshold / 100) * config.errorFactor * extremeMul * persona.intensityBias;
+  const intensityScalarRaw = typeof config.personaIntensity === "number" ? config.personaIntensity : 1.0;
+  const intensityScalar = Math.max(0.1, Math.min(1.0, intensityScalarRaw));
+  let baseDensity = (config.chaosThreshold / 100) * config.errorFactor * extremeMul * persona.intensityBias * intensityScalar;
   if (config.isAcademic) baseDensity = Math.min(baseDensity, 0.95);
 
   let mutations: ErrorMutationLog[] = [];
-  let outputText = text;
 
-  // 3. Process Blocks
-  const paragraphs = outputText.split(/\n\n+/);
+  // ═══════════════════════════════════════════════════════════════════
+  // V22: COGNITIVE STATE MACHINE
+  // ═══════════════════════════════════════════════════════════════════
+  type CognitiveState = "FOCUSED" | "NEUTRAL" | "DISTRACTED" | "FATIGUED";
+  
+  // Error budgets per state: [min, max] errors to apply
+  const STATE_BUDGETS: Record<CognitiveState, [number, number]> = {
+    FOCUSED:    [0, 1],
+    NEUTRAL:    [1, 3],
+    DISTRACTED: [3, 7],
+    FATIGUED:   [1, 4],
+  };
+  
+  // State transition probabilities (Markov chain)
+  // Read as: from STATE_X, probability of going to [FOCUSED, NEUTRAL, DISTRACTED, FATIGUED]
+  const STATE_TRANSITIONS: Record<CognitiveState, number[]> = {
+    FOCUSED:    [0.30, 0.45, 0.15, 0.10], // Focused tends to stay focused or go neutral
+    NEUTRAL:    [0.15, 0.35, 0.30, 0.20], // Neutral is the crossroads
+    DISTRACTED: [0.05, 0.25, 0.40, 0.30], // Distracted tends to stay distracted or get fatigued
+    FATIGUED:   [0.10, 0.30, 0.25, 0.35], // Fatigued can recover to neutral or stay fatigued
+  };
+  
+  const STATES: CognitiveState[] = ["FOCUSED", "NEUTRAL", "DISTRACTED", "FATIGUED"];
+  
+  // Error type affinities per state:
+  // FOCUSED → spelling only (typos from fast typing)
+  // NEUTRAL → articles, prepositions (background L1 noise)
+  // DISTRACTED → everything (chaos mode)
+  // FATIGUED → run-ons, missing words, lazy grammar (low-effort errors)
+  const STATE_AFFINITIES: Record<CognitiveState, string[]> = {
+    FOCUSED:    ["spelling", "keyboard_prox"], // Only typos
+    NEUTRAL:    ["articles", "prepositions", "agreement", "article_flux", "confused_words"], // L1 background
+    DISTRACTED: [], // Empty = ALL mutations are valid (chaos mode)
+    FATIGUED:   ["run_ons", "fracture", "v10_fracture", "caps", "conj_chain", "lost_subj", "verb_tense"], // Lazy errors
+  };
+
+  // Transition function
+  function transitionState(currentState: CognitiveState, seed: number): CognitiveState {
+    const probs = STATE_TRANSITIONS[currentState];
+    const r = seededRandom(seed);
+    let cumulative = 0;
+    for (let i = 0; i < probs.length; i++) {
+      cumulative += probs[i];
+      if (r < cumulative) return STATES[i];
+    }
+    return "NEUTRAL";
+  }
+
+  // Multi-source entropy: combines 4 independent hash sources
+  function cognitiveEntropy(content: string, pIdx: number, sIdx: number, prevHash: number): number {
+    const contentHash = simpleHash(content.substring(0, 30));
+    const positionHash = simpleHash(`pos_${pIdx}_${sIdx}`);
+    const prevDep = simpleHash(`prev_${prevHash}`); // Path-dependent!
+    const paraHash = simpleHash(`para_mood_${pIdx}_${content.length}`);
+    // XOR combine for maximum entropy
+    return Math.abs(contentHash ^ positionHash ^ prevDep ^ paraHash);
+  }
+
+  // Sentence fingerprint for uniqueness enforcement
+  const sentenceFingerprints: Set<string> = new Set();
+
+  // ═══════════════════════════════════════════════════════════════════
+  // V22: PROCESS WITH COGNITIVE STATE
+  // ═══════════════════════════════════════════════════════════════════
+  let globalState: CognitiveState = "FOCUSED"; // Always start focused
+  let prevSentenceHash = baseSeed;
+  let globalSentenceIndex = 0;
+
+  const paragraphs = text.split(/\n\n+/);
+  const totalGlobalSentences = text.split(/(?<=[.!?])\s+/).length;
+  
   const processedParagraphs = paragraphs.map((para, pIdx) => {
     if (para.trim().length === 0) return para;
-    
-    // Header check
     if (para.length < 100 && /^[A-Z][^a-z]*$/.test(para)) return para;
+
+    // V22: Paragraph-level mood — each paragraph gets a slight personality shift
+    const paraMoodSeed = simpleHash(`mood_${pIdx}_${para.substring(0, 20)}`);
+    const paraMoodShift = seededRandom(paraMoodSeed) * 0.4 - 0.2; // -0.2 to +0.2 density shift
 
     const sentences = para.split(/(?<=[.!?])\s+/);
     const processedSentences = sentences.map((sent, sIdx) => {
       let mutatedSent = sent;
-      const sSeed = simpleHash(baseSeed.toString() + pIdx + sIdx + sent.substring(0, 10));
-      
-      /** 
-       * V20 GUARD-DROP PROTOCOL:
-       * Increase density as we move deeper into the text.
-       * Logic: Density increases by 2% per sentence.
-       */
-      const guardDropFactor = 1.0 + (sIdx * 0.05); // 5% increase per sentence
-      const sentenceDensity = baseDensity * guardDropFactor;
+      globalSentenceIndex++;
 
-      // Filter valid mutations based on Persona and Slider
+      // ─── V22: COGNITIVE STATE TRANSITION ─────────────────────
+      const entropy = cognitiveEntropy(sent, pIdx, sIdx, prevSentenceHash);
+      globalState = transitionState(globalState, entropy);
+      
+      // V21 Guard-Drop influence: push toward DISTRACTED/FATIGUED in back half
+      const globalProgress = totalGlobalSentences > 1 ? globalSentenceIndex / totalGlobalSentences : 0;
+      if (globalProgress > 0.6 && seededRandom(entropy + 1) < 0.3) {
+        globalState = seededRandom(entropy + 2) < 0.5 ? "DISTRACTED" : "FATIGUED";
+      }
+      if (globalProgress < 0.15 && seededRandom(entropy + 3) < 0.5) {
+        globalState = "FOCUSED"; // Force clean start
+      }
+
+      // ─── V22: ERROR BUDGET (Not probability!) ────────────────
+      const [budgetMin, budgetMax] = STATE_BUDGETS[globalState];
+      const budgetRange = budgetMax - budgetMin;
+      // Non-uniform budget: use entropy, not seededRandom, for extreme variance
+      const rawBudget = budgetMin + Math.floor(seededRandom(entropy + 7) * (budgetRange + 1));
+      const scaledBudget = Math.round(rawBudget * baseDensity * (1.0 + paraMoodShift));
+      const errorBudget = Math.max(0, Math.min(validPool_length(), scaledBudget));
+
+      // ─── V22: FILTER MUTATIONS BY STATE AFFINITY ─────────────
+      const stateAffinity = STATE_AFFINITIES[globalState];
       const validPool = MUTATION_REGISTRY.filter(m => {
-        // Range check
         if (m.range && (config.chaosThreshold < m.range[0] || config.chaosThreshold > m.range[1])) return false;
-        
-        // Persona DNA check: If persona is set, it must include this rule or it must be a general rule
+        // In DISTRACTED state, everything passes (empty affinity = all valid)
+        if (stateAffinity.length > 0 && !stateAffinity.includes(m.name)) {
+          // Non-affinity rules get through at reduced rate based on state
+          const bleedThrough = globalState === "FOCUSED" ? 0.05 : 0.25;
+          if (seededRandom(entropy + simpleHash(m.name)) > bleedThrough) return false;
+        }
+        // Persona DNA check
         if (activePersonaID !== "AUTO") {
-           const pRules = persona.rules;
-           // If the rule is not in persona DNA, only 20% chance of being selected (General background noise)
-           if (!pRules.includes(m.name) && seededRandom(sSeed + 99) > 0.2) return false;
+          const pRules = persona.rules;
+          if (!pRules.includes(m.name) && seededRandom(entropy + 99) > 0.2) return false;
         }
         return true;
       });
 
-      // Select mutations
-      const targetCount = config.assignmentMode ? validPool.length : (2 + Math.floor(seededRandom(sSeed) * 5));
+      // ─── V22: BUDGET-BASED SELECTION (NOT probability-based) ──
+      // Instead of "each rule has X% chance", we say "pick exactly N rules"
+      // This creates natural clustering: some sentences get 0 errors, some get 7
       const selectedIndices = new Set<number>();
       
-      for (let i = 0; i < 20 && selectedIndices.size < targetCount; i++) {
-        selectedIndices.add(Math.floor(seededRandom(sSeed + i) * validPool.length));
+      // Shuffle the valid pool using Fisher-Yates with cognitive entropy
+      const shuffledPool = validPool.map((_, i) => i);
+      for (let i = shuffledPool.length - 1; i > 0; i--) {
+        const j = Math.floor(seededRandom(entropy + i + 50) * (i + 1));
+        [shuffledPool[i], shuffledPool[j]] = [shuffledPool[j], shuffledPool[i]];
+      }
+      
+      // Take exactly `errorBudget` items from the shuffled pool
+      for (let i = 0; i < Math.min(errorBudget, shuffledPool.length); i++) {
+        selectedIndices.add(shuffledPool[i]);
       }
 
-      // Apply
+      // Persona signature enforcement
+      if (activePersonaID !== "AUTO" && persona?.rules?.length && globalState !== "FOCUSED") {
+        const mustInclude = ["already_suffix", "rant_abbrev", "hyphen_descriptor", "self_correction", "lah_particle"];
+        for (const ruleName of mustInclude) {
+          if (!persona.rules.includes(ruleName)) continue;
+          const idx = validPool.findIndex((m) => m.name === ruleName);
+          if (idx >= 0 && seededRandom(entropy + 200) < 0.4) selectedIndices.add(idx);
+        }
+      }
+
+      // ─── V22: APPLY WITH VARIABLE INTENSITY ──────────────────
+      // Each selected mutation gets a RANDOM intensity (0.3 to 1.5) — not uniform!
       Array.from(selectedIndices).forEach((idx, iter) => {
         const m = validPool[idx];
-        const iterSeed = simpleHash(sSeed.toString() + iter + m.name);
-        mutatedSent = m.fn(mutatedSent, sentenceDensity * m.weight, iterSeed, mutations);
+        const iterSeed = simpleHash(entropy.toString() + iter + m.name);
+        // V22: Variable intensity per mutation (extreme randomness)
+        const intensityJitter = 0.3 + seededRandom(iterSeed + 33) * 1.2; // 0.3x to 1.5x
+        mutatedSent = m.fn(mutatedSent, baseDensity * m.weight * intensityJitter, iterSeed, mutations);
       });
 
-      // Special Filler Injection (Persona specific)
-      if (persona.fillers.length > 0 && seededRandom(sSeed + 13) < (sentenceDensity * 0.1)) {
-         const filler = persona.fillers[Math.floor(seededRandom(sSeed + 14) * persona.fillers.length)];
-         if (mutatedSent.length > 50) {
-            mutatedSent = mutatedSent.replace(/([.!?])$/, `, ${filler}$1`);
-         }
+      // ─── V22: SENTENCE ARCHITECTURE VARIATION ────────────────
+      // Randomly inject short punchy fragments to break length uniformity
+      if (globalState === "DISTRACTED" && seededRandom(entropy + 300) < 0.12) {
+        const punchyFragments = [
+          "That's the main point.",
+          "This matters.",
+          "It's quite clear.",
+          "Simple as that.",
+          "That's basically it.",
+          "No question about it.",
+          "This is real.",
+          "Think about it."
+        ];
+        const fragment = punchyFragments[Math.floor(seededRandom(entropy + 301) * punchyFragments.length)];
+        mutatedSent = mutatedSent + " " + fragment;
       }
+
+      // ─── V22: FILLER CLUSTERING (State-Aware) ────────────────
+      // Fillers ONLY appear in DISTRACTED state (humans add fillers when unfocused)
+      if (globalState === "DISTRACTED" && persona.fillers.length > 0 && seededRandom(entropy + 13) < 0.3) {
+        const filler = persona.fillers[Math.floor(seededRandom(entropy + 14) * persona.fillers.length)];
+        if (mutatedSent.length > 50) {
+          mutatedSent = mutatedSent.replace(/([.!?])$/, `, ${filler}$1`);
+        }
+      }
+
+      // ─── V22: PERSONAL OPINION (State-Aware) ─────────────────
+      // Opinions only in NEUTRAL or FATIGUED (when guard is down)
+      const opinionMarkers = ["I think", "from what I read", "personally", "in my opinion", "I believe", "if you ask me"];
+      if ((globalState === "NEUTRAL" || globalState === "FATIGUED") && sIdx === 1 && seededRandom(entropy + 77) < 0.2) {
+        const marker = opinionMarkers[Math.floor(seededRandom(entropy + 78) * opinionMarkers.length)];
+        mutatedSent = `${marker}, ${mutatedSent.charAt(0).toLowerCase() + mutatedSent.slice(1)}`;
+      }
+
+      // ─── V22: UNIQUENESS ENFORCEMENT ─────────────────────────
+      // Generate a fingerprint of mutation types applied
+      const appliedTypes = Array.from(selectedIndices).map(i => validPool[i]?.name || "").sort().join("|");
+      const fingerprint = `${globalState}:${errorBudget}:${appliedTypes}`;
+      if (sentenceFingerprints.has(fingerprint) && selectedIndices.size > 0) {
+        // Re-roll: shift the selection by 1 position in the shuffled pool
+        const bonus = shuffledPool[Math.min(errorBudget + 1, shuffledPool.length - 1)];
+        if (bonus !== undefined) {
+          selectedIndices.add(bonus);
+          const m = validPool[bonus];
+          if (m) {
+            const bonusSeed = simpleHash(entropy.toString() + "reroll" + m.name);
+            mutatedSent = m.fn(mutatedSent, baseDensity * m.weight * 0.8, bonusSeed, mutations);
+          }
+        }
+      }
+      sentenceFingerprints.add(fingerprint);
+
+      // Update path-dependency
+      prevSentenceHash = simpleHash(mutatedSent.substring(0, 20));
 
       return mutatedSent;
     });
@@ -2252,6 +2603,14 @@ export function applyHumanErrors(
     mutations,
     persona: activePersonaID 
   };
+
+  // Helper: compute pool length without creating the full pool
+  function validPool_length(): number {
+    return MUTATION_REGISTRY.filter(m => {
+      if (m.range && (config.chaosThreshold < m.range[0] || config.chaosThreshold > m.range[1])) return false;
+      return true;
+    }).length;
+  }
 }
 
 // ─── GROUP IMPLEMENTATIONS ──────────────────────────────────────────────────

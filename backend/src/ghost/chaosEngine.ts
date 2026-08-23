@@ -21,7 +21,16 @@ const FORMAL_MARKERS = {
         "it is worth noting that",
         "importantly",
         "significantly",
-        "as a result"
+        "as a result",
+        "from a technical standpoint",
+        "it follows that",
+        "clearly",
+        "given this context",
+        "traditionally",
+        "consequently",
+        "interestingly",
+        "paradoxically",
+        "moreover"
     ],
     conversational: [
         "in a sense",
@@ -29,12 +38,40 @@ const FORMAL_MARKERS = {
         "to a certain extent",
         "broadly speaking",
         "as one might expect",
-        "in practice" // allowed formal-conversational bridge
+        "in practice",
+        "basically",
+        "honestly",
+        "really",
+        "I mean",
+        "actually"
     ],
     connectors: {
-        addition: ["furthermore", "moreover", "additionally"],
-        contrast: ["however", "yet", "in contrast", "nevertheless"],
-        cause: ["thus", "therefore", "consequently"]
+        addition: [
+            "what stands out is", 
+            "an additional point is", 
+            "alongside this",
+            "not to mention",
+            "plus",
+            "coupled with this",
+            "on top of that"
+        ],
+        contrast: [
+            "however", 
+            "yet", 
+            "in contrast", 
+            "nevertheless",
+            "on the other hand",
+            "alternatively",
+            "even so",
+            "nonetheless"
+        ],
+        cause: [
+            "thus", 
+            "therefore", 
+            "consequently",
+            "hence",
+            "accordingly"
+        ]
     },
     subordinate_triggers: new Set(["because", "although", "while", "whereas", "since", "unless", "if"])
 };
@@ -42,10 +79,8 @@ const FORMAL_MARKERS = {
 // --- VOCABULARY MATRIX (Formal Core -> Accessible) ---
 const VOCABULARY_MATRIX: Record<string, string[]> = {
     "demonstrate": ["show", "suggest", "indicate"],
-    "demonstrates": ["shows", "suggests", "indicates"],
     "demonstrated": ["showed", "suggested", "indicated"],
     "conclude": ["determine", "find", "infer"],
-    "concludes": ["determines", "finds", "infers"],
     "concluded": ["determined", "found", "inferred"],
     "produce": ["yield", "make", "generate"],
     "produced": ["yielded", "made", "generated"],
@@ -60,7 +95,19 @@ const VOCABULARY_MATRIX: Record<string, string[]> = {
     "facilitate": ["help", "ease", "enable"],
     "facilitated": ["helped", "eased", "enabled"],
     "advantageous": ["helpful", "useful", "beneficial"],
-    "optimal": ["best", "ideal", "most effective"]
+    "optimal": ["best", "ideal", "most effective"],
+    // V25: Absorbed from bladerHumanizer (Stochastic Path)
+    "additionally": ["also", "on top of that", "plus"],
+    "moreover": ["also", "furthermore", "and another thing"],
+    "furthermore": ["also", "not to mention", "plus"],
+    "crucial": ["important", "key", "huge"],
+    "pivotal": ["important", "central", "main"],
+    "underscore": ["show", "point out", "highlight"],
+    "enhance": ["improve", "boost", "fix up"],
+    "landscape": ["area", "scene", "field"],
+    "testament": ["sign", "proof", "mark"],
+    "vibrant": ["lively", "active", "bright"],
+    "intricate": ["complex", "tangled", "tricky"]
 };
 
 // --- COLLOCATIONS & ASIDES (Extreme Chaos) ---
@@ -73,7 +120,16 @@ const COLLOCATION_MATRIX: Record<string, string[]> = {
     "demonstrates that": ["illustrates how", "reveals that", "indicates conceptually that"],
     "in addition to": ["alongside", "coupled with"],
     "due to the fact that": ["given that", "because"],
-    "it can be seen that": ["one can observe", "evidence suggests"]
+    "it can be seen that": ["one can observe", "evidence suggests"],
+    // V25: Absorbed from bladerHumanizer
+    "at its core": ["basically", "essentially", "realistically"],
+    "in today's rapidly evolving": ["nowadays", "in this current scene", "right now"],
+    "in order to": ["to", "just to"],
+    "at this point in time": ["now", "currently"],
+    "it is important to note that": ["mind you,", "it's worth saying,", "honestly,"],
+    "needless to say": ["obviously,", "of course,"],
+    "serves as": ["is", "works as"],
+    "boasts": ["has", "comes with"]
 };
 
 const REFLECTIVE_ASIDES = [
@@ -99,7 +155,7 @@ function seededRandom(seed: number): number {
     return x - Math.floor(x);
 }
 
-function wordCount(str: string): number {
+export function wordCount(str: string): number {
     return (str.match(/\b\w+\b/g) || []).length;
 }
 
@@ -228,6 +284,122 @@ function heuristicClauseRegexSplit(sentence: string): string[] {
     return clauses.filter(c => wordCount(c) > 2);
 }
 
+/**
+ * V22.3: Structural Deformity (Clause Re-Ordering)
+ * Intentionally swaps main and subordinate clauses to destroy AI statistical symmetry.
+ */
+function applyStructuralDeformity(sentence: string, seed: number): string {
+    const clauses = heuristicClauseRegexSplit(sentence);
+    if (clauses.length < 2) return sentence;
+
+    const r = seededRandom(seed);
+    if (r < 0.4) {
+        // Swap first and last clause if they are long enough
+        let newClauses = [...clauses];
+        const last = newClauses.pop();
+        const first = newClauses.shift();
+        if (last && first) {
+            // Check for subordinate triggers to maintain basic logic
+            const triggers = Array.from(FORMAL_MARKERS.subordinate_triggers);
+            const hasTrigger = triggers.some(t => first.toLowerCase().startsWith(t));
+            
+            if (hasTrigger) {
+                // If first clause starts with "Although", moving it to end is very human.
+                return [...newClauses, last, first.replace(/,$/, "")].join(" ").replace(/\s{2,}/g, " ").trim();
+            } else {
+                return [last, ...newClauses, first].join(" ").replace(/\s{2,}/g, " ").trim();
+            }
+        }
+    }
+    return sentence;
+}
+
+/**
+ * V25: Voice Flip (Active <-> Passive)
+ * Heuristic conversion to break AI structural symmetry.
+ */
+function applyVoiceFlip(sentence: string, seed: number): string {
+    const r = seededRandom(seed);
+    if (r > 0.15) return sentence; // Low density but high impact
+
+    // Passive -> Active: "X was analyzed by Y" -> "Y analyzed X"
+    const passiveRegex = /\b([A-Za-z]+)\s+(?:was|were)\s+([A-Za-z]+)ed\s+by\s+([A-Za-z]+)\b/i;
+    if (passiveRegex.test(sentence)) {
+        return sentence.replace(passiveRegex, (m, target, verb, actor) => {
+            return `${actor.charAt(0).toUpperCase() + actor.slice(1)} ${verb}ed ${target.toLowerCase()}`;
+        });
+    }
+
+    // Active -> Passive: "Y analyzed X" -> "X was analyzed by Y"
+    const activeRegex = /\b([I|We|The studies])\s+([A-Za-z]+)ed\s+([A-Za-z]+)\b/i;
+    if (activeRegex.test(sentence)) {
+        return sentence.replace(activeRegex, (m, actor, verb, target) => {
+            return `${target.charAt(0).toUpperCase() + target.slice(1)} was ${verb}ed by ${actor.toLowerCase()}`;
+        });
+    }
+
+    return sentence;
+}
+
+/**
+ * V25: Narrative Swap (Direct <-> Indirect)
+ * Converts formal reported speech into conversational narrative.
+ */
+function applyNarrativeSwap(sentence: string, seed: number): string {
+    if (seededRandom(seed) > 0.12) return sentence;
+
+    // Indirect -> Direct: "Researchers stated that X" -> "Researchers were clearly like, 'X'"
+    const reportedRegex = /\b([A-Za-z]+)\s+(stated|claimed|suggested|argued)\s+that\b/i;
+    if (reportedRegex.test(sentence)) {
+        return sentence.replace(reportedRegex, (m, actor, verb) => {
+            const colloquialVerb = verb === "stated" ? "were like" : "basically said";
+            return `${actor} ${colloquialVerb}, `;
+        });
+    }
+    return sentence;
+}
+
+/**
+ * V26: Punctuation Stutter
+ * Injects "fat-finger" or "cognitive hesitation" marks.
+ */
+function applyPunctuationStutter(sentence: string, seed: number): string {
+    if (seededRandom(seed) > 0.03) return sentence;
+    const r = seededRandom(seed + 1);
+    if (r < 0.3) return sentence.replace(/([.!?])/, "$1$1"); // Double marks
+    if (r < 0.6) return sentence.replace(/,/, ", ,"); // Double comma stutter
+    return sentence.replace(/\b([a-z]+)\s+([a-z]+)\b/i, "$1, $2"); // Unnecessary comma
+}
+
+/**
+ * V26: Case Flux
+ * Omissions of capitalization for 'i' or sentence starts.
+ */
+function applyCaseFlux(sentence: string, seed: number): string {
+    let out = sentence;
+    if (seededRandom(seed) < 0.02) {
+        out = out.replace(/\bI\b/g, "i");
+    }
+    if (seededRandom(seed + 2) < 0.015) {
+        out = out.charAt(0).toLowerCase() + out.slice(1);
+    }
+    return out;
+}
+
+/**
+ * V26: Fragment Bomb
+ * Intentionally breaks a sentence to create human-like dysfluency.
+ */
+function applyFragmentBomb(sentence: string, seed: number): string[] {
+    if (seededRandom(seed) > 0.04 || wordCount(sentence) < 12) return [sentence];
+    const words = sentence.split(" ");
+    const pivot = Math.floor(words.length / 2);
+    return [
+        words.slice(0, pivot).join(" ") + "..",
+        words.slice(pivot).join(" ")
+    ];
+}
+
 function labelClause(text: string): ClauseNode {
     const lowerText = text.toLowerCase();
     
@@ -342,6 +514,11 @@ export function applyStructuralChaos(text: string, userDnaHash: string, isAcadem
         // 2. Intra-Sentence Tone Blend
         let blendedSentence = blendClauses(labeledClauses, currentSeed, isAcademic);
 
+        // V22.3: Apply Structural Deformity (Linguistic Fragmentation)
+        if (seededRandom(currentSeed + 10) < 0.35) {
+            blendedSentence = applyStructuralDeformity(blendedSentence, currentSeed + 11);
+        }
+
         // 2.5 Intra-Word Vocabulary, Grammar Mix, & Collocation Swaps
         blendedSentence = mixVocabularyAndGrammar(blendedSentence, currentSeed, isAcademic, globalWordUsage);
 
@@ -425,11 +602,44 @@ export function applyStructuralChaos(text: string, userDnaHash: string, isAcadem
             blendedSentence += ".";
         }
         
+        // V25: Voice & Narrative Swaps
+        if (seededRandom(currentSeed + 12) < 0.20) {
+            blendedSentence = applyVoiceFlip(blendedSentence, currentSeed + 13);
+        }
+        if (seededRandom(currentSeed + 14) < 0.15) {
+            blendedSentence = applyNarrativeSwap(blendedSentence, currentSeed + 15);
+        }
+
         // Capitalize correctly
         blendedSentence = blendedSentence.charAt(0).toUpperCase() + blendedSentence.slice(1);
         
-        shuffledOutput.push(blendedSentence);
+        // V25: Lung Capacity Pulse (Burstiness state check)
+        const lastWc = shuffledOutput.length > 0 ? wordCount(shuffledOutput[shuffledOutput.length - 1]) : 0;
+        const currentWc = wordCount(blendedSentence);
+        
+        // If last sentence was long (>25), force this one to be short or fragmented
+        if (lastWc > 22 && currentWc > 12 && seededRandom(currentSeed + 16) < 0.5) {
+            const parts = blendedSentence.split(/[,;]/);
+            if (parts.length > 1) {
+                shuffledOutput.push(parts[0].trim() + ".");
+                blendedSentence = parts.slice(1).join(", ").trim();
+                blendedSentence = blendedSentence.charAt(0).toUpperCase() + blendedSentence.slice(1);
+            }
+        }
+
+        // V26: Case Flux & Punctuation Stutter
+        blendedSentence = applyCaseFlux(blendedSentence, currentSeed + 17);
+        blendedSentence = applyPunctuationStutter(blendedSentence, currentSeed + 18);
+
+        // V26: Fragment Bombs
+        const fragmented = applyFragmentBomb(blendedSentence, currentSeed + 19);
+        for (let fragment of fragmented) {
+            shuffledOutput.push(fragment);
+        }
     }
 
-    return shuffledOutput.join(" ").replace(/\s{2,}/g, " ").trim();
+    return shuffledOutput.join(" ")
+        .replace(/\s{2,}/g, " ")
+        .replace(/\s+([.!?])/g, "$1")
+        .trim();
 }

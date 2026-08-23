@@ -12,7 +12,7 @@ export default async function AdminLayout({
   }
 
   if (!canAccessAdminRole(role)) {
-    redirect("/store?error=unauthorized_admin");
+    redirect("/?error=unauthorized_admin");
   }
 
   return <>{children}</>;

@@ -12,7 +12,7 @@ export const runtime = 'edge';
 
 export const metadata: Metadata = {
   title: 'Rizik Global | Engineering the Future of Eco-Tech & Food Safety',
-  description: 'Rizik Global is the holding company for Rizik EcoMat, Rizik BioShield, and enterprise supply operations.',
+  description: 'Rizik Global is the holding company for enterprise manufacturing, packaging, and supply operations.',
 };
 
 export default async function RootLayout({
@@ -50,4 +50,3 @@ export default async function RootLayout({
     </html>
   );
 }
-

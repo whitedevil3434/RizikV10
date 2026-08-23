@@ -53,7 +53,6 @@ export async function createProductAction(formData: FormData) {
     }
 
     revalidatePath("/admin/products");
-    revalidatePath("/store");
     return { success: true };
 }
 
@@ -98,7 +97,6 @@ export async function updateProductAction(formData: FormData) {
     }
 
     revalidatePath("/admin/products");
-    revalidatePath("/store");
     return { success: true };
 }
 
@@ -119,7 +117,6 @@ export async function toggleProductAction(productId: string, isActive: boolean) 
     }
 
     revalidatePath("/admin/products");
-    revalidatePath("/store");
     return { success: true };
 }
 
@@ -140,6 +137,5 @@ export async function deleteProductAction(productId: string) {
     }
 
     revalidatePath("/admin/products");
-    revalidatePath("/store");
     return { success: true };
 }

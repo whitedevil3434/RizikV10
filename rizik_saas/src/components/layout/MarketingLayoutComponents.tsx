@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import RizikLogo from '@/components/brand/rizik-logo';
 
 interface MarketingProps {
-  user: any;
+  user: unknown;
   role: string | undefined;
   canAccessPortal: boolean;
   canAccessAdmin: boolean;
@@ -17,6 +17,7 @@ const ecosystemLinks = [
   { href: '/', label: 'Global' },
   { href: '/b2b', label: 'B2B' },
   { href: '/subsidiaries', label: 'Subsidiaries' },
+  { href: '/clink', label: 'C-Link' },
   { href: '/impact', label: 'Impact' },
 ];
 
@@ -24,22 +25,17 @@ const publicExperienceLinks = [
   { href: '/fair', label: 'Rizik Fair' },
   { href: '/community', label: 'Community' },
   { href: '/trust', label: 'Trust' },
-  { href: '/writer', label: 'Rizik Writer' },
 ];
 
-const getMobileCommerceLinks = (user: any) => [
-  { href: '/store', label: 'Store' },
-  { href: '/cart', label: 'Cart' },
+const getMobileCommerceLinks = (user: unknown) => [
   { href: user ? '/account' : '/login', label: user ? 'Account' : 'Login' },
 ];
 
-export function MarketingNav({ user, role, canAccessPortal, canAccessAdmin, workspaceLabel }: MarketingProps) {
+export function MarketingNav({ user, canAccessPortal, canAccessAdmin, workspaceLabel }: MarketingProps) {
   const pathname = usePathname();
   const navRef = useRef<HTMLElement | null>(null);
   const [isMobileNavVisible, setIsMobileNavVisible] = useState(true);
   const isControlPlane = pathname?.startsWith('/admin') || pathname?.startsWith('/portal');
-
-  if (isControlPlane) return null;
 
   const mobileCommerceLinks = getMobileCommerceLinks(user);
 
@@ -99,6 +95,8 @@ export function MarketingNav({ user, role, canAccessPortal, canAccessAdmin, work
     return () => window.removeEventListener('scroll', handleScroll);
   }, [pathname]);
 
+  if (isControlPlane) return null;
+
   return (
     <nav
       ref={navRef}
@@ -133,11 +131,6 @@ export function MarketingNav({ user, role, canAccessPortal, canAccessAdmin, work
                   {item.label}
                 </Link>
               ))}
-              <Link href="/store" className="text-[#031E49]/80 hover:text-[#031E49] px-2 py-2 rounded-md text-sm font-semibold transition-colors">E-Commerce</Link>
-              <Link href="/cart" className="text-[#031E49]/80 hover:text-[#031E49] px-2 py-2 rounded-md text-sm font-semibold transition-colors">
-                <svg className="w-5 h-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" /></svg>
-                Cart
-              </Link>
               <Link href={user ? "/account" : "/login"} className="text-[#031E49]/80 hover:text-[#031E49] px-2 py-2 rounded-md text-sm font-semibold transition-colors">
                 {user ? "Account" : "Login"}
               </Link>

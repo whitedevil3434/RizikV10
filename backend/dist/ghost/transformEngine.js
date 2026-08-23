@@ -1,9 +1,71 @@
-// Godly Chaos Engine: Forensic Transformer v3.0
+// Godly Chaos Engine: Forensic Transformer v3.3
 // Implementation: 100% Non-Generative Structural Hull Resin (SHR).
+// v3.3: Structure-Preserving Pipeline + Extreme Mode Integration.
 // NO LLM CALLS: Rule-based mapping from Human Consortium.
 import { FidelityEngine } from './fidelityEngine';
 import { applyStructuralChaos } from './chaosEngine';
+import { evaluateHumanQuality, shouldRegenerateByQuality } from './qualityEngine';
 import { applyHumanErrors, lightReInjectErrors, PRESERVE_ERRORS_SYSTEM_PROMPT } from './humanErrorEngine';
+/**
+ * V26: N-gram Decimator
+ * Scans for common AI 3-gram signatures and forcibly breaks them.
+ */
+function applyNgramDecimator(text, seed) {
+    let out = text;
+    const commonAIPatterns = [
+        [/\bis one of (?:the|a)\b/gi, "is definitely one of the"],
+        [/\bthe prospect of\b/gi, "that whole prospect of"],
+        [/\bfundamentally shapes the\b/gi, "basically drives the"],
+        [/\bin terms of\b/gi, "when it comes to"],
+        [/\bthe concept of\b/gi, "that whole idea of"],
+        [/\bit can be argued that\b/gi, "basically, you could say that"],
+        [/\ba variety of\b/gi, "lots of different"],
+        [/\bplay a role in\b/gi, "be a part of"],
+        [/\bthe importance of\b/gi, "why it matters to have"],
+        [/\ba significant (?:number|amount) of\b/gi, "a huge chunk of"]
+    ];
+    for (const [re, rep] of commonAIPatterns) {
+        if (Math.abs(Math.sin(seed++) * 10000) % 1 < 0.4) {
+            out = out.replace(re, rep);
+        }
+    }
+    return out;
+}
+/**
+ * V22.3: Rhythmic Pulse (Burstiness Engine)
+ * Intentionally varies sentence lengths to destroy AI symmetry (Perplexity Boost).
+ * AI loves 15-25 word sentences. We force Short-Long-Short patterns.
+ */
+function applyRhythmicPulse(text, seed) {
+    const sentences = text.split(/(?<=[.!?])\s+/);
+    if (sentences.length < 3)
+        return text;
+    let result = [];
+    for (let i = 0; i < sentences.length; i++) {
+        let sent = sentences[i];
+        let wc = sent.split(/\s+/).length;
+        // If 3 sentences in a row are medium length, force a split or merge
+        if (i > 1) {
+            let prev1Wc = sentences[i - 1].split(/\s+/).length;
+            let prev2Wc = sentences[i - 2].split(/\s+/).length;
+            if (wc >= 12 && wc <= 22 && prev1Wc >= 12 && prev1Wc <= 22 && prev2Wc >= 12 && prev2Wc <= 22) {
+                // Stochastic Jolt: Split current or merge with next
+                const r = Math.abs(Math.sin(seed + i) * 10000) % 1;
+                if (r < 0.5 && wc > 15) {
+                    // Split at a comma or semicolon
+                    const parts = sent.split(/[,;]/);
+                    if (parts.length > 1) {
+                        result.push(parts[0].trim() + ".");
+                        result.push(parts.slice(1).join(", ").trim());
+                        continue;
+                    }
+                }
+            }
+        }
+        result.push(sent);
+    }
+    return result.join(" ");
+}
 const NOISE_PATTERNS = [
     /!\[[^\]]*]\([^)]*\)/gi, // markdown images
     /\[[^\]]+]\((?:https?:\/\/|www\.)[^)]*\)/gi, // markdown links
@@ -315,6 +377,10 @@ function simpleStableHash(input) {
     }
     return Math.abs(h >>> 0);
 }
+function seededRandom(seed) {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+}
 function sentenceWordCount(text) {
     return (text.match(/\b[A-Za-z']+\b/g) || []).length;
 }
@@ -397,6 +463,31 @@ export function applyStructureRefinement(text, mode) {
         .trim();
 }
 /**
+ * V9.0: Nuclear Spacing Jitter
+ * Randomly injects double spaces or spacing irregularities between words
+ * to mimic natural human typing flows. AI never produces these patterns.
+ */
+function applyNuclearSpacingJitter(text, seed) {
+    const words = text.split(/\s+/);
+    let s = seed;
+    let jittered = "";
+    for (let i = 0; i < words.length; i++) {
+        jittered += words[i];
+        if (i < words.length - 1) {
+            s = simpleStableHash(s.toString() + words[i]);
+            const roll = seededRandom(s);
+            // 5% chance of double space, 2% chance of triple space
+            if (roll < 0.05)
+                jittered += "  ";
+            else if (roll < 0.02)
+                jittered += "   ";
+            else
+                jittered += " ";
+        }
+    }
+    return jittered;
+}
+/**
  * Strips markdown, preamble, and explanations from LLM output.
  * Models often add "Here is the edited text:" or markdown formatting despite instructions.
  */
@@ -432,58 +523,162 @@ function resolveStrength(options) {
         return raw;
     return "balanced";
 }
-function isHeader(text) {
-    const trimmed = text.trim();
-    if (trimmed.length === 0)
-        return false;
-    // Common header patterns: "Introduction", "Point 1:", "1. Analysis", etc.
-    // Usually short, no ending punctuation except colon, or specific keywords.
+const HEADING_KEYWORDS = /^(introduction|conclusion|summary|background|abstract|discussion|analysis|results|recommendations|methodology|literature\s+review|theoretical\s+framework|data\s+(collection|analysis)|research\s+(design|questions?|methodology)|findings|implications|limitations|acknowledgements?|appendix|appendices)$/i;
+const REFERENCE_TRIGGERS = /^(references|bibliography|works\s+cited|cited\s+works|reference\s+list|sources|literature\s+cited)\s*:?\s*$/i;
+const TOC_HEADER = /^(table\s+of\s+contents|contents|list\s+of\s+(tables|figures))\s*:?\s*$/i;
+// ToC line: "1.1 Background ..... 3" or "1.1 Background   3"
+const TOC_LINE = /^\s*(?:\d+(?:\.\d+)*|[ivxlc]+|[a-z])(?:[.):]|\s)\s*.+\s*(?:\.{2,}|\s{3,})\s*\d+\s*$/i;
+function classifyLine(text, lineIndex, totalLines, isInReferenceSection, isInTocSection) {
+    const originalTrimmed = text.trim();
+    if (originalTrimmed.length === 0)
+        return 'body'; // blank lines handled separately
+    // 1. ONE-WAY GATE: References
+    if (isInReferenceSection)
+        return 'reference';
+    // Strip markdown formatting specifically for classification to avoid misses
+    // e.g. "## Table of Contents", "**Introduction**", "### 1.1 Background"
+    const classifyText = originalTrimmed.replace(/^#+\s*/, '').replace(/[*_~`]/g, '').trim();
+    const trimmed = classifyText;
+    // 2. HARD MARKDOWN HEADING GUARD
+    // If the raw text explicitly stars with Markdown heading (###), it's ALWAYS a heading/subheading
+    let isExplicitMarkdownHeading = false;
+    if (/^#{1,2}\s+/.test(originalTrimmed)) {
+        isExplicitMarkdownHeading = true;
+    }
+    else if (/^#{3,6}\s+/.test(originalTrimmed)) {
+        return 'subheading';
+    }
+    // Reference section trigger
+    if (REFERENCE_TRIGGERS.test(trimmed) || (isExplicitMarkdownHeading && REFERENCE_TRIGGERS.test(trimmed))) {
+        return 'reference';
+    }
+    // Table of Contents header
+    if (TOC_HEADER.test(trimmed) || (isExplicitMarkdownHeading && TOC_HEADER.test(trimmed))) {
+        return 'toc'; // This will trigger isInTocSection in the loop
+    }
+    // If inside TOC, treat list items, short lines, and numbered entries as 'toc' untouched lines
+    if (isInTocSection) {
+        // If it's a very long body-like paragraph, we've likely exited the TOC
+        if (trimmed.length > 150 && !/^\s*(?:\d+[-.)]|\*|-|\+)\s/.test(originalTrimmed)) {
+            // Exit TOC natively (handled in loop), but for now return body
+            return 'body';
+        }
+        // If it's a hard markdown heading, and we are in TOC, it means TOC finished, real section begins
+        if (isExplicitMarkdownHeading)
+            return 'heading';
+        return 'toc';
+    }
+    if (isExplicitMarkdownHeading)
+        return 'heading';
+    // ToC entry line (page numbers with dots)
+    if (TOC_LINE.test(trimmed))
+        return 'toc';
+    // Title detection: first non-empty line if short and title-like
+    if (lineIndex === 0 && trimmed.length < 120 && trimmed.length > 3) {
+        const words = trimmed.split(/\s+/);
+        if (words.length <= 20 && !/[.!?]$/.test(trimmed))
+            return 'title';
+    }
+    // Heading patterns
     const words = trimmed.split(/\s+/);
-    if (words.length > 8)
-        return false; // Headers are usually short
-    const headerKeywords = /^(introduction|conclusion|summary|background|abstract|discussion|analysis|results|recommendations|methodology)$/i;
-    if (headerKeywords.test(trimmed.replace(/[:.]/g, "")))
-        return true;
-    const pointPattern = /^(\d+|[a-z]|[A-Z])[\.)]\s+.+/i; // 1. or A. etc
-    if (pointPattern.test(trimmed))
-        return true;
-    const colonHeader = /^[A-Z][^:]+:$/; // Title: style
-    if (colonHeader.test(trimmed))
-        return true;
-    // If it's short and uppercase or bold-ish (all caps)
-    if (trimmed.length < 50 && trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed))
-        return true;
-    return false;
+    // Keyword-only headings: "Introduction", "Methodology", etc.
+    if (HEADING_KEYWORDS.test(trimmed.replace(/[:.]/g, "")))
+        return 'heading';
+    // Numbered headings: "1.", "1.1", "1.1.1", "2.3.1 Data Collection"
+    if (/^\d+(\.\d+)*[.):]?\s+.+/i.test(trimmed) && words.length <= 12)
+        return 'heading';
+    // Lettered headings: "A.", "a)", "B."
+    if (/^[a-zA-Z][.):]\s+.+/i.test(trimmed) && words.length <= 10)
+        return 'heading';
+    // Roman numeral headings: "IV. Discussion", "III. Results"
+    if (/^[IVXLC]+[.):]\s+.+/i.test(trimmed) && words.length <= 10)
+        return 'heading';
+    // Chapter/Section/Part: "Chapter 2: Analysis"
+    if (/^(chapter|section|part)\s+\d+/i.test(trimmed) && words.length <= 12)
+        return 'heading';
+    // Colon-terminated titles: "Background:" or "Data Analysis:"
+    if (/^[A-Z][^:]{2,60}:\s*$/.test(trimmed) && words.length <= 8)
+        return 'heading';
+    // ALL CAPS short lines (< 80 chars): "LITERATURE REVIEW"
+    if (trimmed.length < 80 && trimmed === trimmed.toUpperCase() && /[A-Z]{2,}/.test(trimmed) && words.length <= 10)
+        return 'heading';
+    // Short non-punctuated lines that look like sub-headings
+    if (words.length <= 6 && trimmed.length < 60 && !/[.!?;,]$/.test(trimmed) && /^[A-Z]/.test(trimmed)) {
+        // Additional check: no lowercase articles at start (avoid catching short sentences)
+        if (!/^(the|a|an|this|that|it|we|he|she|they|in|on|at|for|to)\s/i.test(trimmed))
+            return 'heading';
+    }
+    // List Items
+    if (/^\s*[-*+]\s+/.test(originalTrimmed) || /^\s*\d+[\.)]\s+/.test(originalTrimmed)) {
+        return 'list_item';
+    }
+    return 'body';
 }
 export async function transformText(aiText, dnaProfile, env, options = {}) {
     if (!aiText || !dnaProfile)
         return { pipelineOutput: aiText, llmOutput: null };
     const isAcademic = options.academic || false;
-    // Split into structural blocks (paragraphs and headers)
-    const lines = aiText.split(/\r?\n/);
+    const isAssignmentMode = options.assignmentMode || false;
+    const useBladerHumanizer = options.bladerHumanizer !== false;
+    const activePersonaID = options.persona || "AUTO";
+    const personaIntensity = typeof options.personaIntensity === "number" ? options.personaIntensity : 1.0;
+    const guardDropEnabled = options.guardDropEnabled !== false;
+    // ─── Document Structure Parsing (v3.3) ──────────────────────────────
+    // Split into structural blocks. Only 'body' blocks get humanized.
+    const rawLines = aiText.split(/\r?\n/);
     const blocks = [];
     let currentParagraph = "";
-    for (const line of lines) {
-        if (isHeader(line)) {
+    let isInReferenceSection = false;
+    let isInTocSection = false;
+    let firstNonEmptyLineIndex = -1;
+    // Find first non-empty line index for title detection
+    for (let i = 0; i < rawLines.length; i++) {
+        if (rawLines[i].trim().length > 0) {
+            firstNonEmptyLineIndex = i;
+            break;
+        }
+    }
+    for (let i = 0; i < rawLines.length; i++) {
+        const line = rawLines[i];
+        const relativeIndex = i === firstNonEmptyLineIndex ? 0 : 1; // pass 0 only for actual first content line
+        // Classify
+        const lineType = classifyLine(line, relativeIndex, rawLines.length, isInReferenceSection, isInTocSection);
+        // One-way gate transitions
+        if (lineType === 'reference')
+            isInReferenceSection = true;
+        // TOC transitions
+        if (lineType === 'toc' && !isInTocSection && TOC_HEADER.test(line.replace(/^#+\s*/, '').replace(/[*_~`]/g, '').trim())) {
+            isInTocSection = true;
+        }
+        else if (isInTocSection && (lineType === 'body' || lineType === 'heading' || lineType === 'subheading')) {
+            isInTocSection = false;
+        }
+        if (lineType !== 'body') {
+            // Flush any accumulated body paragraph
             if (currentParagraph.trim()) {
-                blocks.push({ type: 'paragraph', content: currentParagraph.trim() });
+                blocks.push({ type: 'body', content: currentParagraph.trim() });
                 currentParagraph = "";
             }
-            blocks.push({ type: 'header', content: line.trim() });
+            // Pass structural lines through exactly (preserve original line)
+            blocks.push({ type: lineType, content: line });
         }
         else if (line.trim() === "") {
+            // Blank line: flush paragraph
             if (currentParagraph.trim()) {
-                blocks.push({ type: 'paragraph', content: currentParagraph.trim() });
+                blocks.push({ type: 'body', content: currentParagraph.trim() });
                 currentParagraph = "";
             }
         }
         else {
+            // Accumulate body text
+            // We only merge consecutive body lines that are part of the same paragraph block.
             currentParagraph += (currentParagraph ? " " : "") + line.trim();
         }
     }
     if (currentParagraph.trim()) {
-        blocks.push({ type: 'paragraph', content: currentParagraph.trim() });
+        blocks.push({ type: 'body', content: currentParagraph.trim() });
     }
+    console.log(`📄 Ghost v3.3: AST Parser — ${blocks.filter(b => b.type === 'body').length} body, ${blocks.filter(b => b.type === 'heading' || b.type === 'subheading').length} headers, ${blocks.filter(b => b.type === 'toc').length} toc, ${blocks.filter(b => b.type === 'list_item').length} lists`);
     // Map 0-1.0 chaosLevel to strength if provided
     let strength = "balanced";
     if (options.chaosLevel !== undefined) {
@@ -506,19 +701,63 @@ export async function transformText(aiText, dnaProfile, env, options = {}) {
         errorFactor: errorFactor,
         isAcademic: isAcademic,
         dnaSeed: userDnaSeed,
+        assignmentMode: isAssignmentMode,
+        persona: activePersonaID,
+        personaIntensity,
+        guardDropEnabled,
     };
-    console.log(`🧬 Ghost v3.2: Initializing Section-Aware Pipeline [Blocks: ${blocks.length}]...`);
+    // ─── Extreme Mode Multiplier (v3.3) ──────────────────────────────────
+    const extremeMultiplier = humanErrorThreshold < 40 ? 1.0
+        : humanErrorThreshold < 60 ? 1.3
+            : humanErrorThreshold < 80 ? 1.6
+                : 2.0;
+    console.log(`🧬 Ghost v3.3: Pipeline [Blocks: ${blocks.length}] [ExtremeMultiplier: ${extremeMultiplier}x]...`);
     let finalPipelineOutputArray = [];
     let finalLlmOutputArray = [];
+    let bodyParagraphIndex = 0;
     try {
         for (const block of blocks) {
-            if (block.type === 'header') {
-                finalPipelineOutputArray.push(block.content);
-                finalLlmOutputArray.push(block.content);
+            // PARTIAL PASS THROUGH & STRUCTURAL MUTATION
+            if (block.type !== 'body') {
+                // 1. Structural Markdown Purge
+                let cleanContent = block.content.replace(/^#+\s*/, '').replace(/[*_~`]/g, '').trim();
+                // 2. Exact fact preservation for References (no typos allowed)
+                if (block.type === 'reference') {
+                    finalPipelineOutputArray.push(cleanContent);
+                    finalLlmOutputArray.push(cleanContent);
+                    continue;
+                }
+                // 3. Deterministic Sync-Mutation for TOC, Headings, and Lists
+                if (humanErrorThreshold > 0 && cleanContent.length > 2) {
+                    const blockSeedHash = simpleStableHash(cleanContent.toLowerCase());
+                    const structuralErrorConfig = {
+                        ...errorConfig,
+                        // Seed depends strictly on the string itself, guaranteeing TOC matches Headers
+                        dnaSeed: userDnaSeed + "_" + blockSeedHash,
+                        extremeMultiplier: 1.0, // Keep structural headers relatively stable, don't over-mutate
+                        persona: activePersonaID,
+                        personaIntensity,
+                        guardDropEnabled,
+                    };
+                    const errorResult = applyHumanErrors(cleanContent, structuralErrorConfig);
+                    // POST-CHECK VALIDATOR: Auto-Repair
+                    // If the error mutation somehow destroyed the entire text or reduced it significantly, fallback to the original structure
+                    if (errorResult.text && errorResult.text.length > (cleanContent.length * 0.3)) {
+                        cleanContent = errorResult.text;
+                    }
+                    else {
+                        console.warn("Ghost Post-Check: Structural corruption detected. Auto-repairing back to original.");
+                        // Fallback to original cleanContent
+                    }
+                }
+                // Both Pipeline and LLM arrays use the exact identically-mutated header
+                finalPipelineOutputArray.push(cleanContent);
+                finalLlmOutputArray.push(cleanContent);
                 continue;
             }
             // Process Paragraph
             const paragraphText = block.content;
+            const pIdx = bodyParagraphIndex++;
             // Phase I: Rule-Based Fact Segmentation
             const factAtoms = paragraphText.split(/[.!?;]+/g)
                 .map(s => s.trim())
@@ -575,6 +814,7 @@ export async function transformText(aiText, dnaProfile, env, options = {}) {
             const leadUsage = {};
             const leadBudget = Math.max(1, Math.floor(factAtoms.length / 6));
             let leadCount = 0;
+            const recentAssignmentConnectors = [];
             factAtoms.forEach((atom, idx) => {
                 if (/^(and|but|or|so|yet)$/i.test(atom))
                     return;
@@ -584,6 +824,56 @@ export async function transformText(aiText, dnaProfile, env, options = {}) {
                 if (connector === lastConnector)
                     connector = connectors[(idx * 5 + 2) % connectors.length];
                 let targetContent = atom.trim();
+                targetContent = FidelityEngine.aiClichePurge(targetContent);
+                if (!targetContent)
+                    return; // Skip if it was purely an AI filler phrase
+                // ─── Phase II: Fragmenting (Assignment Mode Demolition) ─────────
+                if (isAssignmentMode && targetContent.split(/\s+/).length > 20) {
+                    // Attempt a fracture at middle commas or conjunctions
+                    const fractureRegex = /(.{30,80}), (which|that|because|since|and) (.{30,})/i;
+                    const fractured = targetContent.replace(fractureRegex, (m, part1, conj, part2) => {
+                        return `${part1}. This ${conj} ${part2}`;
+                    });
+                    if (fractured !== targetContent) {
+                        targetContent = fractured;
+                        console.log("🪓 Structural Demolition: Fragmented long AI sentence.");
+                    }
+                }
+                // Assignment Mode Override (V7.0 Stealth)
+                if (isAssignmentMode) {
+                    const capContent = targetContent.charAt(0).toUpperCase() + targetContent.slice(1);
+                    // V7.0 Stealth: Lower Connection Density (30% instead of 70%)
+                    // V22.3: Lower Connection Density (15% vs 30%) to avoid "Also/Alongside" addiction
+                    const shouldConnect = (seededRandom(simpleStableHash(targetContent + pIdx)) < 0.15);
+                    let chosenConnector = "";
+                    if (shouldConnect && seededRandom(simpleStableHash(targetContent + "conn")) < 0.2) {
+                        for (const conn of connectors) {
+                            if (!recentAssignmentConnectors.includes(conn)) {
+                                chosenConnector = conn;
+                                break;
+                            }
+                        }
+                        if (!chosenConnector)
+                            chosenConnector = connectors[0];
+                    }
+                    if (chosenConnector) {
+                        assembly += `${chosenConnector.charAt(0).toUpperCase() + chosenConnector.slice(1)}, ${lowerInitialForEmbeddedClause(targetContent)}. `;
+                        recentAssignmentConnectors.push(chosenConnector);
+                        if (recentAssignmentConnectors.length > 3)
+                            recentAssignmentConnectors.shift();
+                    }
+                    else {
+                        // V7.0: Randomly join sentences using 'and' or ';' to increase burstiness
+                        const jitterSeed = seededRandom(simpleStableHash(targetContent + "jitter"));
+                        if (jitterSeed < 0.15 && assembly.endsWith(". ")) {
+                            assembly = assembly.slice(0, -2) + ` ${jitterSeed < 0.08 ? 'and' : ';'} ${lowerInitialForEmbeddedClause(targetContent)}. `;
+                        }
+                        else {
+                            assembly += `${capContent}. `;
+                        }
+                    }
+                    return;
+                }
                 let hullRhythm = isAcademic
                     ? pickHullRhythm(hullText)
                     : pickLeadByUsage(casualLeadPool, leadUsage, simpleStableHash(`${paragraphText}:${idx}`));
@@ -591,16 +881,16 @@ export async function transformText(aiText, dnaProfile, env, options = {}) {
                     hullRhythm = pickLeadByUsage(casualLeadPool, leadUsage, simpleStableHash(`${paragraphText}:retry:${idx}`));
                 }
                 if (isAcademic) {
-                    if ((idx % 4 === 0) && (Math.random() < 0.15)) {
+                    if ((idx % 4 === 0) && (seededRandom(simpleStableHash(`${paragraphText}:acad:${idx}`)) < 0.15)) {
                         assembly += `${targetContent.charAt(0).toUpperCase() + targetContent.slice(1)}. `;
                     }
                     else {
-                        assembly += `${hullRhythm}, ${targetContent}. `;
+                        assembly += `${hullRhythm}, ${lowerInitialForEmbeddedClause(targetContent)}. `;
                     }
                 }
                 else {
                     const shouldLeadWithFiller = (idx % 6 === 0) && (leadUsage[hullRhythm] || 0) < 1 && leadCount < leadBudget;
-                    const shouldUseConnector = !shouldLeadWithFiller && idx % 5 === 1;
+                    const shouldUseConnector = !shouldLeadWithFiller && idx % 5 === 1 && seededRandom(simpleStableHash(`${paragraphText}:conn:${idx}`)) < 0.3; // V22.2 Reducer
                     if (shouldLeadWithFiller) {
                         assembly += `${hullRhythm}, ${lowerInitialForEmbeddedClause(targetContent)}. `;
                         leadUsage[hullRhythm] = (leadUsage[hullRhythm] || 0) + 1;
@@ -617,7 +907,8 @@ export async function transformText(aiText, dnaProfile, env, options = {}) {
                 lastRhythm = hullRhythm;
             });
             let outputParagraph = assembly.trim();
-            outputParagraph = FidelityEngine.alignPhrasing(outputParagraph, isAcademic);
+            const fidelitySeed = simpleStableHash(`${userDnaSeed}:fidelity:${outputParagraph.slice(0, 40)}`);
+            outputParagraph = FidelityEngine.alignPhrasing(outputParagraph, isAcademic, fidelitySeed);
             if (isAcademic) {
                 outputParagraph = FidelityEngine.purgeSlang(outputParagraph);
                 outputParagraph = outputParagraph.replace(/\bi\b/g, 'I');
@@ -625,12 +916,27 @@ export async function transformText(aiText, dnaProfile, env, options = {}) {
             else {
                 outputParagraph = normalizeSentenceCase(outputParagraph);
             }
+            // ─── Quality Gate (v3.3: Bypassed in V6.5 Assignment Mode) ──────
+            const qualityCheck = isAssignmentMode
+                ? { score: 100, reasons: [], metrics: {} }
+                : evaluateHumanQuality(outputParagraph, paragraphText);
+            if (!isAssignmentMode && shouldRegenerateByQuality(qualityCheck)) {
+                // One retry with shifted seed
+                let retryOutput = applyStructuralChaos(paragraphText, `${userDnaSeed}:retry:${pIdx}`, isAcademic);
+                const retryQuality = evaluateHumanQuality(retryOutput, paragraphText);
+                if (retryQuality.score > qualityCheck.score) {
+                    outputParagraph = retryOutput;
+                    console.log(`🔄 Quality Gate: Retry improved score ${qualityCheck.score} → ${retryQuality.score}`);
+                }
+            }
             // Phase IV: Chaos Entropy Validator Loop
             let finalParagraphOutput = outputParagraph;
             let passCount = 0;
             let entropySufficient = false;
             let userHash = userDnaSeed;
-            while (passCount < 2 && !entropySufficient) {
+            // V22.2: Enabled for Assignment Mode to guarantee AI Detector Bypass (Forensic Grade)
+            const maxPasses = isAssignmentMode ? 1 : 2; // Safe mode for assignments (1 pass)
+            while (passCount < maxPasses && !entropySufficient) {
                 passCount++;
                 finalParagraphOutput = applyStructuralChaos(finalParagraphOutput, userHash + passCount.toString(), isAcademic);
                 const wc = (finalParagraphOutput.match(/\b\w+\b/g) || []).length;
@@ -640,18 +946,55 @@ export async function transformText(aiText, dnaProfile, env, options = {}) {
                     entropySufficient = true;
             }
             outputParagraph = finalParagraphOutput;
-            outputParagraph = applyHumanizerQualityPolicy(outputParagraph);
-            outputParagraph = applyStructureRefinement(outputParagraph, strength);
-            outputParagraph = dedupeAndRepairFlow(outputParagraph);
-            outputParagraph = normalizeTypographyArtifacts(outputParagraph);
-            // Human Error Injection Stage 1
+            // Trace V22.3: Pulse & Human Narrative Refinement
+            outputParagraph = applyRhythmicPulse(outputParagraph, simpleStableHash(userDnaSeed + pIdx));
+            // V6.5: Skip Refinement in Assignment Mode to preserve Human Chaos
+            if (!isAssignmentMode) {
+                outputParagraph = applyHumanizerQualityPolicy(outputParagraph);
+                outputParagraph = applyStructureRefinement(outputParagraph, strength);
+                outputParagraph = dedupeAndRepairFlow(outputParagraph);
+                outputParagraph = normalizeTypographyArtifacts(outputParagraph);
+            }
+            else {
+                // ASSIGNMENT MODE: Narrative Pass (Sovereign V13)
+                // V22.2: Deep Cliche Purge ENFORCED to destroy GPT-4 lexical signatures.
+                outputParagraph = FidelityEngine.aiClichePurge(outputParagraph);
+                // [SKIP LLM] Pure Forensic Hull Resin Path
+                outputParagraph = applyStructuralChaos(paragraphText, userDnaSeed + pIdx, isAcademic);
+                // V26: Nuclear N-gram Decimator Pass
+                outputParagraph = applyNgramDecimator(outputParagraph, simpleStableHash(userDnaSeed + pIdx + "_ngram"));
+                outputParagraph = applyHumanNarrativePass(outputParagraph, simpleStableHash(userDnaSeed + pIdx));
+                // V9.0: Inject Nuclear Spacing Jitter
+                outputParagraph = applyNuclearSpacingJitter(outputParagraph, simpleStableHash(userDnaSeed + pIdx));
+            }
+            // Human Error Injection Stage 1 (v3.3: with extreme multiplier)
             if (humanErrorThreshold > 0) {
-                const errorResult = applyHumanErrors(outputParagraph, errorConfig);
+                // 🎭 Ghost V6.0: Shadow Entropy Jitter
+                let shadowEntropyJitter = 1.0;
+                if (isAssignmentMode) {
+                    const modValue = pIdx % 4;
+                    if (modValue === 0)
+                        shadowEntropyJitter = 1.25; // Boosted entropy
+                    else if (modValue === 1)
+                        shadowEntropyJitter = 0.65; // High-perplexity "Focused" stretch
+                    else if (modValue === 2)
+                        shadowEntropyJitter = 1.10; // Medium-high entropy
+                    else
+                        shadowEntropyJitter = 0.85; // Natural variance
+                }
+                const extremeConfig = {
+                    ...errorConfig,
+                    dnaSeed: `${userDnaSeed}_v6_${pIdx}`, // Salt per paragraph
+                    extremeMultiplier: extremeMultiplier * shadowEntropyJitter,
+                    persona: activePersonaID
+                };
+                const errorResult = applyHumanErrors(outputParagraph, extremeConfig);
                 outputParagraph = errorResult.text;
+                console.log(`⚡ Error Stage 1: ${errorResult.mutations.length} mutations injected [×${extremeMultiplier}]`);
             }
             finalPipelineOutputArray.push(outputParagraph);
-            // Stage LLM
-            if (env.AI) {
+            // Stage LLM (v3.3: Bypass in Assignment Mode to prevent 'Re-AI-ification')
+            if (env.AI && !isAssignmentMode) {
                 let llmPara = outputParagraph;
                 try {
                     const sysPrompt = humanErrorThreshold > 0 ? PRESERVE_ERRORS_SYSTEM_PROMPT(isAcademic) : `You are a GOD-MODE sentence restructuring engine. TOTAL STRUCTURAL INVERSION.`;
@@ -668,26 +1011,103 @@ export async function transformText(aiText, dnaProfile, env, options = {}) {
                 catch (e) {
                     console.error("Para LLM Error:", e);
                 }
-                // Stage 3: Safety net
+                // Stage 3: Safety net (v3.3: expanded — only runs if LLM was used)
                 if (humanErrorThreshold > 0) {
-                    const reInjectResult = lightReInjectErrors(llmPara, errorConfig);
+                    const safetyConfig = {
+                        ...errorConfig,
+                        extremeMultiplier: extremeMultiplier,
+                    };
+                    const reInjectResult = lightReInjectErrors(llmPara, safetyConfig);
                     llmPara = reInjectResult.text;
+                    console.log(`🛡️ Safety Net: ${reInjectResult.mutations.length} re-injected`);
                 }
                 llmPara = normalizeTypographyArtifacts(llmPara);
                 finalLlmOutputArray.push(llmPara);
             }
             else {
+                // If Skip LLM (Assignment Mode) or No AI, use the already humanized outputParagraph
                 finalLlmOutputArray.push(outputParagraph);
             }
         }
-        const assemble = (arr) => arr.join("\n\n").trim();
+        const assemble = (arr, blocksRef) => {
+            let result = "";
+            for (let i = 0; i < arr.length; i++) {
+                const textStr = arr[i];
+                const bType = blocksRef[i].type;
+                result += textStr;
+                // Academic document formatting: Headings need clear separation
+                if (isAssignmentMode && (bType === 'heading' || bType === 'subheading')) {
+                    result += "\n\n";
+                }
+                else {
+                    result += "\n\n";
+                }
+            }
+            return result.trim();
+        };
+        // FINAL OUTPUT ISOLATION: 
+        // If Assignment Mode is active, we strip the LLM option entirely or return the pure result twice to avoid detector flags.
+        const finalPipeline = assemble(finalPipelineOutputArray, blocks);
+        const finalHybrid = isAssignmentMode ? null : (env.AI ? assemble(finalLlmOutputArray, blocks) : null);
+        console.log(`✅ Ghost Pipeline Finalized: [Pure: ${finalPipeline.length} chars] [Hybrid: ${finalHybrid?.length ?? 0} chars]`);
         return {
-            pipelineOutput: assemble(finalPipelineOutputArray),
-            llmOutput: env.AI ? assemble(finalLlmOutputArray) : null
+            pipelineOutput: finalPipeline,
+            llmOutput: finalHybrid
         };
     }
     catch (err) {
-        console.error("Ghost v3.2 Critical Error:", err);
+        console.error("Ghost v3.3 Critical Error:", err);
         return { pipelineOutput: aiText, llmOutput: null };
     }
+}
+/**
+ * V13: Human Narrative Pass
+ * Converts robotic AI-typical academic structures into conversational human narration.
+ */
+function applyHumanNarrativePass(text, seed) {
+    let output = text;
+    let s = seed;
+    const narrativeSwaps = [
+        { regex: /\bFurthermore\b/gi, swaps: ["On top of that,", "Plus,", "And another thing is,", "Going further,"] },
+        { regex: /\bConsequently\b/gi, swaps: ["So basically,", "As a result,", "Which means,", "That led to"] },
+        { regex: /\bMoreover\b/gi, swaps: ["In fact,", "Beyond that,", "What's more,", "Adding to this,"] },
+        { regex: /\bIn conclusion\b/gi, swaps: ["Finally,", "To wrap it up,", "All things considered,", "At the end of the day,"] },
+        { regex: /\bIt is evident that\b/gi, swaps: ["Clearly,", "We can see that", "It's pretty clear that", "Looking at this,"] },
+        { regex: /\bRegarding\b/gi, swaps: ["About", "Speaking of", "When it comes to", "On the topic of"] },
+        { regex: /\butilized\b/gi, swaps: ["used", "took", "applied"] },
+        { regex: /\bdemonstrates\b/gi, swaps: ["shows", "makes clear", "points to"] }
+    ];
+    narrativeSwaps.forEach((swap, idx) => {
+        output = output.replace(swap.regex, () => {
+            const options = swap.swaps;
+            return options[Math.floor(seededRandom(s + idx) * options.length)];
+        });
+    });
+    // V21: Inject fillers with Guard-Drop gating and reduced density
+    // Only inject fillers in the BACK HALF of the text (mimics human fatigue)
+    const sentences = output.split(/(?<=[.!?])\s+/);
+    const totalSent = sentences.length;
+    const fillers = [
+        "Actually, ", "I mean, ", "In real terms, ", "To be honest, ",
+        "Now, ", "At this point, ", "The thing is, ", "Look, ",
+        "Honestly, ", "In a way, ", "So, ", "Right, "
+    ];
+    // Track filler usage to prevent clustering of the SAME filler
+    const usedFillers = new Set();
+    const processed = sentences.map((sent, idx) => {
+        const progress = totalSent > 1 ? idx / (totalSent - 1) : 0;
+        // V21: Only inject fillers after 40% of document, max 8% chance
+        if (idx > 0 && progress > 0.4 && seededRandom(s + idx) < 0.08) {
+            let filler = fillers[Math.floor(seededRandom(s + idx + 1) * fillers.length)];
+            // Don't repeat the same filler within 5 sentences
+            if (usedFillers.has(filler))
+                return sent;
+            usedFillers.add(filler);
+            if (usedFillers.size > 3)
+                usedFillers.clear(); // Reset after 3 unique fillers used
+            return filler + sent.charAt(0).toLowerCase() + sent.slice(1);
+        }
+        return sent;
+    });
+    return processed.join(' ');
 }

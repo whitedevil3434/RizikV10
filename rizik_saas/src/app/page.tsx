@@ -33,10 +33,10 @@ export default function Home() {
 
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
             <Link
-              href="/store"
+              href="/b2b"
               className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-[#031E49] rounded-full hover:bg-[#0A2D6C] shadow-lg hover:shadow-xl"
             >
-              Browse E-Commerce
+              Enter B2B
               <ArrowRightIcon className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
 
@@ -45,6 +45,13 @@ export default function Home() {
               className="inline-flex items-center justify-center px-8 py-4 font-bold text-[#031E49] transition-all duration-200 bg-[#00B16A]/10 border-2 border-[#00B16A]/30 rounded-full hover:bg-[#00B16A]/20"
             >
               Join Rizik Fair
+            </Link>
+
+            <Link
+              href="/clink"
+              className="inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-[#00A150] rounded-full hover:bg-[#008F42] shadow-lg hover:shadow-xl"
+            >
+              Open C-Link
             </Link>
           </div>
         </div>
@@ -76,7 +83,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-[#031E49] mb-4">Operations & Subsidiaries</h2>
-            <p className="text-[#0A2D6C]/75 max-w-2xl mx-auto">The Rizik Global ecosystem operates across five specialized units, unified by automated logistics and eco-tech compliance.</p>
+            <p className="text-[#0A2D6C]/75 max-w-2xl mx-auto">The Rizik Global ecosystem operates across specialized units, unified by automated logistics and eco-tech compliance.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
             {/* Rizik Textile (Hero) */}
@@ -86,9 +93,9 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold text-[#031E49] mb-3">Rizik Textile</h3>
               <p className="text-[#0A2D6C]/75 text-sm leading-relaxed mb-6">
-                Redefining woven tech. Home to the **Rizik Eco-Mat** series—biodegradable, high-durability surfaces engineered for community and prayer spaces.
+                Redefining woven tech for enterprise textile manufacturing, precision fabrication, and institutional supply chains.
               </p>
-              <Link href="/store" className="text-sm font-bold text-[#00B16A] hover:underline">Explore Products →</Link>
+              <Link href="/b2b" className="text-sm font-bold text-[#00B16A] hover:underline">Explore B2B Intake →</Link>
             </div>
 
             {/* Rizik Bio-Tech */}
@@ -109,8 +116,22 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold text-[#00B16A] uppercase tracking-widest">Active Product: </span>
-                <Link href="#rizik-writer" className="text-xs font-bold text-[#031E49] hover:text-[#00B16A] transition-colors">Rizik Writer ↓</Link>
+                <Link href="/trust" className="text-xs font-bold text-[#031E49] hover:text-[#00B16A] transition-colors">Rizik Tech Ops ↓</Link>
               </div>
+            </div>
+
+            {/* C-Link */}
+            <div className="p-8 rounded-3xl bg-[#F9F9F9] border border-[#00A150]/25 hover:border-[#00A150]/50 transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#00A150] text-sm font-bold text-white">C</span>
+                  <h3 className="text-xl font-bold text-[#031E49]">C-Link</h3>
+                </div>
+                <p className="text-[#0A2D6C]/75 text-sm leading-relaxed mb-5">
+                  A private coordination workspace that shows what should happen, which capability can make it happen, what was assigned, and what actually happened.
+                </p>
+              </div>
+              <Link href="/clink" className="text-sm font-bold text-[#008F42] hover:underline">Open C-Link →</Link>
             </div>
 
             {/* Rizik Cloud Kitchen (Upcoming) */}
@@ -132,69 +153,22 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Rizik Writer (PRODUCT OF RIZIK TECH) */}
-            <div id="rizik-writer" className="p-8 rounded-3xl bg-[#031E49] border border-[#00B16A]/30 shadow-xl relative overflow-hidden group transition-all">
+            {/* Rizik Writer (disabled) */}
+            <div className="p-8 rounded-3xl bg-[#031E49] border border-[#00B16A]/30 shadow-xl relative overflow-hidden group transition-all">
               <div className="absolute top-0 right-0 p-4">
-                <span className="px-2 py-1 rounded bg-[#00B16A] text-white text-[10px] font-bold uppercase tracking-wider">New Launch</span>
+                <span className="px-2 py-1 rounded bg-[#00B16A] text-white text-[10px] font-bold uppercase tracking-wider">Under Upgrade</span>
               </div>
               <h3 className="text-xl font-bold text-white mb-3 flex flex-wrap items-center gap-2">
                 Rizik Writer
                 <span className="text-[9px] bg-white/10 px-2 py-1 rounded text-white/80 uppercase tracking-tighter">PRODUCT OF RIZIK TECH</span>
               </h3>
               <p className="text-white/70 text-sm leading-relaxed mb-6">
-                Advanced Voice DNA Humanizer. Stealing the "AI" fingerprint from text and injecting your unique linguistic signature. 100% Turnitin & GPTZero stealth.
+                Rizik Writer is temporarily offline while we complete a broader platform consolidation.
               </p>
-              <Link
-                href="/writer"
-                className="inline-flex items-center text-sm font-bold text-[#00B16A] hover:text-white transition-colors"
-              >
-                Launch DNA Engine →
-              </Link>
+              <span className="inline-flex items-center text-sm font-bold text-[#00B16A]/70">
+                Service paused
+              </span>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Visual Storytelling */}
-      <section className="w-full py-20 bg-[#F5F2EB] border-t border-[#031E49]/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
-            <div>
-              <p className="text-xs uppercase tracking-[0.14em] text-[#00784D] font-semibold">Field Stories</p>
-              <h2 className="mt-2 text-3xl font-bold text-[#031E49]">From Community Node to Global Supply</h2>
-            </div>
-            <Link href="/subsidiaries" className="text-sm font-bold text-[#031E49] hover:text-[#00B16A]">
-              Explore All Units
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <article className="bg-white rounded-3xl border border-[#031E49]/10 overflow-hidden shadow-sm">
-              <Image src="/story/mosque-case.jpg" alt="Mosque distribution case" width={960} height={640} className="w-full h-52 object-cover" />
-              <div className="p-6">
-                <p className="text-xs uppercase tracking-[0.12em] text-[#031E49]/70 font-semibold">Case Study 01</p>
-                <h3 className="mt-2 text-xl font-bold text-[#031E49]">Mosque Fleet Delivery</h3>
-                <p className="mt-3 text-sm text-[#0A2D6C]/70">Glow-series mats deployed across clustered Ramadan schedules with synchronized logistics windows.</p>
-              </div>
-            </article>
-
-            <article className="bg-white rounded-3xl border border-[#031E49]/10 overflow-hidden shadow-sm">
-              <Image src="/story/agro-case.jpg" alt="Agro processing case" width={960} height={640} className="w-full h-52 object-cover" />
-              <div className="p-6">
-                <p className="text-xs uppercase tracking-[0.12em] text-[#031E49]/70 font-semibold">Case Study 02</p>
-                <h3 className="mt-2 text-xl font-bold text-[#031E49]">Agro Processor Pilot</h3>
-                <p className="mt-3 text-sm text-[#0A2D6C]/70">Bio-Shield membranes tested for spice and vegetable shelf-life extension in decentralized operations.</p>
-              </div>
-            </article>
-
-            <article className="bg-white rounded-3xl border border-[#031E49]/10 overflow-hidden shadow-sm">
-              <Image src="/story/export-case.jpg" alt="Export readiness case" width={960} height={640} className="w-full h-52 object-cover" />
-              <div className="p-6">
-                <p className="text-xs uppercase tracking-[0.12em] text-[#031E49]/70 font-semibold">Case Study 03</p>
-                <h3 className="mt-2 text-xl font-bold text-[#031E49]">Export Chain Readiness</h3>
-                <p className="mt-3 text-sm text-[#0A2D6C]/70">Traceability-linked packaging flow prepared for high-volume outbound handling and compliance review.</p>
-              </div>
-            </article>
           </div>
         </div>
       </section>

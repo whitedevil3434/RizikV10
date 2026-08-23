@@ -4,13 +4,76 @@
 // NO LLM CALLS: Rule-based mapping from Human Consortium.
 
 import { FidelityEngine } from './fidelityEngine';
-import { applyStructuralChaos } from './chaosEngine';
+import { applyStructuralChaos, wordCount } from './chaosEngine';
 import { evaluateHumanQuality, shouldRegenerateByQuality } from './qualityEngine';
 import { applyHumanErrors, lightReInjectErrors, PRECONDITION_SYSTEM_PROMPT, PRESERVE_ERRORS_SYSTEM_PROMPT } from './humanErrorEngine';
 import type { HumanErrorConfig } from './humanErrorEngine';
-import { applyBladerHumanizerPolicy } from './bladerHumanizer';
 export type StrengthMode = "conservative" | "balanced" | "strong";
-export { applyBladerHumanizerPolicy } from './bladerHumanizer';
+
+/**
+ * V26: N-gram Decimator
+ * Scans for common AI 3-gram signatures and forcibly breaks them.
+ */
+function applyNgramDecimator(text: string, seed: number): string {
+  let out = text;
+  const commonAIPatterns: Array<[RegExp, string]> = [
+    [/\bis one of (?:the|a)\b/gi, "is definitely one of the"],
+    [/\bthe prospect of\b/gi, "that whole prospect of"],
+    [/\bfundamentally shapes the\b/gi, "basically drives the"],
+    [/\bin terms of\b/gi, "when it comes to"],
+    [/\bthe concept of\b/gi, "that whole idea of"],
+    [/\bit can be argued that\b/gi, "basically, you could say that"],
+    [/\ba variety of\b/gi, "lots of different"],
+    [/\bplay a role in\b/gi, "be a part of"],
+    [/\bthe importance of\b/gi, "why it matters to have"],
+    [/\ba significant (?:number|amount) of\b/gi, "a huge chunk of"]
+  ];
+
+  for (const [re, rep] of commonAIPatterns) {
+    if (Math.abs(Math.sin(seed++) * 10000) % 1 < 0.4) {
+      out = out.replace(re, rep);
+    }
+  }
+  return out;
+}
+
+/**
+ * V22.3: Rhythmic Pulse (Burstiness Engine)
+ * Intentionally varies sentence lengths to destroy AI symmetry (Perplexity Boost).
+ * AI loves 15-25 word sentences. We force Short-Long-Short patterns.
+ */
+function applyRhythmicPulse(text: string, seed: number): string {
+    const sentences = text.split(/(?<=[.!?])\s+/);
+    if (sentences.length < 3) return text;
+    
+    let result = [];
+    for (let i = 0; i < sentences.length; i++) {
+        let sent = sentences[i];
+        let wc = sent.split(/\s+/).length;
+        
+        // If 3 sentences in a row are medium length, force a split or merge
+        if (i > 1) {
+            let prev1Wc = sentences[i-1].split(/\s+/).length;
+            let prev2Wc = sentences[i-2].split(/\s+/).length;
+            
+            if (wc >= 12 && wc <= 22 && prev1Wc >= 12 && prev1Wc <= 22 && prev2Wc >= 12 && prev2Wc <= 22) {
+                // Stochastic Jolt: Split current or merge with next
+                const r = Math.abs(Math.sin(seed + i) * 10000) % 1;
+                if (r < 0.5 && wc > 15) {
+                    // Split at a comma or semicolon
+                    const parts = sent.split(/[,;]/);
+                    if (parts.length > 1) {
+                        result.push(parts[0].trim() + ".");
+                        result.push(parts.slice(1).join(", ").trim());
+                        continue;
+                    }
+                }
+            }
+        }
+        result.push(sent);
+    }
+    return result.join(" ");
+}
 
 const NOISE_PATTERNS: RegExp[] = [
   /!\[[^\]]*]\([^)]*\)/gi, // markdown images
@@ -617,11 +680,15 @@ export async function transformText(
   env: any,
   options: {
     academic?: boolean;
+    strength?: string;
+    chaosLevel?: number;
     useConsortium?: boolean;
     humanErrorThreshold?: number;
     assignmentMode?: boolean;
     bladerHumanizer?: boolean;
     persona?: any; // PersonaID
+    personaIntensity?: number; // 0.1 - 1.0
+    guardDropEnabled?: boolean;
   } = {},
 ) {
   if (!aiText || !dnaProfile) return { pipelineOutput: aiText, llmOutput: null };
@@ -629,6 +696,8 @@ export async function transformText(
   const isAssignmentMode = options.assignmentMode || false;
   const useBladerHumanizer = options.bladerHumanizer !== false;
   const activePersonaID = options.persona || "AUTO";
+  const personaIntensity = typeof options.personaIntensity === "number" ? options.personaIntensity : 1.0;
+  const guardDropEnabled = options.guardDropEnabled !== false;
   
   // ─── Document Structure Parsing (v3.3) ──────────────────────────────
   // Split into structural blocks. Only 'body' blocks get humanized.
@@ -709,6 +778,8 @@ export async function transformText(
     dnaSeed: userDnaSeed,
     assignmentMode: isAssignmentMode,
     persona: activePersonaID,
+    personaIntensity,
+    guardDropEnabled,
   };
 
   // ─── Extreme Mode Multiplier (v3.3) ──────────────────────────────────
@@ -745,7 +816,9 @@ export async function transformText(
                // Seed depends strictly on the string itself, guaranteeing TOC matches Headers
                dnaSeed: userDnaSeed + "_" + blockSeedHash, 
                extremeMultiplier: 1.0, // Keep structural headers relatively stable, don't over-mutate
-               persona: activePersonaID
+               persona: activePersonaID,
+               personaIntensity,
+               guardDropEnabled,
             };
             const errorResult = applyHumanErrors(cleanContent, structuralErrorConfig);
             
@@ -855,11 +928,10 @@ export async function transformText(
           if (isAssignmentMode) {
               const capContent = targetContent.charAt(0).toUpperCase() + targetContent.slice(1);
               // V7.0 Stealth: Lower Connection Density (30% instead of 70%)
-              // High connection density looks like a robot trying to be human.
-              const shouldConnect = (seededRandom(simpleStableHash(targetContent + pIdx)) < 0.30);
+              // V22.3: Lower Connection Density (15% vs 30%) to avoid "Also/Alongside" addiction
+              const shouldConnect = (seededRandom(simpleStableHash(targetContent + pIdx)) < 0.15);
               let chosenConnector = "";
-              
-              if (shouldConnect) {
+              if (shouldConnect && seededRandom(simpleStableHash(targetContent + "conn")) < 0.2) {
                   for (const conn of connectors) {
                       if (!recentAssignmentConnectors.includes(conn)) {
                           chosenConnector = conn;
@@ -872,7 +944,7 @@ export async function transformText(
               if (chosenConnector) {
                   assembly += `${chosenConnector.charAt(0).toUpperCase() + chosenConnector.slice(1)}, ${lowerInitialForEmbeddedClause(targetContent)}. `;
                   recentAssignmentConnectors.push(chosenConnector);
-                  if (recentAssignmentConnectors.length > 5) recentAssignmentConnectors.shift();
+                  if (recentAssignmentConnectors.length > 3) recentAssignmentConnectors.shift();
               } else {
                   // V7.0: Randomly join sentences using 'and' or ';' to increase burstiness
                   const jitterSeed = seededRandom(simpleStableHash(targetContent + "jitter"));
@@ -900,7 +972,7 @@ export async function transformText(
               }
           } else {
               const shouldLeadWithFiller = (idx % 6 === 0) && (leadUsage[hullRhythm] || 0) < 1 && leadCount < leadBudget;
-              const shouldUseConnector = !shouldLeadWithFiller && idx % 5 === 1;
+              const shouldUseConnector = !shouldLeadWithFiller && idx % 5 === 1 && seededRandom(simpleStableHash(`${paragraphText}:conn:${idx}`)) < 0.3; // V22.2 Reducer
               if (shouldLeadWithFiller) {
                 assembly += `${hullRhythm}, ${lowerInitialForEmbeddedClause(targetContent)}. `;
                 leadUsage[hullRhythm] = (leadUsage[hullRhythm] || 0) + 1;
@@ -930,10 +1002,7 @@ export async function transformText(
         : evaluateHumanQuality(outputParagraph, paragraphText);
       if (!isAssignmentMode && shouldRegenerateByQuality(qualityCheck)) {
         // One retry with shifted seed
-        const retryAssembly = outputParagraph; // save current
-        let retryOutput = applyStructuralChaos(outputParagraph, userDnaSeed + '_quality_retry', isAcademic);
-        retryOutput = applyHumanizerQualityPolicy(retryOutput);
-        if (useBladerHumanizer) retryOutput = applyBladerHumanizerPolicy(retryOutput);
+        let retryOutput = applyStructuralChaos(paragraphText, `${userDnaSeed}:retry:${pIdx}`, isAcademic);
         const retryQuality = evaluateHumanQuality(retryOutput, paragraphText);
         if (retryQuality.score > qualityCheck.score) {
           outputParagraph = retryOutput;
@@ -946,28 +1015,40 @@ export async function transformText(
       let passCount = 0;
       let entropySufficient = false;
       let userHash = userDnaSeed;
-      if (!isAssignmentMode) {
-        while (passCount < 2 && !entropySufficient) {
-            passCount++;
-            finalParagraphOutput = applyStructuralChaos(finalParagraphOutput, userHash + passCount.toString(), isAcademic);
-            const wc = (finalParagraphOutput.match(/\b\w+\b/g) || []).length;
-            const uniqueWords = new Set(finalParagraphOutput.toLowerCase().match(/\b\w+\b/g) || []).size;
-            const uniqueRatio = wc > 0 ? (uniqueWords / wc) : 0;
-            if (uniqueRatio > 0.42) entropySufficient = true;
-        }
+      
+      // V22.2: Enabled for Assignment Mode to guarantee AI Detector Bypass (Forensic Grade)
+      const maxPasses = isAssignmentMode ? 1 : 2; // Safe mode for assignments (1 pass)
+      
+      while (passCount < maxPasses && !entropySufficient) {
+          passCount++;
+          finalParagraphOutput = applyStructuralChaos(finalParagraphOutput, userHash + passCount.toString(), isAcademic);
+          const wc = (finalParagraphOutput.match(/\b\w+\b/g) || []).length;
+          const uniqueWords = new Set(finalParagraphOutput.toLowerCase().match(/\b\w+\b/g) || []).size;
+          const uniqueRatio = wc > 0 ? (uniqueWords / wc) : 0;
+          if (uniqueRatio > 0.42) entropySufficient = true;
       }
+      
       outputParagraph = finalParagraphOutput;
+      
+      // Trace V22.3: Pulse & Human Narrative Refinement
+      outputParagraph = applyRhythmicPulse(outputParagraph, simpleStableHash(userDnaSeed + pIdx));
       
       // V6.5: Skip Refinement in Assignment Mode to preserve Human Chaos
       if (!isAssignmentMode) {
         outputParagraph = applyHumanizerQualityPolicy(outputParagraph);
-        if (useBladerHumanizer) outputParagraph = applyBladerHumanizerPolicy(outputParagraph);
         outputParagraph = applyStructureRefinement(outputParagraph, strength);
         outputParagraph = dedupeAndRepairFlow(outputParagraph);
         outputParagraph = normalizeTypographyArtifacts(outputParagraph);
       } else {
         // ASSIGNMENT MODE: Narrative Pass (Sovereign V13)
-        // We SKIP aiClichePurge because humans USE cliches and it makes it authentic.
+        // V22.2: Deep Cliche Purge ENFORCED to destroy GPT-4 lexical signatures.
+        outputParagraph = FidelityEngine.aiClichePurge(outputParagraph);
+        // [SKIP LLM] Pure Forensic Hull Resin Path
+        outputParagraph = applyStructuralChaos(paragraphText, userDnaSeed + pIdx, isAcademic);
+        
+        // V26: Nuclear N-gram Decimator Pass
+        outputParagraph = applyNgramDecimator(outputParagraph, simpleStableHash(userDnaSeed + pIdx + "_ngram"));
+
         outputParagraph = applyHumanNarrativePass(outputParagraph, simpleStableHash(userDnaSeed + pIdx));
         // V9.0: Inject Nuclear Spacing Jitter
         outputParagraph = applyNuclearSpacingJitter(outputParagraph, simpleStableHash(userDnaSeed + pIdx));
@@ -1024,7 +1105,6 @@ export async function transformText(
           console.log(`🛡️ Safety Net: ${reInjectResult.mutations.length} re-injected`);
         }
         llmPara = normalizeTypographyArtifacts(llmPara);
-        if (useBladerHumanizer) llmPara = applyBladerHumanizerPolicy(llmPara);
         finalLlmOutputArray.push(llmPara);
       } else {
         // If Skip LLM (Assignment Mode) or No AI, use the already humanized outputParagraph
@@ -1076,14 +1156,14 @@ function applyHumanNarrativePass(text: string, seed: number): string {
   let s = seed;
 
   const narrativeSwaps = [
-    { regex: /\bFurthermore\b/gi, swaps: ["Also, I should say,", "Plus,", "And another thing is,"] },
-    { regex: /\bConsequently\b/gi, swaps: ["So basically,", "As a result,", "Therefore, actually,"] },
-    { regex: /\bMoreover\b/gi, swaps: ["Also,", "In fact,", "Wait, also,"] },
-    { regex: /\bIn conclusion\b/gi, swaps: ["Finally,", "To wrap it up,", "To be honest, finally,"] },
-    { regex: /\bIt is evident that\b/gi, swaps: ["Clearly, we see that", "Obviously, I'd say", "Actually, it is clear that"] },
-    { regex: /\bRegarding\b/gi, swaps: ["About", "Speaking of", "Talking about"] },
-    { regex: /\butilized\b/gi, swaps: ["used", "took"] },
-    { regex: /\bdemonstrates\b/gi, swaps: ["shows", "proves it"] }
+    { regex: /\bFurthermore\b/gi, swaps: ["On top of that,", "Plus,", "And another thing is,", "Going further,"] },
+    { regex: /\bConsequently\b/gi, swaps: ["So basically,", "As a result,", "Which means,", "That led to"] },
+    { regex: /\bMoreover\b/gi, swaps: ["In fact,", "Beyond that,", "What's more,", "Adding to this,"] },
+    { regex: /\bIn conclusion\b/gi, swaps: ["Finally,", "To wrap it up,", "All things considered,", "At the end of the day,"] },
+    { regex: /\bIt is evident that\b/gi, swaps: ["Clearly,", "We can see that", "It's pretty clear that", "Looking at this,"] },
+    { regex: /\bRegarding\b/gi, swaps: ["About", "Speaking of", "When it comes to", "On the topic of"] },
+    { regex: /\butilized\b/gi, swaps: ["used", "took", "applied"] },
+    { regex: /\bdemonstrates\b/gi, swaps: ["shows", "makes clear", "points to"] }
   ];
 
   narrativeSwaps.forEach((swap, idx) => {
@@ -1093,15 +1173,31 @@ function applyHumanNarrativePass(text: string, seed: number): string {
     });
   });
 
-  // Inject random fillers at the start of some sentences
+  // V21: Inject fillers with Guard-Drop gating and reduced density
+  // Only inject fillers in the BACK HALF of the text (mimics human fatigue)
   const sentences = output.split(/(?<=[.!?])\s+/);
-  const fillers = ["Actually, ", "Basically, ", "I mean, ", "In real terms, ", "To be honest, "];
+  const totalSent = sentences.length;
+  const fillers = [
+    "Actually, ", "I mean, ", "In real terms, ", "To be honest, ",
+    "Now, ", "At this point, ", "The thing is, ", "Look, ",
+    "Honestly, ", "In a way, ", "So, ", "Right, "
+  ];
+  // Track filler usage to prevent clustering of the SAME filler
+  const usedFillers = new Set<string>();
   const processed = sentences.map((sent, idx) => {
-    if (idx > 0 && seededRandom(s + idx) < 0.2) {
-      return fillers[Math.floor(seededRandom(s + idx + 1) * fillers.length)] + sent.charAt(0).toLowerCase() + sent.slice(1);
+    const progress = totalSent > 1 ? idx / (totalSent - 1) : 0;
+    // V21: Only inject fillers after 40% of document, max 8% chance
+    if (idx > 0 && progress > 0.4 && seededRandom(s + idx) < 0.08) {
+      let filler = fillers[Math.floor(seededRandom(s + idx + 1) * fillers.length)];
+      // Don't repeat the same filler within 5 sentences
+      if (usedFillers.has(filler)) return sent;
+      usedFillers.add(filler);
+      if (usedFillers.size > 3) usedFillers.clear(); // Reset after 3 unique fillers used
+      return filler + sent.charAt(0).toLowerCase() + sent.slice(1);
     }
     return sent;
   });
 
   return processed.join(' ');
+
 }

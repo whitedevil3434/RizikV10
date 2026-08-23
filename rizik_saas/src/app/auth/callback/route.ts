@@ -39,7 +39,7 @@ function getSafeNextPath(requestedNext: string | null): string {
 /**
  * OAuth Callback Route.
  * Supabase redirects here after Google sign-in.
- * Exchanges the code for a session, then redirects to /store.
+ * Exchanges the code for a session, then redirects to the public home.
  */
 export async function GET(request: Request) {
     const { searchParams, origin } = new URL(request.url);
@@ -150,7 +150,7 @@ export async function GET(request: Request) {
                 }
             }
 
-            return NextResponse.redirect(`${origin}/store`);
+            return NextResponse.redirect(`${origin}/`);
         }
     }
 
