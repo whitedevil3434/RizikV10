@@ -12,6 +12,7 @@
     "@supabase/supabase-js": "^2.111.0",
     "@vitejs/plugin-react": "latest",
     "firebase": "^12.17.0",
+    "framer-motion": "^13.1.1",
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest"

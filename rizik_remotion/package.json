@@ -1,0 +1,31 @@
+{
+  "name": "rizik_remotion",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "remotion studio src/index.ts",
+    "build": "remotion render src/index.ts GravityOfIntent out/video.mp4",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@react-three/fiber": "^9.7.0",
+    "@remotion/cli": "^4.0.515",
+    "@remotion/three": "^4.0.515",
+    "@types/three": "^0.185.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "remotion": "^4.0.515",
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "@react-three/drei": "^10.7.8",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}
