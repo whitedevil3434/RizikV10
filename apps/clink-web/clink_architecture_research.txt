@@ -1,0 +1,23 @@
+Researching spatial predictability in zero-sum expanding UIs...
+Problem: Auto-flowing grids (like CSS Masonry) cause cascading layout shifts (CLS). When Element A grows by 2 columns, Elements B, C, and D are forcefully pushed to new coordinates, breaking the user's spatial memory ("slippery puzzle").
+
+Solution 1: Shared-Element Z-Space Expansion (Modals)
+- Result: Violates C-Link rule "No Modals".
+
+Solution 2: Flex-Grow Accordion (1D)
+- Result: Works perfectly for a single row or column. But fails for 2D bento grids as wrapping causes the same domino effect.
+
+Solution 3: Treemap Geometry (Continuous 2D Morphing)
+- Result: Mathematically preserves topology, but extremely complex to implement and can still feel disorienting as aspect ratios of all cards change wildly.
+
+Solution 4: Center Stage & Periphery (The "Horizon" Model)
+- Concept: Divide the viewport into two deterministic zones.
+  - The Focus Zone (takes 70-80% of the canvas)
+  - The Periphery Zone (takes 20-30%, arranged as a tight list or dock)
+- Interaction: Clicking an item in the Periphery triggers a "Hero Swap". The item in the Focus Zone shrinks and travels to the Periphery, while the clicked item expands and travels to the Focus Zone.
+- Why it fits C-Link: 
+  - Pure Zero-Sum: Total space never exceeds 100vh/100vw.
+  - Predictable: The user knows exactly where an item will go when it shrinks (to the horizon). No domino effect.
+  - Attention Engine aligned: The engine automatically places the most critical item (e.g., GAP/DISPUTE) in the Focus Zone on load.
+
+Conclusion: The Horizon Model is the definitive solution for C-Link.

@@ -1,320 +1,402 @@
-import { ArrowUpRight, Minimize2, Package, Sparkles, CheckCircle2, Send, Clock, Inbox, Box, AlertTriangle, ShieldCheck, Users, Eye, Target, Briefcase } from "lucide-react";
-import { FormEvent, useEffect, useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { createRoot } from "react-dom/client";
-import "./styles.css";
+import { Plus, ArrowLeft, MessageSquareQuote, AlertCircle, Activity, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { compileNeed } from "./api/clink";
+import "./styles.css";
 
-type Status = "draft" | "pending" | "in_progress" | "fulfilled" | "disputed";
-type Lens = "actor" | "responder";
+type EntityState = "resolved" | "pending" | "blocked" | "active" | "ghost" | "source";
+type EntityType = "Source" | "Need" | "Capability" | "Responsibility" | "Commitment" | "Actor" | "Gap";
+type CausalNode = { id: string; type: EntityType; title: string; subtitle?: string; state: EntityState; children?: Record<string, CausalNode>; };
 
-// UNIFIED WORK OBJECT (Single Reality)
-type UnifiedWork = {
-  id: string;
-  status: Status;
-  actor: string;
-  responder: string;
-  
-  need: { qty: number; unit: string; item: string; due: string };
-  capability: { summary: string };
-  commitment: { qty: number; amount: string };
-  gap: string | null;
-  
-  history: any[];
-};
-
-const SAMPLE_INTENTS = [
-  "I need 500kg of fresh mangoes by Friday...",
-  "Source 20 laptops for our new office...",
-  "Find a logistics partner for Chittagong route...",
-];
-
-function App() {
-  const [works, setWorks] = useState<UnifiedWork[]>([]);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [isCompiling, setIsCompiling] = useState(false);
-  const [lens, setLens] = useState<Lens>("actor");
-  const [hintIndex, setHintIndex] = useState(0);
-
-  useEffect(() => {
-    const t = setInterval(() => setHintIndex(i => (i + 1) % SAMPLE_INTENTS.length), 3000);
-    return () => clearInterval(t);
-  }, []);
-
-  useEffect(() => {
-    Promise.resolve().then(() => {
-      setWorks([
-        {
-          id: "work_1", status: "pending",
-          actor: "Restaurant A", responder: "Supplier B",
-          need: { qty: 1000, unit: "KG", item: "Fresh Chicken", due: "Aug 30" },
-          capability: { summary: "Poultry Supply Chain" },
-          commitment: { qty: 500, amount: "৳75,000" },
-          gap: "500 KG deficit",
-          history: [{ state: { status: "pending" }, date: "Today", note: "Supplier committed to half" }]
-        },
-        {
-          id: "work_2", status: "in_progress",
-          actor: "TechCorp BD", responder: "Supplier B",
-          need: { qty: 50, unit: "Units", item: "Office Laptops", due: "Sep 05" },
-          capability: { summary: "Electronics Distribution" },
-          commitment: { qty: 50, amount: "৳2,500,000" },
-          gap: null,
-          history: [{ state: { status: "in_progress" }, date: "Yesterday", note: "Delivery started" }]
-        },
-        {
-          id: "work_3", status: "disputed",
-          actor: "Restaurant A", responder: "Supplier B",
-          need: { qty: 200, unit: "KG", item: "Onions", due: "Aug 20" },
-          capability: { summary: "Vegetable Wholesale" },
-          commitment: { qty: 200, amount: "৳12,000" },
-          gap: "Quality mismatch reported",
-          history: [{ state: { status: "disputed" }, date: "Aug 21", note: "Restaurant raised dispute on quality" }]
-        }
-      ]);
-    });
-  }, []);
-
-  async function handleCompose(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const intent = String(data.get("intent") || "").trim();
-    if (!intent) return;
-
-    if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(50);
-    setIsCompiling(true);
-    (event.target as HTMLFormElement).reset();
-
-    const qtyMatch = intent.match(/(\d+)\s*(kg|pcs|units|tons|batch|lbs|unit|bags)?/i);
-    let q = 1, u = "unit", it = intent;
-    if (qtyMatch) {
-      q = parseInt(qtyMatch[1]);
-      u = qtyMatch[2] || "unit";
-      it = intent.replace(qtyMatch[0], "").replace(/I need|we need|deliver|of/gi, "").trim();
-      it = it.charAt(0).toUpperCase() + it.slice(1);
+// ─────────────────────────────────────────────────────────────
+// 1. ATTENTION ENGINE
+// ─────────────────────────────────────────────────────────────
+function calculateWeights(nodes: Record<string, CausalNode>, expandedId: string | null): Record<string, number> {
+  const weights: Record<string, number> = {};
+  for (const [id, node] of Object.entries(nodes)) {
+    if (expandedId === id) weights[id] = 40.0; 
+    else if (expandedId) {
+      if (node.state === "ghost") weights[id] = 2.0;
+      else weights[id] = 8.0; 
     }
+    else {
+      if (node.state === "ghost") weights[id] = 4.0;
+      else if (node.type === "Source") weights[id] = 8.0;
+      else if (node.type === "Gap" && node.state === "blocked") weights[id] = 20.0;
+      else if (node.state === "pending") weights[id] = 12.0;
+      else weights[id] = 10.0;
+    }
+  }
+  return weights;
+}
 
-    try {
-      await new Promise(resolve => setTimeout(resolve, 900));
-      const mockCreated: UnifiedWork = {
-        id: "work_" + Date.now(), status: "draft",
-        actor: "You", responder: "Network",
-        need: { qty: q, unit: u, item: it || intent, due: "TBD" },
-        capability: { summary: "Awaiting match" },
-        commitment: { qty: 0, amount: "TBD" },
-        gap: "Unfulfilled",
-        history: [{ state: { status: "draft" }, date: "Just now", note: "Intent compiled into reality" }]
-      };
-      setWorks(prev => [mockCreated, ...prev]);
-    } finally { setIsCompiling(false); }
+// ─────────────────────────────────────────────────────────────
+// 2. TERRITORY SOLVER (DYNAMIC TETRIS)
+// ─────────────────────────────────────────────────────────────
+const TOPOLOGY = ["source", "need", "capability", "actor", "gap", "responsibility", "resolve", "commit", "spec", "timeline", "task", "proof"];
+
+function allocateTerritories(weights: Record<string, number>, COLS: number, ROWS: number) {
+  const grid: (string | null)[][] = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+  const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
+  const totalCells = COLS * ROWS;
+  const allocations: Record<string, number> = {};
+  
+  let remaining = totalCells;
+  const sortedIds = Object.keys(weights).sort((a, b) => {
+      const idxA = TOPOLOGY.indexOf(a);
+      const idxB = TOPOLOGY.indexOf(b);
+      return (idxA !== -1 ? idxA : 99) - (idxB !== -1 ? idxB : 99);
+  });
+  
+  for (let i = 0; i < sortedIds.length; i++) {
+    const id = sortedIds[i];
+    if (i === sortedIds.length - 1) allocations[id] = remaining;
+    else {
+      const cells = Math.max(1, Math.round((weights[id] / totalWeight) * totalCells));
+      allocations[id] = cells;
+      remaining -= cells;
+    }
   }
 
-  const isEmpty = works.length === 0 && !isCompiling;
+  const SEED_MAP: Record<string, {x: number, y: number}> = {
+    source: { x: Math.floor(COLS/2), y: Math.floor(ROWS/2) },
+    need: { x: 1, y: 1 },
+    capability: { x: 1, y: Math.max(1, ROWS - 2) },
+    actor: { x: Math.max(1, COLS - 2), y: Math.max(1, ROWS - 2) },
+    gap: { x: Math.max(1, COLS - 2), y: 1 },
+    responsibility: { x: Math.floor(COLS/2), y: Math.max(1, ROWS - 2) }
+  };
+  
+  const defaultSeeds = [
+    { x: Math.floor(COLS/2), y: Math.floor(ROWS/2) }, { x: 0, y: 0 }, { x: COLS-1, y: 0 }, 
+    { x: 0, y: ROWS-1 }, { x: COLS-1, y: ROWS-1 }
+  ];
+  
+  const queues: Record<string, {x: number, y: number}[]> = {};
+  let dIdx = 0;
+  for (let i = 0; i < sortedIds.length; i++) {
+     const id = sortedIds[i];
+     const seed = SEED_MAP[id] || defaultSeeds[dIdx++ % defaultSeeds.length];
+     queues[id] = [seed];
+  }
+
+  const claimed: Record<string, number> = {};
+  for (const id of sortedIds) claimed[id] = 0;
+
+  let progress = true;
+  while (progress) {
+    progress = false;
+    for (const id of sortedIds) {
+      if (claimed[id] >= allocations[id]) continue;
+      const q = queues[id];
+      let found = false;
+      while (q.length > 0 && !found) {
+        const {x, y} = q.shift()!;
+        if (x >= 0 && x < COLS && y >= 0 && y < ROWS && grid[y][x] === null) {
+          grid[y][x] = id;
+          claimed[id]++;
+          found = true;
+          progress = true;
+          q.push({x: x+1, y}); q.push({x: x-1, y}); q.push({x, y: y+1}); q.push({x, y: y-1});
+        }
+      }
+    }
+  }
+  
+  for (let y = 0; y < ROWS; y++)
+    for (let x = 0; x < COLS; x++)
+      if (grid[y][x] === null) grid[y][x] = sortedIds[0];
+      
+  return grid;
+}
+
+// ─────────────────────────────────────────────────────────────
+// 3. CONTINUOUS GEOMETRY ENGINE (ORGANIC SEAMS + INVISIBLE RECTANGLES)
+// ─────────────────────────────────────────────────────────────
+function extractGeometry(grid: (string | null)[][], width: number, height: number, nodes: Record<string, CausalNode>, COLS: number, ROWS: number) {
+  const cellW = width / COLS;
+  const cellH = height / ROWS;
+  const seams = [];
+  
+  // Create organic SVG seams
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      const id = grid[y][x];
+      if (x < COLS - 1 && grid[y][x+1] !== id) {
+        seams.push({ id: `seam-v-${x}-${y}`, x1: (x+1)*cellW, y1: y*cellH, x2: (x+1)*cellW, y2: (y+1)*cellH, id1: id, id2: grid[y][x+1] });
+      }
+      if (y < ROWS - 1 && grid[y+1][x] !== id) {
+        seams.push({ id: `seam-h-${x}-${y}`, x1: x*cellW, y1: (y+1)*cellH, x2: (x+1)*cellW, y2: (y+1)*cellH, id1: id, id2: grid[y+1][x] });
+      }
+    }
+  }
+
+  const anchors: Record<string, {x: number, y: number, w: number, h: number}> = {};
+  for (const id of Object.keys(nodes)) {
+    let minX = COLS, minY = ROWS, maxX = 0, maxY = 0, count = 0;
+    
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        if (grid[y][x] === id) {
+          minX = Math.min(minX, x); minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+          count++;
+        }
+      }
+    }
+    if (count > 0) {
+      anchors[id] = { 
+          x: minX * cellW, 
+          y: minY * cellH, 
+          w: (maxX - minX + 1) * cellW, 
+          h: (maxY - minY + 1) * cellH 
+      };
+    }
+  }
+  return { seams, anchors, cellW, cellH };
+}
+
+// ─────────────────────────────────────────────────────────────
+// 4. ONE WORK FIELD (Continuous SVG Face Engine)
+// ─────────────────────────────────────────────────────────────
+
+const SPRING: any = { type: "spring", stiffness: 180, damping: 25 }; 
+
+function WorkField({ nodes, width, height, onNodeTap, expandedNodeId, isRoot = true, cols, rows }: { nodes: Record<string, CausalNode>; width: number; height: number; onNodeTap: (id: string | null) => void; expandedNodeId: string | null; isRoot?: boolean; cols: number; rows: number }) {
+    const weights = useMemo(() => calculateWeights(nodes, expandedNodeId), [nodes, expandedNodeId]);
+    const grid = useMemo(() => allocateTerritories(weights, cols, rows), [weights, cols, rows]);
+    const { seams, anchors, cellW, cellH } = useMemo(() => extractGeometry(grid, width, height, nodes, cols, rows), [grid, width, height, nodes, cols, rows]);
+
+    const getColors = (node: CausalNode, isExpanded: boolean) => {
+        // Semantic Text colors over the empty white surface
+        let text = "#111111"; // Default text color
+        let ghostColor = "#888888";
+        
+        if (node.type === "Source") { text = "#1976D2"; } // Blue
+        else if (node.type === "Gap" || node.type === "Responsibility") { text = "#C62828"; } // Red
+        else if (node.type === "Capability") { text = "#2E7D32"; } // Green
+        
+        // Ghost state
+        if (node.state === "ghost") {
+            text = ghostColor;
+        }
+        return { text };
+    };
+
+    return (
+        <div className="work-field" style={{ width, height, position: 'relative' }}>
+            {/* LAYER 0: SVG BOUNDARY & SEAMS (NO TETRIS FILL, JUST SEAMS AND EMPTY SPACE) */}
+            <svg className="svg-boundary-layer" width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+                {/* The Outer Continuous Work Boundary (Only if root) */}
+                {isRoot && <rect x="0" y="0" width={width} height={height} fill="#FFFFFF" />}
+                
+                {/* Dynamic Organic Seams based on State */}
+                <g className="seams">
+                    {seams.map((seam) => {
+                        let strokeColor = "rgba(0,0,0,0.06)"; // Faint boundary
+                        let strokeWidth = 2;
+                        let dashArray = "none";
+                        
+                        const n1 = seam.id1 ? nodes[seam.id1] : null;
+                        const n2 = seam.id2 ? nodes[seam.id2] : null;
+                        
+                        // Tension/Blocked seam styling
+                        if (n1?.state === "blocked" || n2?.state === "blocked") {
+                            strokeColor = "#E53935"; // Red Tension
+                            strokeWidth = 2;
+                            dashArray = "4 4";
+                        } else if (n1?.state === "active" || n2?.state === "active") {
+                            strokeColor = "#1976D2"; // Blue Active
+                            strokeWidth = 2;
+                        } else if (n1?.state === "ghost" && n2?.state === "ghost") {
+                            dashArray = "2 4"; // Very faint latent territory
+                        }
+
+                        return (
+                            <motion.line 
+                                key={seam.id}
+                                initial={false}
+                                animate={{ x1: seam.x1, y1: seam.y1, x2: seam.x2, y2: seam.y2 }}
+                                transition={SPRING}
+                                stroke={strokeColor}
+                                strokeWidth={strokeWidth}
+                                strokeDasharray={dashArray}
+                                strokeLinecap="round"
+                            />
+                        );
+                    })}
+                </g>
+            </svg>
+
+            {/* LAYER 1: HTML CONTENT (Absolute positioned over SVG, NO CARDS, JUST TEXT) */}
+            <div className="html-content-layer">
+                <AnimatePresence>
+                    {Object.entries(nodes).map(([id, node]) => {
+                        const anchor = anchors[id];
+                        const isExpanded = expandedNodeId === id;
+                        if (!anchor) return null;
+                        const { text } = getColors(node, isExpanded);
+                        
+                        return (
+                            <motion.div
+                                key={id}
+                                layout
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1, x: anchor.x, y: anchor.y, width: anchor.w, height: anchor.h }}
+                                exit={{ opacity: 0 }}
+                                transition={SPRING}
+                                className={`content-face state-${node.state} ${isExpanded ? 'is-expanded' : ''}`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onNodeTap(isExpanded ? null : id);
+                                }}
+                            >
+                                <div className="semantic-content" style={{ padding: isExpanded ? '24px' : '16px' }}>
+                                    <div className="node-header">
+                                        {isExpanded && isRoot && (
+                                            <button className="btn-back" style={{color: text}} onClick={(e) => { e.stopPropagation(); onNodeTap(null); }}>
+                                                <ArrowLeft size={16} /> <span style={{fontWeight: 700}}>BACK</span>
+                                            </button>
+                                        )}
+                                        <div className={`badge type-${node.type.toLowerCase()}`} style={node.state === "ghost" ? {opacity: 0.5} : {}}>
+                                            {node.type === "Source" ? <MessageSquareQuote size={12}/> : node.type === "Gap" ? <AlertCircle size={12}/> : <Activity size={12}/>}
+                                            <span>{node.type}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="text-zone" style={{ color: text }}>
+                                        <motion.h3 layout className={isExpanded ? 'text-expanded' : 'text-normal'}>{node.title}</motion.h3>
+                                        {node.subtitle && <p className="node-sub">{node.subtitle}</p>}
+                                    </div>
+                                    
+                                    {/* MOSAIC INSIDE MOSAIC (Recursion) */}
+                                    {isExpanded && node.children && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.1, ...SPRING }}
+                                            className="recursive-container" 
+                                            onClick={e => e.stopPropagation()}
+                                        >
+                                            <WorkField 
+                                                nodes={node.children} 
+                                                width={Math.max(80, anchor.w - (width < 600 ? 32 : 80))} 
+                                                height={Math.max(80, anchor.h - (isRoot ? (width < 600 ? 100 : 160) : 80))} 
+                                                onNodeTap={() => {}} 
+                                                expandedNodeId={null}
+                                                isRoot={false}
+                                                cols={Math.floor(cols/2)}
+                                                rows={Math.floor(rows/2)}
+                                            />
+                                        </motion.div>
+                                    )}
+                                </div>
+                            </motion.div>
+                        );
+                    })}
+                </AnimatePresence>
+            </div>
+        </div>
+    );
+}
+
+const INITIAL_NODES: Record<string, CausalNode> = {
+  need: { id: "need", type: "Need", title: "Waiting for intent", state: "ghost" },
+  capability: { id: "cap", type: "Capability", title: "Potential capability", state: "ghost" },
+  actor: { id: "actor", type: "Actor", title: "Unknown actor", state: "ghost" },
+  gap: { id: "gap", type: "Gap", title: "Hidden gap", state: "ghost" },
+};
+
+export default function App() {
+  const [nodes, setNodes] = useState<Record<string, CausalNode>>(INITIAL_NODES);
+  const [viewState, setViewState] = useState<"QUIET" | "SOURCE_CREATED" | "COMPILING" | "COMPILED">("QUIET");
+  const [intentValue, setIntentValue] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  
+  const [windowSize, setWindowSize] = useState({ w: typeof window !== 'undefined' ? window.innerWidth : 1200, h: typeof window !== 'undefined' ? window.innerHeight : 800 });
+  useEffect(() => {
+     const handleResize = () => setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+     window.addEventListener('resize', handleResize);
+     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isMobile = windowSize.w < 768;
+  const cols = isMobile ? 8 : 16;
+  const rows = isMobile ? 12 : 12;
+
+  const handleIntent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!intentValue.trim()) return;
+    const text = intentValue;
+    setIntentValue("");
+    setViewState("SOURCE_CREATED");
+    
+    setNodes(prev => ({
+      source: { id: "source", type: "Source", title: text, subtitle: "YOU · Just now", state: "source" },
+      ...prev
+    }));
+
+    setTimeout(async () => {
+       setViewState("COMPILING");
+       try {
+         const response = await compileNeed({ text, locale: "en" });
+         const draft = response?.draft || response?.data?.draft;
+         if (draft) {
+             setNodes(prev => {
+                const next = { ...prev };
+                next.need = { 
+                    ...next.need, title: draft.desiredState?.title || "Need Resolved", state: "active",
+                    children: {
+                        spec: { id: "spec", type: "Capability", title: "Specifications", state: "ghost" },
+                        timeline: { id: "timeline", type: "Gap", title: "Urgency", state: "ghost" }
+                    }
+                };
+                if (draft.gap) {
+                   next.gap = { 
+                       ...next.gap, title: "Missing Requirement", subtitle: draft.gap, state: "blocked",
+                       children: {
+                           resolve: { id: "resolve", type: "Actor", title: "Find Actor", state: "pending" },
+                           commit: { id: "commit", type: "Commitment", title: "Awaiting Commitment", state: "ghost" }
+                       }
+                   };
+                } else { delete next.gap; }
+                if (draft.dependencies?.length) {
+                   next.responsibility = { 
+                       id: "resp", type: "Responsibility", title: draft.dependencies[0].action || "Action required", state: "pending",
+                       children: { task: { id: "t1", type: "Need", title: "Sub-task", state: "ghost"} }
+                   };
+                   next.actor = { 
+                       ...next.actor, title: draft.dependencies[0].role || "Actor needed", state: "active",
+                       children: { proof: { id: "proof", type: "Capability", title: "Verification", state: "ghost"} }
+                   };
+                }
+                return next;
+             });
+         }
+       } catch (err) { console.error(err); }
+       setViewState("COMPILED");
+    }, 1500); 
+  };
 
   return (
     <div className="living-surface">
-      {/* ── LENS CONTROL (Attention/Perspective) ── */}
-      <div className="lens-control-bar">
-        <span className="lens-label">Perspective Lens:</span>
-        <div className="lens-switcher">
-          <button
-            className={`lens-btn ${lens === "actor" ? "active" : ""}`}
-            onClick={() => setLens("actor")}
-          ><Target size={14} /> My Needs</button>
-          <button
-            className={`lens-btn ${lens === "responder" ? "active" : ""}`}
-            onClick={() => setLens("responder")}
-          ><Briefcase size={14} /> My Capabilities</button>
-        </div>
+      <div className="mosaic-scroll-viewport">
+          <WorkField nodes={nodes} width={windowSize.w} height={windowSize.h} onNodeTap={setExpandedId} expandedNodeId={expandedId} cols={cols} rows={rows} />
       </div>
-
-      {/* ── MOSAIC CANVAS ── */}
-      <motion.div layout className={`mosaic-canvas ${isEmpty ? "canvas-empty" : ""}`}>
-        <AnimatePresence mode="popLayout">
-
-          {isCompiling && (
-            <motion.div layout initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.85 }} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="mosaic-card card-normal skeleton-card">
-              <div className="skeleton-pulse">
-                <div className="skeleton-line short"></div>
-                <div className="skeleton-line"></div>
-              </div>
-              <div className="skeleton-overlay"><span className="pulsing-text">Compiling Reality...</span></div>
-            </motion.div>
-          )}
-
-          {isEmpty && (
-            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="empty-state">
-              <div className="breath-rings"><div className="breath-ring ring-1"/><div className="breath-ring ring-2"/><div className="breath-ring ring-3"/><Sparkles className="breath-icon"/></div>
-              <p className="empty-title">The canvas is silent.</p>
-              <AnimatePresence mode="wait">
-                <motion.p key={hintIndex} className="empty-hint" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.4 }}>Try: "{SAMPLE_INTENTS[hintIndex]}"</motion.p>
-              </AnimatePresence>
-            </motion.div>
-          )}
-
-          {/* Cards */}
-          {works.map(work => (
-            <UnifiedCard
-              key={work.id}
-              work={work}
-              lens={lens}
-              isExpanded={expandedId === work.id}
-              onToggle={() => {
-                if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(20);
-                setExpandedId(expandedId === work.id ? null : work.id);
-              }}
-            />
-          ))}
-
-        </AnimatePresence>
-      </motion.div>
-
-      <div className={`composer-bar ${isEmpty ? "composer-glowing" : ""}`}>
-        <form onSubmit={handleCompose} className="composer-form">
-          <input name="intent" placeholder="Inject intent into the mosaic..." autoComplete="off" autoFocus />
-          <button type="submit" aria-label="Submit intent"><ArrowUpRight size={20} /></button>
+      
+      <div className="composer-bar">
+        <div className="onboarding-text" style={{ opacity: viewState === "QUIET" ? 1 : 0, display: viewState === "QUIET" ? 'block' : 'none' }}>
+             Tell C-Link what needs to move.
+        </div>
+        <form className="composer-form" onSubmit={handleIntent}>
+          <input value={intentValue} onChange={(e) => setIntentValue(e.target.value)} placeholder="Type your intent..." disabled={viewState === "COMPILING" || viewState === "SOURCE_CREATED"} />
+          <button type="submit" disabled={viewState === "COMPILING" || viewState === "SOURCE_CREATED"}>
+             {viewState === "COMPILING" ? <Loader2 className="spinner-small" /> : <Plus size={20} />}
+          </button>
         </form>
       </div>
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────
-// UNIFIED CARD — Shifts Spatial Weight Based on Lens
-// ─────────────────────────────────────────────────────────────
-function UnifiedCard({ work, isExpanded, onToggle, lens }: {
-  work: UnifiedWork; isExpanded: boolean; onToggle: () => void; lens: Lens;
-}) {
-  const [timeIndex, setTimeIndex] = useState(work.history.length - 1);
-  const maxIndex = work.history.length - 1;
-  const isPast = timeIndex < maxIndex;
-
-  // LENS GRAVITY: Which side of the reality holds weight right now?
-  const isMyNeedLens = lens === "actor";
-  
-  // Dynamic Sizing based on lens and status
-  let sizeClass = "card-normal";
-  if (isExpanded) sizeClass = "card-expanded";
-  else if (work.status === "disputed") sizeClass = "card-full"; 
-  // If I'm looking through My Needs, my drafts/pending needs are large.
-  // If I'm looking through My Capabilities, my commitments are large.
-  else if (isMyNeedLens && (work.status === "pending" || work.status === "draft")) sizeClass = "card-large";
-  else if (!isMyNeedLens && work.status === "in_progress") sizeClass = "card-large";
-  else if (work.status === "fulfilled") sizeClass = "card-small";
-
-  if (isPast) sizeClass += " time-travel-active";
-
-  const StatusIcon = work.status === "draft" ? Sparkles
-    : work.status === "in_progress" ? Clock
-    : work.status === "fulfilled" ? CheckCircle2
-    : work.status === "disputed" ? AlertTriangle
-    : Inbox;
-
-  return (
-    <motion.div
-      layout
-      transition={{ type: "spring", stiffness: 280, damping: 28 }}
-      className={`mosaic-card ${sizeClass} status-${work.status}`}
-      onClick={!isExpanded ? onToggle : undefined}
-      style={{ cursor: isExpanded ? "default" : "pointer" }}
-    >
-      {work.status === "disputed" && !isExpanded && <div className="disputed-stamp">DISPUTED</div>}
-
-      <motion.div layout="position" className="card-header">
-        <div className={`status-badge status-badge--${getStatusVariant(work.status)}`}>
-          <StatusIcon size={13} className="status-icon" />
-          <span className="card-status">{work.status.replace("_", " ").toUpperCase()}</span>
-        </div>
-        {isExpanded && <button className="icon-button" onClick={(e) => { e.stopPropagation(); onToggle(); }}><Minimize2 size={16} /></button>}
-      </motion.div>
-
-      {/* REARRANGING CORE REALITY based on lens */}
-      <motion.div layout className="lens-container">
-        {isMyNeedLens ? (
-          // ACTOR LENS (Heavy emphasis on Need)
-          <motion.div layout key="actor-lens" className="reality-stack actor-heavy"
-            initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-          >
-            <motion.h2 layout="position" className="primary-focus">
-              {work.need.qty} {work.need.unit} · {work.need.item}
-            </motion.h2>
-            <motion.div layout="position" className="secondary-objects">
-              <span className="obj-pill responder-pill">Supplier: {work.responder}</span>
-              {work.commitment.qty > 0 && <span className="obj-pill commit-pill">Committed: {work.commitment.qty} {work.need.unit}</span>}
-              {work.gap && <span className="obj-pill gap-pill">Gap: {work.gap}</span>}
-            </motion.div>
-          </motion.div>
-        ) : (
-          // RESPONDER LENS (Heavy emphasis on Capability/Commitment)
-          <motion.div layout key="responder-lens" className="reality-stack responder-heavy"
-            initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-          >
-            <motion.h2 layout="position" className="primary-focus">
-              {work.capability.summary}
-            </motion.h2>
-            <motion.div layout="position" className="secondary-objects">
-              <span className="obj-pill commit-pill">My Responsibility: {work.commitment.qty || 0} {work.need.unit}</span>
-              <span className="obj-pill actor-pill">Req by: {work.actor}</span>
-              <span className="obj-pill need-pill">Total Need: {work.need.qty}</span>
-            </motion.div>
-          </motion.div>
-        )}
-      </motion.div>
-
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="card-deep-details">
-            
-            {/* Unified 360-degree view of the object */}
-            <div className="reality-matrix">
-              <div className="matrix-cell">
-                <label>THE NEED</label>
-                <div>{work.need.qty} {work.need.unit} {work.need.item}</div>
-                <div className="sub">Due: {work.need.due}</div>
-              </div>
-              <div className="matrix-cell">
-                <label>CAPABILITY APPLIED</label>
-                <div>{work.capability.summary}</div>
-                <div className="sub">By {work.responder}</div>
-              </div>
-              <div className="matrix-cell">
-                <label>COMMITMENT</label>
-                <div>{work.commitment.qty} units ({work.commitment.amount})</div>
-              </div>
-              {work.gap && (
-                <div className="matrix-cell warning">
-                  <label>GAP / CONFLICT</label>
-                  <div>{work.gap}</div>
-                </div>
-              )}
-            </div>
-
-            {/* Actions dynamically shift based on lens */}
-            <div className="response-actions">
-              {lens === "actor" && work.status === "draft" && (
-                <button className="primary-action"><Sparkles size={16} /> Broadcast Need</button>
-              )}
-              {lens === "responder" && work.status === "pending" && (
-                <button className="primary-action"><CheckCircle2 size={16} /> Commit Capability</button>
-              )}
-              {work.status === "in_progress" && (
-                <button className="primary-action"><CheckCircle2 size={16} /> Mark Fulfilled</button>
-              )}
-              {work.status === "disputed" && (
-                <button className="action-btn action-btn--danger"><AlertTriangle size={14} /> Submit Evidence</button>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
-function getStatusVariant(status: Status): string {
-  if (status === "disputed") return "danger";
-  if (status === "in_progress" || status === "pending") return "active";
-  if (status === "fulfilled") return "done";
-  return "neutral";
-}
-
 createRoot(document.getElementById("root")!).render(<App />);

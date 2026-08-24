@@ -6,10 +6,17 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center w-full">
       {/* Hero Section */}
-      <section className="relative w-full min-h-[90vh] flex flex-col items-center justify-center overflow-hidden bg-[#F5F2EB]">
-        {/* Background gradient orb */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#031E49]/5 rounded-full blur-[120px] -z-10" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#00B16A]/10 rounded-full blur-[100px] -z-10" />
+      <section className="relative w-full min-h-[90vh] flex flex-col items-center justify-center overflow-hidden">
+        {/* Background 3D Motion Video */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover opacity-80 pointer-events-none z-0"
+        >
+          <source src="/rizik_3d_bg.mp4" type="video/mp4" />
+        </video>
 
         <div className="max-w-4xl mx-auto px-4 text-center z-10 flex flex-col items-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#031E49]/5 border border-[#031E49]/10 mb-8">

@@ -248,3 +248,21 @@ export async function signInWithFirebase(idToken: string) {
   if (!response.ok || !payload.data) throw new Error(payload.message || payload.error || `Google sign-in failed (${response.status})`);
   return payload.data;
 }
+
+
+export async function compileNeed(input: { text: string; locale?: string }) {
+  const session = supabase ? (await supabase.auth.getSession()).data.session : null;
+  const url = `${baseUrl}/ai/compile-need`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { 
+        "Content-Type": "application/json",
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+    },
+    body: JSON.stringify({ text: input.text, locale: input.locale || "bn" })
+  });
+  if (!response.ok) {
+    throw new Error(`Compile need failed: ${response.status}`);
+  }
+  return response.json();
+}
