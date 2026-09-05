@@ -17,6 +17,7 @@ export default function ZinyPage() {
       roleLabel="Personal Assistant"
       navItems={adminNavItems}
       fullScreen={true}
+      hideHeader={true}
     >
       <ZinyClient />
     </OpsShell>

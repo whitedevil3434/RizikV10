@@ -44,6 +44,7 @@ interface OpsShellProps {
   navItems: WorkspaceNavItem[];
   quickLinks?: QuickLink[];
   fullScreen?: boolean;
+  hideHeader?: boolean;
   children: ReactNode;
 }
 
@@ -89,6 +90,7 @@ export default function OpsShell({
   navItems,
   quickLinks = [],
   fullScreen = false,
+  hideHeader = false,
   children,
 }: OpsShellProps) {
   const [isNavOpen, setIsNavOpen] = useState(false);
@@ -156,38 +158,40 @@ export default function OpsShell({
         </aside>
 
         <main className={`flex-1 md:ml-0 flex flex-col ${fullScreen ? "h-screen pb-0 overflow-hidden" : "pb-24 md:pb-8"}`}>
-          <div className="sticky top-0 z-30 border-b border-[#031E49]/10 bg-[#F5F2EB]/90 backdrop-blur-md">
-            <div className="px-4 md:px-8 py-2.5 md:py-3 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 min-w-0">
-                <button
-                  onClick={() => setIsNavOpen((v) => !v)}
-                  className="md:hidden h-10 w-10 flex items-center justify-center rounded-lg border border-[#031E49]/15 bg-white"
-                  aria-label="Toggle workspace menu"
-                >
-                  {isNavOpen ? <XMarkIcon className="h-5 w-5" /> : <Bars3Icon className="h-5 w-5" />}
-                </button>
-                <div className="min-w-0">
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-[#031E49]/45 font-semibold truncate">{scopeLabel}</p>
-                  <h1 className="text-base md:text-xl font-bold truncate">{title}</h1>
+          {!hideHeader && (
+            <div className="sticky top-0 z-30 border-b border-[#031E49]/10 bg-[#F5F2EB]/90 backdrop-blur-md">
+              <div className="px-4 md:px-8 py-2.5 md:py-3 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <button
+                    onClick={() => setIsNavOpen((v) => !v)}
+                    className="md:hidden h-10 w-10 flex items-center justify-center rounded-lg border border-[#031E49]/15 bg-white"
+                    aria-label="Toggle workspace menu"
+                  >
+                    {isNavOpen ? <XMarkIcon className="h-5 w-5" /> : <Bars3Icon className="h-5 w-5" />}
+                  </button>
+                  <div className="min-w-0">
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-[#031E49]/45 font-semibold truncate">{scopeLabel}</p>
+                    <h1 className="text-base md:text-xl font-bold truncate">{title}</h1>
+                  </div>
+                </div>
+
+                <div className="hidden lg:flex items-center gap-2">
+                  {quickLinks.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`px-4 py-2 rounded-full text-xs font-bold transition-colors ${item.tone === "primary"
+                        ? "bg-[#031E49] text-white hover:bg-[#0A2D6C]"
+                        : "border border-[#031E49]/15 bg-white text-[#031E49] hover:bg-[#F5F2EB]"
+                        }`}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
                 </div>
               </div>
-
-              <div className="hidden lg:flex items-center gap-2">
-                {quickLinks.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`px-4 py-2 rounded-full text-xs font-bold transition-colors ${item.tone === "primary"
-                      ? "bg-[#031E49] text-white hover:bg-[#0A2D6C]"
-                      : "border border-[#031E49]/15 bg-white text-[#031E49] hover:bg-[#F5F2EB]"
-                      }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
             </div>
-          </div>
+          )}
 
           <div className={`flex-1 flex flex-col ${fullScreen ? "p-0 overflow-hidden" : "px-4 md:px-8 pt-6"}`}>
             {!fullScreen && subtitle && <p className="text-sm text-[#0A2D6C]/70 mb-6">{subtitle}</p>}

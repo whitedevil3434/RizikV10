@@ -21,7 +21,9 @@ export type WorkspaceIconKey =
   | "finance"
   | "hr"
   | "checkin"
-  | "report";
+  | "report"
+  | "ziny";
+
 
 export interface WorkspaceNavItem {
   href: string;
@@ -57,6 +59,7 @@ export const adminNavItems: WorkspaceNavItem[] = [
   { href: "/admin/analytics", label: "Analytics", icon: "analytics", description: "Revenue and KPI insights" },
   { href: "/admin/finance", label: "Finance", icon: "finance", description: "Invoicing and expenses" },
   { href: "/admin/hr", label: "HR & People", icon: "hr", description: "Workforce and payroll" },
+  { href: "/admin/ziny", label: "Ziny", icon: "ziny", description: "Personal AI · Cortex Memory" },
 ];
 
 export const portalNavItems: WorkspaceNavItem[] = [
