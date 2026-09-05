@@ -10,6 +10,7 @@ import {
   ClipboardDocumentListIcon,
   ClipboardDocumentCheckIcon,
   ClockIcon,
+  CpuChipIcon,
   CubeIcon,
   ExclamationTriangleIcon,
   HomeIcon,
@@ -42,6 +43,7 @@ interface OpsShellProps {
   roleLabel: string;
   navItems: WorkspaceNavItem[];
   quickLinks?: QuickLink[];
+  fullScreen?: boolean;
   children: ReactNode;
 }
 
@@ -67,7 +69,9 @@ const iconMap: Record<WorkspaceIconKey, React.ComponentType<React.SVGProps<SVGSV
   hr: UserGroupIcon,
   checkin: ClockIcon,
   report: ExclamationTriangleIcon,
+  ziny: CpuChipIcon,
 };
+
 
 function isActivePath(activeHref: string, itemHref: string): boolean {
   if (itemHref === "/admin" || itemHref === "/portal") {
@@ -84,6 +88,7 @@ export default function OpsShell({
   roleLabel,
   navItems,
   quickLinks = [],
+  fullScreen = false,
   children,
 }: OpsShellProps) {
   const [isNavOpen, setIsNavOpen] = useState(false);
@@ -96,7 +101,7 @@ export default function OpsShell({
   }, [quickLinks, navItems]);
 
   return (
-    <div className="min-h-screen w-full bg-[#F5F2EB] text-[#031E49]">
+    <div className={`min-h-screen w-full bg-[#F5F2EB] text-[#031E49] ${fullScreen ? "h-screen overflow-hidden" : ""}`}>
       {isNavOpen && (
         <button
           aria-label="Close workspace sidebar"
@@ -105,7 +110,7 @@ export default function OpsShell({
         />
       )}
 
-      <div className="flex min-h-screen">
+      <div className={`flex ${fullScreen ? "h-screen" : "min-h-screen"}`}>
         <aside
           className={`fixed md:static top-0 left-0 z-50 h-screen w-72 md:w-72 bg-[#031E49] text-white border-r border-white/10 transform transition-transform duration-300 ${isNavOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
             }`}
@@ -150,9 +155,9 @@ export default function OpsShell({
           </div>
         </aside>
 
-        <main className="flex-1 md:ml-0 pb-24 md:pb-8">
+        <main className={`flex-1 md:ml-0 flex flex-col ${fullScreen ? "h-screen pb-0 overflow-hidden" : "pb-24 md:pb-8"}`}>
           <div className="sticky top-0 z-30 border-b border-[#031E49]/10 bg-[#F5F2EB]/90 backdrop-blur-md">
-            <div className="px-4 md:px-8 py-3 md:py-4 flex items-center justify-between gap-4">
+            <div className="px-4 md:px-8 py-2.5 md:py-3 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 <button
                   onClick={() => setIsNavOpen((v) => !v)}
@@ -163,7 +168,7 @@ export default function OpsShell({
                 </button>
                 <div className="min-w-0">
                   <p className="text-[11px] uppercase tracking-[0.14em] text-[#031E49]/45 font-semibold truncate">{scopeLabel}</p>
-                  <h1 className="text-lg md:text-2xl font-bold truncate">{title}</h1>
+                  <h1 className="text-base md:text-xl font-bold truncate">{title}</h1>
                 </div>
               </div>
 
@@ -184,30 +189,32 @@ export default function OpsShell({
             </div>
           </div>
 
-          <div className="px-4 md:px-8 pt-6">
-            <p className="text-sm text-[#0A2D6C]/70 mb-6">{subtitle}</p>
+          <div className={`flex-1 flex flex-col ${fullScreen ? "p-0 overflow-hidden" : "px-4 md:px-8 pt-6"}`}>
+            {!fullScreen && subtitle && <p className="text-sm text-[#0A2D6C]/70 mb-6">{subtitle}</p>}
             {children}
           </div>
 
-          <div className="md:hidden fixed bottom-3 left-0 right-0 px-3 z-30">
-            <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[#031E49]/15 bg-white/95 backdrop-blur p-2 shadow-lg">
-              {mobileQuickLinks.map((item) => {
-                const isPrimary = item.tone === "primary";
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`text-center py-2 rounded-lg text-xs font-bold ${isPrimary
-                      ? "bg-[#031E49] text-white"
-                      : "border border-[#031E49]/15 text-[#031E49]"
-                      }`}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
+          {!fullScreen && (
+            <div className="md:hidden fixed bottom-3 left-0 right-0 px-3 z-30">
+              <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[#031E49]/15 bg-white/95 backdrop-blur p-2 shadow-lg">
+                {mobileQuickLinks.map((item) => {
+                  const isPrimary = item.tone === "primary";
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`text-center py-2 rounded-lg text-xs font-bold ${isPrimary
+                        ? "bg-[#031E49] text-white"
+                        : "border border-[#031E49]/15 text-[#031E49]"
+                        }`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </main>
       </div>
     </div>
