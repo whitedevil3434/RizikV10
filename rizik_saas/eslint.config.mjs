@@ -8,7 +8,6 @@ const __dirname = dirname(__filename);
 const compat = new FlatCompat({ baseDirectory: __dirname });
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     ignores: [
       ".vercel/**",
@@ -22,8 +21,14 @@ const eslintConfig = [
       "next-env.d.ts",
       "test.js",
       "tmp_e2e_*.js",
-      "scripts/**"
-    ],
+      "scripts/**",
+      "**/*.config.js",
+      "**/*.config.mjs",
+      "**/*.config.cjs"
+    ]
+  },
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
     rules: {
       "@typescript-eslint/no-unused-vars": "warn",
       "@typescript-eslint/no-explicit-any": "warn",
