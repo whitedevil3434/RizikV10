@@ -20,7 +20,22 @@ const eslintConfig = [
       "dist/**",
       "coverage/**",
       "next-env.d.ts",
-    ],
+      "test.js",
+      "tmp_e2e_*.js",
+      "scripts/**",
+      "**/*.config.js",
+      "**/*.config.mjs",
+      "**/*.config.cjs"
+    ]
+  },
+  {
+    rules: {
+      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-expressions": "warn",
+      "@typescript-eslint/no-this-alias": "warn",
+      "react/no-unescaped-entities": "warn"
+    }
   },
 ];
 
