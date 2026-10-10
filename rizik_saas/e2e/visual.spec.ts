@@ -2,10 +2,10 @@ import { test, expect } from '@playwright/test';
 
 const ROUTES = [
   '/',
-  '/global',
-  '/about',
-  '/contact',
-  '/oathlink'
+  '/impact',
+  '/trust',
+  '/b2b',
+  '/login'
 ];
 
 test.describe('Visual Regression Tests', () => {
